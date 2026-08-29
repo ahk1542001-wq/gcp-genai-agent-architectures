@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Espresso Solo",
+    "category": "Hot Coffee",
+    "description": "Rich single shot of espresso with caramel notes and rich crema.",
+    "price": 3.50,
+    "allergens": [],
+    "tags": ["strong", "warm", "classic"]
+  },
+  {
+    "name": "Oat Milk Honey Latte",
+    "category": "Hot Coffee",
+    "description": "Espresso steamed with creamy oat milk and infused with organic wildflower honey.",
+    "price": 5.75,
+    "allergens": [],
+    "tags": ["dairy-free", "sweet", "warm"]
+  },
+  {
+    "name": "Iced Caramel Macchiato",
+    "category": "Cold Coffee",
+    "description": "Freshly brewed espresso poured over vanilla syrup, whole milk, ice, and caramel drizzle.",
+    "price": 6.25,
+    "allergens": ["dairy"],
+    "tags": ["cold", "sweet", "creamy"]
+  },
+  {
+    "name": "Cold Brew Reserve",
+    "category": "Cold Coffee",
+    "description": "Slow-steeped for 20 hours for an ultra-smooth, low-acidity chocolate finish.",
+    "price": 4.75,
+    "allergens": [],
+    "tags": ["cold", "strong", "smooth"]
+  },
+  {
+    "name": "Vegan Blueberry Muffin",
+    "category": "Pastry",
+    "description": "Moist plant-based muffin loaded with fresh organic blueberries.",
+    "price": 4.25,
+    "allergens": ["gluten"],
+    "tags": ["dairy-free", "pastry", "breakfast"]
+  }
+]

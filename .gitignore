@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Environment & Credentials
+.env
+*.key
+credentials.json
+service_account.json
+token.json
+
+# IDE / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Cloud & Build Artifacts
+.cloudbuild/
+.gcloud/
+build/
+dist/
+*.egg-info/

@@ -1,0 +1,5 @@
+fastapi>=0.100.0
+uvicorn>=0.22.0
+google-adk>=1.27.1
+google-auth
+google-api-python-client
