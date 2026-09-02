@@ -60,18 +60,9 @@ def test_browser_ui_shell_and_navigation():
         brand = page.locator("text=Sanctuary OS").first
         assert brand.is_visible()
 
-        # 3. Verify Persona Switching
-        guardian_btn = page.locator("#persona-guardian-btn")
-        guardian_btn.click()
-        page.wait_for_timeout(300)
+        # 3. Verify Unified Guardian Sanctuary Callout
         callout_title = page.locator("#callout-title").text_content()
         assert "Guardian" in callout_title
-
-        coach_btn = page.locator("#persona-coach-btn")
-        coach_btn.click()
-        page.wait_for_timeout(300)
-        callout_title_coach = page.locator("#callout-title").text_content()
-        assert "Coach" in callout_title_coach
 
         # 4. Verify View Navigation (Kanban, Calendar, Rewind)
         kanban_nav = page.locator("#nav-kanban")

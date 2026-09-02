@@ -291,35 +291,23 @@ function initNavigation() {
     });
   });
 
-  // Persona Toggles
+  // Persona Toggles (Safely handled if present)
   const coachBtn = document.getElementById("persona-coach-btn");
   const guardianBtn = document.getElementById("persona-guardian-btn");
-
-  coachBtn.addEventListener("click", () => setPersona("coach"));
-  guardianBtn.addEventListener("click", () => setPersona("guardian"));
+  if (coachBtn) coachBtn.addEventListener("click", () => setPersona("coach"));
+  if (guardianBtn) guardianBtn.addEventListener("click", () => setPersona("guardian"));
 }
 
 function setPersona(persona) {
-  state.persona = persona;
-  const coachBtn = document.getElementById("persona-coach-btn");
-  const guardianBtn = document.getElementById("persona-guardian-btn");
+  state.persona = "guardian";
   const calloutTitle = document.getElementById("callout-title");
   const calloutText = document.getElementById("callout-text");
   const calloutEmoji = document.getElementById("callout-emoji");
+  if (!calloutTitle) return;
 
-  if (persona === "coach") {
-    coachBtn.className = "flex-1 py-1.5 px-2 rounded-md font-medium text-center transition-all bg-[#388bfd] text-white flex items-center justify-center space-x-1";
-    guardianBtn.className = "flex-1 py-1.5 px-2 rounded-md font-medium text-center transition-all text-[#8b949e] hover:text-white flex items-center justify-center space-x-1";
-    calloutEmoji.textContent = "🌅";
-    calloutTitle.textContent = "Executive Coach Morning Alignment";
-    calloutText.textContent = '"Good morning Victor! What are the Big-3 must-win focus priorities that will move your vision forward today?"';
-  } else {
-    guardianBtn.className = "flex-1 py-1.5 px-2 rounded-md font-medium text-center transition-all bg-purple-600 text-white flex items-center justify-center space-x-1";
-    coachBtn.className = "flex-1 py-1.5 px-2 rounded-md font-medium text-center transition-all text-[#8b949e] hover:text-white flex items-center justify-center space-x-1";
-    calloutEmoji.textContent = "🌙";
-    calloutTitle.textContent = "Guardian Caring Decompression";
-    calloutText.textContent = '"Welcome back Victor. The workday is wrapping up. How are you genuinely feeling in this quiet moment?"';
-  }
+  calloutEmoji.textContent = "🌿";
+  calloutTitle.textContent = "Guardian Socratic Sanctuary";
+  calloutText.textContent = '"Welcome back Victor. What is occupying your headspace or focus right now?"';
 }
 
 // ============================================================================
@@ -526,79 +514,9 @@ function initVoiceAssistant() {
   const stopVoiceBtn = document.getElementById("stop-voice-btn");
   const micInputBtn = document.getElementById("mic-input-btn");
   const soundwaveBar = document.getElementById("soundwave-bar");
+  const voiceText = document.getElementById("voice-btn-text");
 
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    console.warn("Web Speech API not supported in this browser. Enabling simulated voice mode.");
-    if (voiceToggleBtn) {
-      voiceToggleBtn.addEventListener("click", () => {
-        state.isRecordingVoice = !state.isRecordingVoice;
-        const voiceText = document.getElementById("voice-btn-text");
-        if (state.isRecordingVoice) {
-          soundwaveBar.classList.remove("hidden");
-          if (voiceText) voiceText.textContent = "Stop Voice";
-        } else {
-          soundwaveBar.classList.add("hidden");
-          if (voiceText) voiceText.textContent = "Start Live Voice";
-        }
-      });
-    }
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-  recognition.continuous = false;
-  recognition.interimResults = false;
-  recognition.lang = "en-US";
-
-  recognition.onstart = () => {
-    state.isRecordingVoice = true;
-    soundwaveBar.classList.remove("hidden");
-    document.getElementById("voice-btn-text").textContent = "Listening...";
-  };
-
-  recognition.onend = () => {
-    state.isRecordingVoice = false;
-    soundwaveBar.classList.add("hidden");
-    document.getElementById("voice-btn-text").textContent = "Start Live Voice";
-  };
-
-  recognition.onresult = async (event) => {
-    const transcript = event.results[0][0].transcript;
-    if (!transcript || !transcript.trim()) return;
-
-    // Redact any secrets before sending
-    const safeTranscript = redactSecrets(transcript.trim());
-
-    // Inject into chat stream
-    appendChatMessage("user", safeTranscript);
-
-    // Call live-turn endpoint
-    await processLiveTurn(safeTranscript);
-  };
-
-  voiceToggleBtn.addEventListener("click", () => {
-    if (state.isRecordingVoice) {
-      recognition.stop();
-    } else {
-      recognition.start();
-    }
-  });
-
-  if (stopVoiceBtn) {
-    stopVoiceBtn.addEventListener("click", () => recognition.stop());
-  }
-
-  if (micInputBtn) {
-    micInputBtn.addEventListener("click", () => {
-      recognition.start();
-    });
-  }
-
-  state.speechRecognition = recognition;
-
-  // Text Send Form handler
+  // 1. Always bind Text Send & Clear listeners
   const sendBtn = document.getElementById("send-reflection-btn");
   const input = document.getElementById("reflection-input");
   const clearBtn = document.getElementById("clear-input-btn");
@@ -618,6 +536,92 @@ function initVoiceAssistant() {
   if (clearBtn) {
     clearBtn.addEventListener("click", clearDraft);
   }
+
+  // 2. Simulated / Fallback Toggle Handler
+  function toggleSimulatedVoice() {
+    state.isRecordingVoice = !state.isRecordingVoice;
+    if (state.isRecordingVoice) {
+      if (soundwaveBar) soundwaveBar.classList.remove("hidden");
+      if (voiceText) voiceText.textContent = "Stop Voice";
+    } else {
+      if (soundwaveBar) soundwaveBar.classList.add("hidden");
+      if (voiceText) voiceText.textContent = "Start Live Voice";
+    }
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    console.warn("Web Speech API not supported in this browser. Enabling simulated voice mode.");
+    if (voiceToggleBtn) voiceToggleBtn.addEventListener("click", toggleSimulatedVoice);
+    if (stopVoiceBtn) stopVoiceBtn.addEventListener("click", () => {
+      state.isRecordingVoice = false;
+      if (soundwaveBar) soundwaveBar.classList.add("hidden");
+      if (voiceText) voiceText.textContent = "Start Live Voice";
+    });
+    return;
+  }
+
+  // 3. Native Web Speech Recognition Setup
+  const recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = "en-US";
+
+  recognition.onstart = () => {
+    state.isRecordingVoice = true;
+    if (soundwaveBar) soundwaveBar.classList.remove("hidden");
+    if (voiceText) voiceText.textContent = "Stop Voice";
+  };
+
+  recognition.onend = () => {
+    state.isRecordingVoice = false;
+    if (soundwaveBar) soundwaveBar.classList.add("hidden");
+    if (voiceText) voiceText.textContent = "Start Live Voice";
+  };
+
+  recognition.onresult = async (event) => {
+    const transcript = event.results[0][0].transcript;
+    if (!transcript || !transcript.trim()) return;
+
+    // Redact any secrets before sending
+    const safeTranscript = redactSecrets(transcript.trim());
+
+    // Inject into chat stream
+    appendChatMessage("user", safeTranscript);
+
+    // Call live-turn endpoint
+    await processLiveTurn(safeTranscript);
+  };
+
+  if (voiceToggleBtn) {
+    voiceToggleBtn.addEventListener("click", () => {
+      toggleSimulatedVoice();
+      if (!state.isRecordingVoice) {
+        try { recognition.stop(); } catch (e) {}
+      } else {
+        try { recognition.start(); } catch (e) {}
+      }
+    });
+  }
+
+  if (stopVoiceBtn) {
+    stopVoiceBtn.addEventListener("click", () => {
+      state.isRecordingVoice = false;
+      if (soundwaveBar) soundwaveBar.classList.add("hidden");
+      if (voiceText) voiceText.textContent = "Start Live Voice";
+      try { recognition.stop(); } catch (e) {}
+    });
+  }
+
+  if (micInputBtn) {
+    micInputBtn.addEventListener("click", () => {
+      toggleSimulatedVoice();
+      try { recognition.start(); } catch (e) {}
+    });
+  }
+
+  state.speechRecognition = recognition;
 }
 
 async function processLiveTurn(message) {

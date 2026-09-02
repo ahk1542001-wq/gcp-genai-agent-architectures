@@ -260,6 +260,13 @@ class FirestoreService:
             "living_memory": [
                 "Solved complex MCP server challenge on Track 2 with 10/10 perfect score.",
                 "Values privacy and zero-trust cloud architecture deeply."
+            ],
+            "learned_rules": [
+                {
+                    "trigger": "hackathon tasks",
+                    "preference": "categorize strictly as Hackathon sprint priorities",
+                    "rationale": "Explicit user operational preference"
+                }
             ]
         }
         if not uid:
@@ -296,6 +303,17 @@ class FirestoreService:
             profile["living_memory"] = memories[-20:]
             self.save_user_profile(uid, profile)
         return profile.get("living_memory", [])
+
+    def append_learned_rule(self, uid: str, rule: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Hermes Closed-Loop Learning: Appends an operational rule distilled from user correction."""
+        if not uid or not rule:
+            return []
+        profile = self.get_user_profile(uid)
+        rules = profile.get("learned_rules", [])
+        rules.append(rule)
+        profile["learned_rules"] = rules[-20:]
+        self.save_user_profile(uid, profile)
+        return profile.get("learned_rules", [])
 
     # -------------------------------------------------------------------------
     # User Preferences & Settings (/users/{uid}/settings/main)

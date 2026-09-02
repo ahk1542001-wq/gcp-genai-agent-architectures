@@ -196,6 +196,17 @@ def live_agent_conversational_turn(
                 updated_mems = db_service.append_living_memory(uid=user.uid, memory_item=mem)
                 executed_side_effects.append({"action": "memory_saved", "memory": mem})
 
+        elif tool == "synthesize_learned_rule":
+            rule_obj = {
+                "trigger": params.get("trigger_context", "General interaction"),
+                "preference": params.get("learned_preference", ""),
+                "rationale": params.get("rationale", ""),
+                "learned_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+            }
+            if rule_obj["preference"]:
+                db_service.append_learned_rule(uid=user.uid, rule=rule_obj)
+                executed_side_effects.append({"action": "rule_synthesized", "rule": rule_obj})
+
     # Fetch latest tickets to keep client in sync
     latest_tickets = db_service.get_tickets(uid=user.uid)
 

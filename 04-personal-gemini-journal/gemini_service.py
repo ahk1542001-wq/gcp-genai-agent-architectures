@@ -14,7 +14,7 @@ import datetime
 from typing import List, Dict, Any, Optional
 
 GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "intelligent-arc-488111-s0")
-MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-3.7-flash")
 
 def get_secret_from_secret_manager(secret_id: str) -> Optional[str]:
     """
@@ -64,12 +64,8 @@ Security & Delimiters:
 """
 
 SYSTEM_INSTRUCTIONS_ANALYST = """
-You are the "Personal Gemini Analyst & Knowledge Scribe" operating under Cerebras-style evidence-backed retrieval principles.
-Your mission:
-- Extract newly surfaced user habits, preferences, and breakthroughs to append to the user's Living Memory.
-- Calculate emotional arc metrics (sentiment, energy, clarity).
-- When recalling past wisdom, always cite the specific date and breakthrough as concrete evidence.
-Tone: Analytical, objective, structured, evidence-based.
+You are the "Personal Gemini Analyst Scribe" operating as the background cognitive synthesis engine.
+Your mission is to distill unstructured rambling reflections into prioritized Kanban tickets, calculate emotional progression arcs, and synthesize lasting memories.
 """
 
 class GeminiJournalService:
@@ -85,38 +81,44 @@ class GeminiJournalService:
                 print(f"[GeminiService] Notice: Could not initialize google-genai client: {e}")
 
     # --------------------------------------------------------------------------
-    # Live Conversational Agent with Autonomous Tool Calling
+    # Live Conversational Agent with Autonomous Tool Calling & Hermes Self-Learning
     # --------------------------------------------------------------------------
     def live_agent_turn(
         self,
         user_message: str,
         conversation_history: List[Dict[str, str]],
-        persona_mode: str = "coach",
+        persona_mode: str = "guardian",
         user_profile: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
-        Processes a live voice/text turn from the user.
-        Analyzes intent, detects tool executions (create ticket, move ticket, schedule calendar, box breathing, shutdown),
+        Processes a live voice/text turn from the user using Gemini 3.7 Flash.
+        Analyzes intent, detects tool executions (create ticket, move ticket, schedule calendar, box breathing, shutdown, synthesize_learned_rule),
         and returns:
-        - spoken_ack: Immediate voice acknowledgment ("I'm scheduling that right now, please wait...")
+        - spoken_ack: Immediate voice acknowledgment
         - executed_actions: List of structured tool actions to apply to DB & UI
         - final_voice_reply: Calming, empathetic, or coaching vocal response
         """
         sanitized = user_message.strip()
-        system_prompt = SYSTEM_INSTRUCTIONS_COACH if persona_mode == "coach" else SYSTEM_INSTRUCTIONS_GUARDIAN
+        system_prompt = SYSTEM_INSTRUCTIONS_GUARDIAN if persona_mode == "guardian" else SYSTEM_INSTRUCTIONS_COACH
 
         profile_context = ""
         if user_profile:
-            profile_context = f"\nUser Context: Active Goals: {user_profile.get('active_goals', [])}, Living Memory: {user_profile.get('living_memory', [])}\n"
+            profile_context = (
+                f"\nUser Context:\n"
+                f"- Active Goals: {user_profile.get('active_goals', [])}\n"
+                f"- Living Memory: {user_profile.get('living_memory', [])}\n"
+                f"- Learned Preferences & Rules (Hermes Self-Learning): {user_profile.get('learned_rules', [])}\n"
+            )
 
         prompt = f"""{system_prompt}
 {profile_context}
 
 Analyze the user's latest statement and determine:
 1. Is the user asking to create a task, move a task, schedule an event, express high anxiety/burnout, or conclude their day?
-2. If so, generate structured tool action(s).
-3. Provide an immediate spoken acknowledgment (e.g. "I am adding that to your To Do board right now, please wait...")
-4. Provide a warm, conversational final reply suitable for text-to-speech.
+2. Did the user correct a past mistake, state an explicit personal preference, or clarify a rule? (Hermes Closed-Loop Learning)
+3. If so, generate structured tool action(s).
+4. Provide an immediate spoken acknowledgment (e.g. "I am adding that to your To Do board right now, please wait...")
+5. Provide a warm, conversational final reply suitable for text-to-speech.
 
 Supported Tool Actions:
 - "create_ticket": {{"title": "...", "priority": "Urgent"|"High"|"Medium"|"Low", "category": "Work"|"Wellness"|"Study", "column": "todo"|"in_progress"|"done"}}
@@ -125,6 +127,7 @@ Supported Tool Actions:
 - "trigger_box_breathing": {{"reason": "Detected acute stress or user requested breathing exercise"}}
 - "trigger_shutdown_ritual": {{"summary": "End of workday transition"}}
 - "save_memory": {{"memory_item": "Extracted habit, preference, or breakthrough to append to Living Memory"}}
+- "synthesize_learned_rule": {{"trigger_context": "Situation when rule applies", "learned_preference": "Exact user preference or constraint", "rationale": "Why this rule was formed from correction"}}
 
 User statement:
 <user_journal_reflection>

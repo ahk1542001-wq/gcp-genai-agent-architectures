@@ -35,7 +35,7 @@ gcloud run deploy "${SERVICE_NAME}" \
     --project="${PROJECT_ID}" \
     --allow-unauthenticated \
     --labels="dev-tutorial=cloud-run-ai-challenge" \
-    --set-env-vars="GCP_PROJECT_ID=${PROJECT_ID},ENVIRONMENT=production,GEMINI_MODEL=gemini-2.5-flash" \
+    --set-env-vars="GCP_PROJECT_ID=${PROJECT_ID},ENVIRONMENT=production,GEMINI_MODEL=gemini-3.7-flash" \
     --memory="512Mi" \
     --cpu="1" \
     --min-instances="0" \

@@ -5,7 +5,7 @@
 [![Firebase Auth](https://img.shields.io/badge/Firebase-Authentication-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/docs/auth)
 [![Cloud Firestore](https://img.shields.io/badge/Google_Cloud-Firestore-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/docs/firestore)
 [![Secret Manager](https://img.shields.io/badge/Google_Cloud-Secret_Manager-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/secret-manager)
-[![Gemini 2.5 Flash](https://img.shields.io/badge/Gemini-2.5_Flash-8A2BE2?logo=google&logoColor=white)](https://ai.google.dev)
+[![Gemini 3.7 Flash](https://img.shields.io/badge/Gemini-3.7_Flash-8A2BE2?logo=google&logoColor=white)](https://ai.google.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > Built for the **Hack2Skill APAC GenAI Academy (Cohort 3: Accelerate AI with Cloud Run)** Ideathon Challenge.  
@@ -59,7 +59,7 @@ flowchart TD
 | Security Pillar | Production Implementation | Defense Mechanism |
 | :--- | :--- | :--- |
 | **1. User Authentication** | Firebase Authentication (Google Sign-In / Email) | Cryptographic JWT verification on backend via Google Identity Toolkit; validates issuer, audience, and expiry. |
-| **2. Multi-turn AI Interaction** | Gemini 2.5 Flash with Delimiter Guardrails | User reflections are encapsulated within `<user_journal_reflection>` delimiters to prevent prompt injection and instruction overrides. |
+| **2. Multi-turn AI Interaction** | Gemini 3.7 Flash with Delimiter Guardrails | User reflections are encapsulated within `<user_journal_reflection>` delimiters to prevent prompt injection and instruction overrides. |
 | **3. Isolated Data Storage** | Cloud Firestore (`/users/{uid}/journals/{doc_id}`) | Strict user-scoped document hierarchy. User A cannot view, modify, or delete User B's entries (Zero Cross-User Leakage). Enforced via backend logic and `firestore.rules`. |
 | **4. Secure Key Management** | Google Cloud Secret Manager + ADC | Zero hardcoded keys. API keys are loaded dynamically at runtime via Application Default Credentials (ADC). |
 
@@ -67,11 +67,11 @@ flowchart TD
 
 ## ✨ Original Feature Enhancements (Phase 3 Innovation)
 
-Beyond the baseline requirements, this application introduces six unique, high-impact features designed to foster emotional resilience and executive momentum:
+Beyond the baseline requirements, this application introduces seven unique, high-impact features designed to foster emotional resilience and executive momentum:
 
-### 1. 🤖 Coordinated Multi-Agent Team (Google ADK Pattern)
-- **Executive Coach Agent:** Morning prioritization, Big-3 sprint alignment, and Kanban momentum.
-- **Empathetic Guardian Agent:** Decompression, Socratic questioning, and evening shutdown rituals.
+### 1. 🤖 Coordinated Multi-Agent Team with Hermes-Inspired Self-Learning
+- **Unified Front Guardian:** Natural, empathetic life companion (Google ADK Supervisor pattern) without artificial persona flipping.
+- **Hermes Closed-Loop Learning:** Captures user corrections and synthesizes permanent operational rules into Firestore profile (`learned_rules`).
 - **Analyst Scribe Agent:** 3-Tier Cerebras-backed memory synthesis and real-time emotional scoring.
 
 ### 2. 📋 Interactive Drag-and-Drop Kanban Board
