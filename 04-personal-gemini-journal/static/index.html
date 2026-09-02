@@ -3,202 +3,536 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Personal Gemini Journal — Secure AI Companion</title>
-  <!-- Tailwind CSS CDN for modern styling -->
+  <title>Personal Gemini Life Guardian | Notion-Style Workspace</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js for Emotional & Cognitive Arc Visualizer -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Marked for Markdown rendering -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
 </head>
-<body class="bg-slate-950 text-slate-100 font-['Plus_Jakarta_Sans',sans-serif] min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+<body class="bg-[#0e1117] text-[#e6edf3] font-sans antialiased h-screen overflow-hidden flex">
 
-  <!-- Header / Navigation Bar -->
-  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      
-      <!-- Brand & Security Shield -->
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-500 to-amber-400 p-[1px] shadow-lg shadow-indigo-500/20">
-          <div class="w-full h-full bg-slate-950 rounded-[11px] flex items-center justify-center">
-            <span class="text-lg">✨</span>
+  <!-- ===================================================================== -->
+  <!-- Notion-Style Sidebar (Left) -->
+  <!-- ===================================================================== -->
+  <aside class="w-64 bg-[#161b22] border-r border-[#30363d] flex flex-col justify-between shrink-0 select-none">
+    <div>
+      <!-- Workspace Brand -->
+      <div class="p-4 border-b border-[#30363d] flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="text-2xl">🌿</span>
+          <div>
+            <h1 class="font-semibold text-sm text-[#f0f6fc] tracking-tight">Sanctuary OS</h1>
+            <p class="text-[11px] text-[#8b949e]">Personal Gemini Guardian</p>
           </div>
         </div>
-        <div>
-          <div class="flex items-center space-x-2">
-            <h1 class="text-base font-semibold tracking-tight text-white font-['Playfair_Display'] italic">Personal Gemini Journal</h1>
-            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Cloud Run</span>
-          </div>
-          <div class="flex items-center space-x-1.5 text-xs text-slate-400">
-            <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span class="text-[11px] text-slate-400 font-mono">Zero-Trust Isolation • <span id="tenantPathLabel">/users/{uid}</span></span>
-          </div>
+        <button id="open-settings-sidebar-btn" class="p-1 rounded text-gray-400 hover:text-white hover:bg-[#21262d]" title="Settings">
+          ⚙️
+        </button>
+      </div>
+
+      <!-- Persona Switcher -->
+      <div class="p-3">
+        <div class="bg-[#21262d] p-1 rounded-lg flex text-xs">
+          <button id="persona-coach-btn" class="flex-1 py-1.5 px-2 rounded-md font-medium text-center transition-all bg-[#388bfd] text-white flex items-center justify-center space-x-1">
+            <span>🌅</span>
+            <span>Coach</span>
+          </button>
+          <button id="persona-guardian-btn" class="flex-1 py-1.5 px-2 rounded-md font-medium text-center transition-all text-[#8b949e] hover:text-white flex items-center justify-center space-x-1">
+            <span>🌙</span>
+            <span>Guardian</span>
+          </button>
         </div>
       </div>
 
-      <!-- User Auth & Session Control -->
-      <div class="flex items-center space-x-3">
-        <button id="authBtn" class="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-all duration-200 shadow-md shadow-indigo-600/20 flex items-center space-x-1.5">
-          <span id="authIcon">🔑</span>
-          <span id="authBtnText">Demo Mode (Instant Sign In)</span>
+      <!-- Navigation Views -->
+      <nav class="px-2 space-y-1 text-sm font-medium">
+        <button id="nav-journal" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-md bg-[#21262d] text-[#f0f6fc] hover:bg-[#30363d] transition-colors text-left">
+          <span>📝</span>
+          <span>Sanctuary Journal</span>
         </button>
+        <button id="nav-kanban" class="w-full flex items-center justify-between px-3 py-2 rounded-md text-[#8b949e] hover:bg-[#21262d] hover:text-[#f0f6fc] transition-colors text-left">
+          <div class="flex items-center space-x-2.5">
+            <span>📋</span>
+            <span>Kanban Board</span>
+          </div>
+          <span id="ticket-badge-count" class="text-[10px] bg-[#30363d] px-1.5 py-0.5 rounded text-gray-300">0</span>
+        </button>
+        <button id="nav-calendar" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-md text-[#8b949e] hover:bg-[#21262d] hover:text-[#f0f6fc] transition-colors text-left">
+          <span>📅</span>
+          <span>Mood Calendar</span>
+        </button>
+        <button id="nav-rewind" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-md text-[#8b949e] hover:bg-[#21262d] hover:text-[#f0f6fc] transition-colors text-left">
+          <span>✨</span>
+          <span>Life Rewind</span>
+        </button>
+        <button id="nav-shutdown" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-md text-amber-300 hover:bg-amber-400/10 transition-colors text-left">
+          <span>🌙</span>
+          <span>Evening Shutdown</span>
+        </button>
+        <button id="nav-destress" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-md text-[#f0883e] hover:bg-[#f0883e]/10 transition-colors text-left">
+          <span>🧘</span>
+          <span>De-Stress Breathe</span>
+        </button>
+      </nav>
 
-        <div id="userProfile" class="hidden flex items-center space-x-2.5 pl-3 border-l border-slate-800">
-          <div class="w-8 h-8 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-inner" id="userAvatar">
+      <!-- Past Reflections List -->
+      <div class="mt-5 px-3">
+        <div class="flex items-center justify-between text-[11px] font-semibold text-[#8b949e] uppercase tracking-wider mb-2 px-1">
+          <span>Past Reflections</span>
+          <button id="refresh-history-btn" class="hover:text-white" title="Refresh">↻</button>
+        </div>
+        <div id="journal-history-list" class="space-y-1 max-h-40 overflow-y-auto text-xs pr-1">
+          <div class="text-[#8b949e] italic px-2 py-1">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Profile & Burnout Radar -->
+    <div class="p-3 border-t border-[#30363d] bg-[#161b22]">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center space-x-2 overflow-hidden">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0">
             V
           </div>
-          <div class="text-left">
-            <div class="text-xs font-medium text-slate-200" id="userName">Victor</div>
-            <div class="text-[10px] text-slate-400 font-mono" id="userEmail">authenticated</div>
+          <div class="truncate">
+            <div id="user-display-name" class="text-xs font-medium text-[#f0f6fc] truncate">Victor</div>
+            <div class="text-[10px] text-[#3fb950] flex items-center space-x-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse"></span>
+              <span>Tenant Isolated</span>
+            </div>
           </div>
-          <button id="logoutBtn" class="text-xs text-slate-500 hover:text-rose-400 p-1 transition" title="Sign Out">
-            ✕
-          </button>
         </div>
-      </div>
-
-    </div>
-  </header>
-
-  <!-- Main 3-Column Layout -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-    <!-- Column 1: Journal Archive & Past Reflections (3 cols) -->
-    <aside class="lg:col-span-3 flex flex-col space-y-4">
-      <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-4 flex-1 flex flex-col backdrop-blur-sm">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Archives</h2>
-          <button id="newEntryBtn" class="text-xs font-medium px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/20 transition flex items-center space-x-1">
-            <span>+</span> <span>New Session</span>
-          </button>
-        </div>
-
-        <!-- Search entries -->
-        <div class="mt-3">
-          <input type="text" id="searchEntriesInput" placeholder="Filter reflections..." class="w-full bg-slate-950/70 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
-        </div>
-
-        <!-- Entries List -->
-        <div id="entriesList" class="mt-3 flex-1 overflow-y-auto space-y-2 pr-1 max-h-[calc(100vh-280px)]">
-          <div class="text-center py-8 text-xs text-slate-500">Loading your secure reflections...</div>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Column 2: Conversational Journaling Workspace (5 cols) -->
-    <section class="lg:col-span-5 flex flex-col bg-slate-900/50 border border-slate-800/80 rounded-2xl backdrop-blur-sm overflow-hidden">
-      <!-- Session Header -->
-      <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/80">
-        <div>
-          <h2 id="currentSessionTitle" class="text-sm font-semibold text-slate-100 font-['Playfair_Display']">Evening Reflection & Life Flow</h2>
-          <p id="currentSessionDate" class="text-[11px] text-slate-400">Conversational companion powered by Gemini 2.5 Flash</p>
-        </div>
-        <button id="endAndSaveBtn" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 text-white shadow-sm transition flex items-center space-x-1.5">
-          <span>💾</span> <span>End & Save</span>
+        <button id="open-settings-bottom-btn" class="text-xs text-gray-400 hover:text-white" title="Preferences">
+          ⚙️
         </button>
       </div>
-
-      <!-- Past Wisdom Alert Banner (Dynamic) -->
-      <div id="pastWisdomBanner" class="hidden m-3 p-3 rounded-xl bg-violet-950/30 border border-violet-700/30 text-violet-200 text-xs flex items-start space-x-2">
-        <span class="text-base">💡</span>
-        <div class="flex-1">
-          <div class="font-semibold text-violet-300" id="pastWisdomTitle">Past Wisdom Surfaced</div>
-          <div class="text-[11px] mt-0.5 text-violet-200/90" id="pastWisdomText"></div>
-        </div>
-        <button id="dismissWisdomBtn" class="text-slate-500 hover:text-slate-300">✕</button>
-      </div>
-
-      <!-- Chat Messages Container -->
-      <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-4 max-h-[calc(100vh-340px)]">
-        <!-- AI Welcome Message -->
-        <div class="flex items-start space-x-3">
-          <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-xs flex-shrink-0 shadow">
-            ✨
-          </div>
-          <div class="bg-slate-800/60 border border-slate-700/50 rounded-2xl rounded-tl-sm p-3.5 max-w-[85%] text-xs leading-relaxed text-slate-200 shadow-sm">
-            Welcome to your secure reflection space. Whatever is on your mind—today's wins, struggles, or quiet realizations—take a deep breath and share it here. I'm here to reflect with you.
-          </div>
-        </div>
-      </div>
-
-      <!-- Chat Input Area -->
-      <div class="p-3 border-t border-slate-800 bg-slate-950/50">
-        <form id="chatForm" class="flex items-end space-x-2">
-          <textarea id="chatInput" rows="2" placeholder="Write freely about your day, blockers, or feelings..." class="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none transition"></textarea>
-          <button type="submit" id="sendBtn" class="h-10 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition shadow-md shadow-indigo-600/20 flex items-center justify-center">
-            Reflect
-          </button>
-        </form>
-        <div class="mt-2 flex items-center justify-between text-[10px] text-slate-500 px-1">
-          <span>🔒 Sanitized & bounded with &lt;user_journal_reflection&gt;</span>
-          <span>Shift+Enter for newline</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Column 3: AI Cognitive & Action Dashboard (4 cols) -->
-    <aside class="lg:col-span-4 flex flex-col space-y-4">
-      
-      <!-- Feature 1: Emotional & Cognitive Arc Visualizer -->
-      <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-4 backdrop-blur-sm">
-        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-          <div class="flex items-center space-x-1.5">
-            <span class="text-sm">📈</span>
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Emotional & Cognitive Arc</h3>
-          </div>
-          <span id="dominantEmotionBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Grounded</span>
-        </div>
-
-        <div class="mt-3 relative h-40">
-          <canvas id="emotionalArcChart"></canvas>
-        </div>
-        <p id="emotionalInsightNote" class="mt-2 text-[11px] text-slate-400 italic text-center">
-          "Tracking sentiment and cognitive clarity across your conversation."
-        </p>
-      </div>
-
-      <!-- Feature 3: Executive Action Items Distiller -->
-      <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-4 flex-1 flex flex-col backdrop-blur-sm">
-        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-          <div class="flex items-center space-x-1.5">
-            <span class="text-sm">⚡</span>
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Action Items Distiller</h3>
-          </div>
-          <button id="copyActionsBtn" class="text-[10px] font-semibold px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition flex items-center space-x-1" title="Copy to Markdown">
-            <span>📋</span> <span>Copy Markdown</span>
-          </button>
-        </div>
-
-        <div id="actionItemsList" class="mt-3 flex-1 overflow-y-auto space-y-2 max-h-56 pr-1 text-xs">
-          <div class="p-3 text-center text-slate-500 text-[11px]">
-            Share your thoughts or click "End & Save" to distill structured tasks automatically.
-          </div>
-        </div>
-      </div>
-
-    </aside>
-
-  </main>
-
-  <!-- Footer / System Telemetry -->
-  <footer class="border-t border-slate-900 bg-slate-950/80 text-[11px] text-slate-500 py-3 px-6">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-      <div class="flex items-center space-x-2">
-        <span>GCP Cloud Run Serverless</span>
-        <span>•</span>
-        <span>Secret Manager: Protected</span>
-        <span>•</span>
-        <span>Firestore Tenant Isolation: Enforced</span>
-      </div>
-      <div>
-        <span class="font-mono text-indigo-400">#AccelerateAIwithCloudRun</span>
+      <div class="bg-[#0e1117] p-2 rounded border border-[#30363d] flex items-center justify-between">
+        <span class="text-[10px] text-[#8b949e]">Burnout Radar</span>
+        <span id="burnout-status-pill" class="text-[10px] font-medium text-[#3fb950] bg-[#238636]/20 px-1.5 py-0.5 rounded border border-[#238636]/30">Optimal Balance</span>
       </div>
     </div>
-  </footer>
+  </aside>
+
+  <!-- ===================================================================== -->
+  <!-- Main Studio Canvas (Center & Right) -->
+  <!-- ===================================================================== -->
+  <main class="flex-1 flex flex-col h-full overflow-hidden bg-[#0d1117]">
+
+    <!-- Notion-Style Top Header Bar -->
+    <header class="h-14 border-b border-[#30363d] bg-[#161b22]/70 backdrop-blur-md px-6 flex items-center justify-between shrink-0">
+      <div class="flex items-center space-x-3">
+        <span id="view-icon" class="text-xl">📝</span>
+        <h2 id="view-title" class="text-sm font-semibold text-[#f0f6fc]">Sanctuary Journal & Reflection Studio</h2>
+        <span class="text-xs text-[#8b949e] border-l border-[#30363d] pl-3" id="current-date-display">Today</span>
+      </div>
+
+      <!-- Action Utilities -->
+      <div class="flex items-center space-x-3">
+        <!-- Live Voice Button -->
+        <button id="live-voice-toggle-btn" class="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-md transition-all">
+          <span id="voice-icon" class="animate-pulse">🎙️</span>
+          <span id="voice-btn-text">Start Live Voice</span>
+        </button>
+
+        <!-- Export Dropdown -->
+        <div class="relative">
+          <button id="export-menu-btn" class="flex items-center space-x-1.5 bg-[#21262d] hover:bg-[#30363d] text-xs font-medium px-2.5 py-1.5 rounded-md border border-[#30363d] transition-colors text-[#e6edf3]">
+            <span>📥</span>
+            <span>Export</span>
+            <span class="text-[9px]">▼</span>
+          </button>
+          <div id="export-dropdown" class="hidden absolute right-0 mt-1 w-44 bg-[#161b22] border border-[#30363d] rounded-lg shadow-xl py-1 z-30 text-xs">
+            <button id="export-md-btn" class="w-full text-left px-3 py-2 hover:bg-[#21262d] flex items-center space-x-2 text-gray-200">
+              <span>📓</span>
+              <span>Markdown (.md)</span>
+            </button>
+            <button id="export-txt-btn" class="w-full text-left px-3 py-2 hover:bg-[#21262d] flex items-center space-x-2 text-gray-200">
+              <span>📄</span>
+              <span>Plain Text (.txt)</span>
+            </button>
+            <button id="export-pdf-btn" class="w-full text-left px-3 py-2 hover:bg-[#21262d] flex items-center space-x-2 text-gray-200">
+              <span>🖨️</span>
+              <span>Print / Save PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Settings Trigger -->
+        <button id="open-settings-btn" class="p-1.5 rounded-md bg-[#21262d] hover:bg-[#30363d] text-xs text-gray-300 border border-[#30363d]" title="Settings">
+          ⚙️
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Workspace Container -->
+    <div class="flex-1 overflow-y-auto p-6 relative" id="workspace-container">
+
+      <!-- Live Voice Soundwave Visualizer Overlay (Active when speaking) -->
+      <div id="soundwave-bar" class="hidden mb-4 bg-purple-900/30 border border-purple-500/40 rounded-xl p-3 flex items-center justify-between animate-fadeIn">
+        <div class="flex items-center space-x-3">
+          <div class="sound-wave flex space-x-1 items-center h-5">
+            <span class="w-1 bg-purple-400 rounded-full animate-wave"></span>
+            <span class="w-1 bg-purple-400 rounded-full animate-wave delay-100"></span>
+            <span class="w-1 bg-purple-400 rounded-full animate-wave delay-200"></span>
+            <span class="w-1 bg-purple-400 rounded-full animate-wave delay-300"></span>
+          </div>
+          <span id="soundwave-status" class="text-xs font-medium text-purple-200">Listening to your voice... Speak freely</span>
+        </div>
+        <button id="stop-voice-btn" class="text-xs text-purple-300 hover:text-white px-2 py-0.5 rounded bg-purple-800/40">Stop Voice</button>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 1: SANCTUARY JOURNAL & BRAIN DUMP -->
+      <!-- ================================================================= -->
+      <section id="view-journal-content" class="max-w-4xl mx-auto space-y-6">
+        
+        <!-- Notion Callout Block -->
+        <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4 flex items-start space-x-3 shadow-sm">
+          <span class="text-2xl shrink-0" id="callout-emoji">💡</span>
+          <div class="flex-1 text-xs leading-relaxed text-[#c9d1d9]">
+            <strong class="text-[#f0f6fc] block mb-0.5" id="callout-title">Guardian Socratic Check-In</strong>
+            <p id="callout-text">"Welcome back Victor. What is the single most important challenge or feeling occupying your headspace right now?"</p>
+          </div>
+        </div>
+
+        <!-- Conversational Chat Stream -->
+        <div id="chat-stream" class="space-y-4 min-h-[200px]">
+          <!-- Chat messages rendered dynamically -->
+        </div>
+
+        <!-- Brain Dump & Reflection Input Box -->
+        <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-3 shadow-sm focus-within:border-indigo-500 transition-colors">
+          <textarea id="reflection-input" rows="3" class="w-full bg-transparent border-none text-sm text-[#f0f6fc] focus:outline-none resize-none placeholder-gray-500" placeholder="Rambling thoughts, brain dump, or speak your mind with the mic..."></textarea>
+          
+          <div class="flex items-center justify-between pt-2 border-t border-[#30363d]/60 mt-1">
+            <div class="flex items-center space-x-2">
+              <button id="mic-input-btn" class="p-1.5 text-gray-400 hover:text-white hover:bg-[#21262d] rounded-md transition-colors text-xs flex items-center space-x-1" title="Speak into input">
+                <span>🎤</span>
+                <span>Speak</span>
+              </button>
+              <button id="clear-input-btn" class="p-1.5 text-gray-400 hover:text-white hover:bg-[#21262d] rounded-md transition-colors text-xs">
+                Clear
+              </button>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button id="send-reflection-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-1.5 rounded-md transition-colors flex items-center space-x-1.5">
+                <span>Reflect</span>
+                <span>➔</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Emotional & Cognitive Arc Visualizer (Chart.js) -->
+        <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-2">
+              <span class="text-base">📈</span>
+              <h3 class="text-xs font-semibold text-[#f0f6fc] uppercase tracking-wider">Cognitive & Emotional Arc Progression</h3>
+            </div>
+            <span class="text-[11px] text-[#8b949e]">Real-Time Psychological Shift</span>
+          </div>
+          <div class="h-44 w-full">
+            <canvas id="emotionalArcChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 2: DRAG-AND-DROP KANBAN TICKETING BOARD -->
+      <!-- ================================================================= -->
+      <section id="view-kanban-content" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-base font-semibold text-[#f0f6fc]">Execution Board</h3>
+            <p class="text-xs text-[#8b949e]">Drag cards between columns to update status in real time</p>
+          </div>
+          <button id="add-ticket-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium px-3 py-1.5 rounded-md flex items-center space-x-1">
+            <span>+</span>
+            <span>New Ticket</span>
+          </button>
+        </div>
+
+        <!-- Kanban 3 Columns -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          
+          <!-- Column: To Do -->
+          <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-3 flex flex-col kanban-column" data-column="todo">
+            <div class="flex items-center justify-between pb-2 border-b border-[#30363d] mb-3">
+              <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span class="text-xs font-semibold text-[#f0f6fc] uppercase tracking-wider">To Do</span>
+              </div>
+              <span id="count-todo" class="text-[11px] bg-[#21262d] px-1.5 py-0.5 rounded text-[#8b949e]">0</span>
+            </div>
+            <div id="column-todo" class="space-y-2.5 flex-1 min-h-[350px] drop-target">
+              <!-- Draggable Cards Injected Here -->
+            </div>
+          </div>
+
+          <!-- Column: In Progress -->
+          <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-3 flex flex-col kanban-column" data-column="in_progress">
+            <div class="flex items-center justify-between pb-2 border-b border-[#30363d] mb-3">
+              <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                <span class="text-xs font-semibold text-[#f0f6fc] uppercase tracking-wider">In Progress</span>
+              </div>
+              <span id="count-in-progress" class="text-[11px] bg-[#21262d] px-1.5 py-0.5 rounded text-[#8b949e]">0</span>
+            </div>
+            <div id="column-in-progress" class="space-y-2.5 flex-1 min-h-[350px] drop-target">
+              <!-- Draggable Cards Injected Here -->
+            </div>
+          </div>
+
+          <!-- Column: Done -->
+          <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-3 flex flex-col kanban-column" data-column="done">
+            <div class="flex items-center justify-between pb-2 border-b border-[#30363d] mb-3">
+              <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span class="text-xs font-semibold text-[#f0f6fc] uppercase tracking-wider">Done & Celebrated</span>
+              </div>
+              <span id="count-done" class="text-[11px] bg-[#21262d] px-1.5 py-0.5 rounded text-[#8b949e]">0</span>
+            </div>
+            <div id="column-done" class="space-y-2.5 flex-1 min-h-[350px] drop-target">
+              <!-- Draggable Cards Injected Here -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 3: INTERACTIVE MOOD & HABIT CALENDAR -->
+      <!-- ================================================================= -->
+      <section id="view-calendar-content" class="hidden max-w-4xl mx-auto space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-base font-semibold text-[#f0f6fc]">Mindful Calendar</h3>
+            <p class="text-xs text-[#8b949e]">Daily reflection mood badges and scheduled time blocks</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-medium text-[#f0f6fc]" id="cal-month-year">September 2026</span>
+          </div>
+        </div>
+
+        <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
+          <div class="grid grid-cols-7 text-center text-xs font-semibold text-[#8b949e] pb-2 border-b border-[#30363d]">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+          </div>
+          <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 pt-2">
+            <!-- Calendar day cells dynamically injected -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 4: LIFE REWIND (WRAPPED) -->
+      <!-- ================================================================= -->
+      <section id="view-rewind-content" class="hidden max-w-3xl mx-auto space-y-6">
+        <div class="text-center space-y-1">
+          <span class="text-4xl">✨</span>
+          <h3 class="text-xl font-bold text-[#f0f6fc]">Victor's Life Rewind & Growth</h3>
+          <p class="text-xs text-[#8b949e]">Celebrating breakthroughs, consistency, and resilience</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-gradient-to-br from-purple-900/40 to-indigo-900/40 border border-purple-500/30 rounded-xl p-5 space-y-2">
+            <span class="text-2xl">🏆</span>
+            <h4 class="text-sm font-semibold text-white">Top Breakthrough of the Month</h4>
+            <p class="text-xs text-purple-200 leading-relaxed italic" id="rewind-breakthrough-text">"Mastered enterprise multi-tenant Firestore security and passed all Google Cloud challenges with 100% scores."</p>
+          </div>
+
+          <div class="bg-gradient-to-br from-emerald-900/40 to-teal-900/40 border border-emerald-500/30 rounded-xl p-5 space-y-2">
+            <span class="text-2xl">🔥</span>
+            <h4 class="text-sm font-semibold text-white">Consistency & Habit Streak</h4>
+            <p class="text-2xl font-bold text-emerald-400" id="rewind-streak-text">100%</p>
+            <p class="text-xs text-emerald-200">Daily check-ins completed with zero cross-tenant leakage.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- Settings Modal Overlay (User Sovereignty) -->
+  <!-- ===================================================================== -->
+  <div id="settings-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-fadeIn">
+      <div class="flex items-center justify-between border-b border-[#30363d] pb-3">
+        <div class="flex items-center space-x-2">
+          <span class="text-xl">⚙️</span>
+          <h3 class="text-sm font-semibold text-white">Sanctuary Preferences & Settings</h3>
+        </div>
+        <button id="close-settings-btn" class="text-gray-400 hover:text-white text-lg">&times;</button>
+      </div>
+
+      <div class="space-y-4 text-xs max-h-96 overflow-y-auto pr-1">
+        <!-- Section 1: Audio & Voice -->
+        <div class="space-y-2">
+          <h4 class="font-semibold text-gray-300 uppercase tracking-wider text-[10px]">Audio & Voice Controls</h4>
+          <div class="flex items-center justify-between p-2 rounded bg-[#0d1117] border border-[#30363d]">
+            <div>
+              <div class="font-medium text-gray-200">Guardian Voice Responses</div>
+              <div class="text-[10px] text-gray-400">Speak AI responses aloud using gentle Text-to-Speech</div>
+            </div>
+            <input type="checkbox" id="setting-voice-enabled" class="toggle-checkbox" checked>
+          </div>
+          <div class="flex items-center justify-between p-2 rounded bg-[#0d1117] border border-[#30363d]">
+            <div>
+              <div class="font-medium text-gray-200">Tibetan Bell / Rain Sound on Shutdown</div>
+              <div class="text-[10px] text-gray-400">Play calming chime when concluding work in Evening Ritual</div>
+            </div>
+            <input type="checkbox" id="setting-tibetan-sound" class="toggle-checkbox" checked>
+          </div>
+        </div>
+
+        <!-- Section 2: Notifications & Hotkeys -->
+        <div class="space-y-2">
+          <h4 class="font-semibold text-gray-300 uppercase tracking-wider text-[10px]">Desktop & Focus Integration</h4>
+          <div class="flex items-center justify-between p-2 rounded bg-[#0d1117] border border-[#30363d]">
+            <div>
+              <div class="font-medium text-gray-200">Mac Desktop Notifications</div>
+              <div class="text-[10px] text-gray-400">Receive background alerts at noon and evening</div>
+            </div>
+            <input type="checkbox" id="setting-mac-notifications" class="toggle-checkbox" checked>
+          </div>
+          <div class="flex items-center justify-between p-2 rounded bg-[#0d1117] border border-[#30363d]">
+            <div>
+              <div class="font-medium text-gray-200">Quick Voice Hotkey (Alt + V)</div>
+              <div class="text-[10px] text-gray-400">Trigger voice recording from anywhere via keyboard</div>
+            </div>
+            <input type="checkbox" id="setting-hotkey-enabled" class="toggle-checkbox" checked>
+          </div>
+        </div>
+
+        <!-- Section 3: Persona & Circadian Rhythm -->
+        <div class="space-y-2">
+          <h4 class="font-semibold text-gray-300 uppercase tracking-wider text-[10px]">Persona & Circadian Rhythm</h4>
+          <div class="flex items-center justify-between p-2 rounded bg-[#0d1117] border border-[#30363d]">
+            <div>
+              <div class="font-medium text-gray-200">Auto Circadian Persona Switch</div>
+              <div class="text-[10px] text-gray-400">Morning Coach mode, Evening Caring Guardian mode</div>
+            </div>
+            <input type="checkbox" id="setting-circadian-enabled" class="toggle-checkbox" checked>
+          </div>
+          <div class="flex items-center justify-between p-2 rounded bg-[#0d1117] border border-[#30363d]">
+            <div>
+              <div class="font-medium text-gray-200">Burnout Shield Alerts</div>
+              <div class="text-[10px] text-gray-400">Proactively notify when late nights or high stress streaks appear</div>
+            </div>
+            <input type="checkbox" id="setting-burnout-alerts" class="toggle-checkbox" checked>
+          </div>
+          <!-- Live Preview Box -->
+          <div id="burnout-preview-box" class="p-2 rounded bg-purple-900/20 border border-purple-500/30 text-[11px] text-purple-200 leading-relaxed">
+            💡 <strong>Live Example:</strong> <em>"Victor ရေ၊ စိတ်ဖိစီးမှု မြင့်တက်နေတာ သတိထားမိပါတယ်။ ၄ စက္ကန့် အသက်ရှူလေ့ကျင့်ခန်း (Box Breathing) လေး ခဏ လုပ်ကြည့်မလားခင်ဗျာ?"</em>
+          </div>
+        </div>
+
+        <!-- Section 4: Language & Circadian Timing -->
+        <div class="space-y-2">
+          <h4 class="font-semibold text-gray-300 uppercase tracking-wider text-[10px]">Language & Circadian Schedule</h4>
+          <div class="flex items-center justify-between p-2 rounded bg-[#0d1117] border border-[#30363d]">
+            <div>
+              <div class="font-medium text-gray-200">UI Language / ဘာသာစကား</div>
+              <div class="text-[10px] text-gray-400">Switch entire interface between English & Burmese</div>
+            </div>
+            <select id="setting-ui-language" class="bg-[#21262d] border border-[#30363d] text-xs text-white rounded px-2 py-1 focus:outline-none">
+              <option value="en">English</option>
+              <option value="my">မြန်မာ (Burmese)</option>
+            </select>
+          </div>
+          <div class="flex items-center justify-between p-2 rounded bg-[#0d1117] border border-[#30363d]">
+            <div>
+              <div class="font-medium text-gray-200">Morning Coach Start Hour</div>
+              <div class="text-[10px] text-gray-400">Fixed hour to kick off Big-3 planning</div>
+            </div>
+            <input type="time" id="setting-morning-time" value="08:00" class="bg-[#21262d] border border-[#30363d] text-xs text-white rounded px-2 py-0.5">
+          </div>
+          <div class="flex items-center justify-between p-2 rounded bg-[#0d1117] border border-[#30363d]">
+            <div>
+              <div class="font-medium text-gray-200">Evening Shutdown Hour</div>
+              <div class="text-[10px] text-gray-400">Fixed hour to initiate Evening Ritual</div>
+            </div>
+            <input type="time" id="setting-evening-time" value="18:00" class="bg-[#21262d] border border-[#30363d] text-xs text-white rounded px-2 py-0.5">
+          </div>
+        </div>
+
+        <!-- Section 5: Data Sovereignty & GDPR Purge -->
+        <div class="space-y-2 pt-2 border-t border-red-900/40">
+          <h4 class="font-semibold text-red-400 uppercase tracking-wider text-[10px]">User Data Sovereignty & GDPR</h4>
+          <div class="flex items-center justify-between p-2 rounded bg-red-950/20 border border-red-900/40">
+            <div>
+              <div class="font-medium text-red-300">Reset My Sanctuary Data</div>
+              <div class="text-[10px] text-gray-400">Purge all tickets, journals, and memories from Firestore</div>
+            </div>
+            <button id="reset-sanctuary-btn" class="bg-red-900/40 hover:bg-red-800/60 text-red-200 border border-red-700/50 px-2.5 py-1 rounded text-xs transition-colors">
+              Reset All
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-[#30363d] flex justify-end">
+        <button id="save-settings-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-md transition-colors">
+          Save Preferences
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- Evening Shutdown Ritual Overlay (Zen Night Mode) -->
+  <!-- ===================================================================== -->
+  <div id="shutdown-modal" class="hidden fixed inset-0 bg-[#080a0f]/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="max-w-md w-full text-center space-y-5">
+      <span class="text-5xl animate-bounce">🌙</span>
+      <h3 class="text-xl font-bold text-amber-200">Evening Shutdown Sanctuary</h3>
+      <p class="text-xs text-amber-100/80 leading-relaxed" id="shutdown-gratitude-prompt">
+        "ဒီနေ့ တစ်နေကုန် Victor အကောင်းဆုံး ကြိုးစားခဲ့ပါတယ်။ အလုပ်တွေ အကုန်လုံး မနက်ဖြန်အတွက် စနစ်တကျ သိမ်းပြီးပါပြီ။ အိပ်ရာမဝင်ခင်လေး... 'ဒီနေ့မှာ Victor ကိုယ်တိုင်အတွက် စိတ်အကျေနပ်ဆုံး ဖြစ်ခဲ့တဲ့ အရာ ၁ ခု' က ဘာဖြစ်မလဲခင်ဗျာ?"
+      </p>
+
+      <div class="bg-[#161b22] border border-amber-500/30 rounded-xl p-3 text-left">
+        <textarea id="shutdown-gratitude-input" rows="2" class="w-full bg-transparent border-none text-xs text-white focus:outline-none resize-none placeholder-gray-500" placeholder="One win or grateful moment from today..."></textarea>
+      </div>
+
+      <div class="flex items-center justify-center space-x-3">
+        <button id="confirm-shutdown-btn" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-5 py-2.5 rounded-full shadow-lg transition-all flex items-center space-x-1.5">
+          <span>🔔 Conclude Work & Rest</span>
+        </button>
+        <button id="cancel-shutdown-btn" class="text-xs text-gray-400 hover:text-white px-3 py-1">Cancel</button>
+      </div>
+
+      <div id="shutdown-zen-confirmed" class="hidden space-y-3 pt-4">
+        <p class="text-sm font-medium text-emerald-300">✨ Work is officially closed. Rest well, Victor.</p>
+        <button id="wake-workspace-btn" class="bg-[#21262d] hover:bg-[#30363d] text-xs text-white px-4 py-1.5 rounded-full border border-[#30363d]">
+          Wake Workspace 🌅
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- De-Stress Box Breathing Modal Overlay -->
+  <!-- ===================================================================== -->
+  <div id="breathing-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center">
+    <div class="text-center space-y-6 p-8 max-w-md">
+      <h3 class="text-xl font-semibold text-white">Guardian De-Stress Sanctuary</h3>
+      <p class="text-xs text-purple-200">Inhale peace, hold clarity, exhale tension. Let your mind reset.</p>
+      
+      <div class="relative w-48 h-48 mx-auto flex items-center justify-center">
+        <div id="breathing-circle" class="w-32 h-32 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 shadow-2xl flex items-center justify-center text-sm font-semibold text-white transition-all duration-4000">
+          <span id="breathing-phase-text">Inhale...</span>
+        </div>
+      </div>
+
+      <button id="close-breathing-btn" class="bg-[#21262d] hover:bg-[#30363d] text-white text-xs px-5 py-2 rounded-full border border-[#30363d]">
+        I Feel Centered Now ➔
+      </button>
+    </div>
+  </div>
 
   <script src="/static/app.js"></script>
 </body>

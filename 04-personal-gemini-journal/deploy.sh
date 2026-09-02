@@ -23,6 +23,8 @@ gcloud services enable \
     run.googleapis.com \
     firestore.googleapis.com \
     secretmanager.googleapis.com \
+    speech.googleapis.com \
+    texttospeech.googleapis.com \
     --project="${PROJECT_ID}"
 
 # 2. Deploy to Cloud Run from Source
@@ -32,6 +34,7 @@ gcloud run deploy "${SERVICE_NAME}" \
     --region="${REGION}" \
     --project="${PROJECT_ID}" \
     --allow-unauthenticated \
+    --labels="dev-tutorial=cloud-run-ai-challenge" \
     --set-env-vars="GCP_PROJECT_ID=${PROJECT_ID},ENVIRONMENT=production,GEMINI_MODEL=gemini-2.5-flash" \
     --memory="512Mi" \
     --cpu="1" \

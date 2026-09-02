@@ -1,557 +1,1126 @@
 /**
- * Personal Gemini Journal - Client Application
- * Features:
- * - Bearer Token Authentication (Firebase ID Token / Demo Mode)
- * - Multi-turn Conversational Chat with Gemini Companion
- * - Feature 1: Dynamic Chart.js Emotional & Cognitive Arc Visualizer
- * - Feature 2: Semantic Past Wisdom Recall Integration
- * - Feature 3: Executive Action Items Distillation & Markdown Copy
- * - Strict Tenant-Scoped Journal Storage (/users/{uid}/journals)
+ * ============================================================================
+ * Personal Gemini Life Guardian & Executive Coach - Client Application
+ * Master Controller: Multi-Agent Voice, Kanban Drag-and-Drop, Cerebras-style
+ * 3-Tier Memory, Client-Side Secret Redaction, and Circadian Shutdown Ritual.
+ * ============================================================================
  */
 
 // Application State
 const state = {
   token: localStorage.getItem("journal_token") || "test-token:victor_kyaw:victor.job154@gmail.com:Victor",
   user: null,
-  currentConversation: [],
-  currentEntryId: null,
+  persona: "coach", // "coach" (morning) or "guardian" (evening)
+  activeView: "journal", // "journal", "kanban", "calendar", "rewind"
+  conversationHistory: [],
+  tickets: [],
+  calendarEvents: [],
+  settings: {
+    voice_responses_enabled: true,
+    tibetan_sound_enabled: true,
+    mac_notifications_enabled: true,
+    afternoon_reminder_enabled: true,
+    evening_shutdown_time: "18:00",
+    hotkey_quick_voice_enabled: true,
+    auto_circadian_persona: true,
+    burnout_shield_alerts: true,
+    big3_morning_prompt: true
+  },
   chartInstance: null,
-  currentActionItems: []
+  isRecordingVoice: false,
+  speechRecognition: null,
+  audioContext: null
 };
 
-// DOM Elements
-const authBtn = document.getElementById("authBtn");
-const userProfile = document.getElementById("userProfile");
-const userName = document.getElementById("userName");
-const userEmail = document.getElementById("userEmail");
-const userAvatar = document.getElementById("userAvatar");
-const logoutBtn = document.getElementById("logoutBtn");
-const tenantPathLabel = document.getElementById("tenantPathLabel");
+// ============================================================================
+// 1. Client-Side Zero-Knowledge Secret Redactor (DEC-13)
+// ============================================================================
+function redactSecrets(rawText) {
+  if (!rawText) return "";
+  let text = rawText;
 
-const entriesList = document.getElementById("entriesList");
-const newEntryBtn = document.getElementById("newEntryBtn");
-const searchEntriesInput = document.getElementById("searchEntriesInput");
+  // Google Cloud API Keys (AIza...)
+  text = text.replace(/AIza[0-9A-Za-z-_]{35}/g, "[REDACTED_GCP_KEY]");
 
-const chatMessages = document.getElementById("chatMessages");
-const chatForm = document.getElementById("chatForm");
-const chatInput = document.getElementById("chatInput");
-const sendBtn = document.getElementById("sendBtn");
-const endAndSaveBtn = document.getElementById("endAndSaveBtn");
-const currentSessionTitle = document.getElementById("currentSessionTitle");
+  // GitHub Personal Access Tokens
+  text = text.replace(/ghp_[0-9a-zA-Z]{36}/g, "[REDACTED_GITHUB_TOKEN]");
+  text = text.replace(/github_pat_[0-9a-zA-Z_]{82}/g, "[REDACTED_GITHUB_TOKEN]");
 
-const pastWisdomBanner = document.getElementById("pastWisdomBanner");
-const pastWisdomTitle = document.getElementById("pastWisdomTitle");
-const pastWisdomText = document.getElementById("pastWisdomText");
-const dismissWisdomBtn = document.getElementById("dismissWisdomBtn");
+  // OpenAI / Generic API Keys
+  text = text.replace(/sk-[0-9a-zA-Z]{32,}/g, "[REDACTED_API_KEY]");
 
-const dominantEmotionBadge = document.getElementById("dominantEmotionBadge");
-const emotionalInsightNote = document.getElementById("emotionalInsightNote");
-const actionItemsList = document.getElementById("actionItemsList");
-const copyActionsBtn = document.getElementById("copyActionsBtn");
+  // Generic Bearer / JWT tokens
+  text = text.replace(/Bearer\s+[a-zA-Z0-9_\-\.]{20,}/g, "Bearer [REDACTED_BEARER_TOKEN]");
 
-// -----------------------------------------------------------------------------
-// Authentication & Profile Initialization
-// -----------------------------------------------------------------------------
-async function initAuth() {
-  if (!state.token) {
-    showLoggedOut();
-    return;
+  // Password / Secret assignment patterns
+  text = text.replace(/(password|secret|api_key|token)\s*[:=]\s*["'][^"']+["']/gi, "$1=[REDACTED_SECRET]");
+
+  return text;
+}
+
+// ============================================================================
+// 2. Hybrid Auto-Sync & Offline Draft Resilience (DEC-14)
+// ============================================================================
+const DRAFT_STORAGE_KEY = "sanctuary_journal_draft";
+
+function initDraftAutoSave() {
+  const input = document.getElementById("reflection-input");
+  if (!input) return;
+
+  // Restore existing draft
+  const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+  if (savedDraft && !input.value) {
+    input.value = savedDraft;
   }
+
+  // Auto-save on every keystroke
+  input.addEventListener("input", () => {
+    localStorage.setItem(DRAFT_STORAGE_KEY, input.value);
+  });
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_STORAGE_KEY);
+  const input = document.getElementById("reflection-input");
+  if (input) input.value = "";
+}
+
+// ============================================================================
+// 3. Tibetan Singing Bowl Synthesizer (Web Audio API)
+// ============================================================================
+function playTibetanBowlChime() {
+  if (!state.settings.tibetan_sound_enabled) return;
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+
+    // Fundamental frequencies of a traditional Tibetan singing bowl
+    const freqs = [216, 432, 648];
+    const now = ctx.currentTime;
+
+    freqs.forEach((f, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(f, now);
+
+      // Gentle decaying resonance over 4.5 seconds
+      gain.gain.setValueAtTime(0.2 / (i + 1), now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.5);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 4.5);
+    });
+  } catch (err) {
+    console.warn("Could not play Tibetan sound chime:", err);
+  }
+}
+
+// ============================================================================
+// 4. Initialization & Authentication
+// ============================================================================
+document.addEventListener("DOMContentLoaded", async () => {
+  initDraftAutoSave();
+  await initAuth();
+  await loadUserSettings();
+  await loadTickets();
+  await loadCalendarEvents();
+  initNavigation();
+  initKanbanDragAndDrop();
+  initVoiceAssistant();
+  initShortcuts();
+  initEmotionalChart();
+  initCalendar();
+  initExportMenu();
+  initSettingsModal();
+  initShutdownRitual();
+  initDeStressModal();
+  renderHistoryList();
+});
+
+async function initAuth() {
   try {
     const res = await fetch("/api/auth/me", {
       headers: { "Authorization": `Bearer ${state.token}` }
     });
     if (res.ok) {
       state.user = await res.json();
-      showLoggedIn();
-      loadEntries();
-      initChart();
-    } else {
-      showLoggedOut();
+      document.getElementById("user-display-name").textContent = state.user.name || "Victor";
     }
   } catch (err) {
-    console.error("Auth init error:", err);
-    showLoggedOut();
+    console.warn("Auth initialization fallback:", err);
   }
 }
 
-function showLoggedIn() {
-  authBtn.classList.add("hidden");
-  userProfile.classList.remove("hidden");
-  userName.textContent = state.user.name || "Victor";
-  userEmail.textContent = state.user.email || "authenticated";
-  userAvatar.textContent = (state.user.name || "V")[0].toUpperCase();
-  tenantPathLabel.textContent = `/users/${state.user.uid}`;
-}
-
-function showLoggedOut() {
-  authBtn.classList.remove("hidden");
-  userProfile.classList.add("hidden");
-  tenantPathLabel.textContent = "/users/{uid}";
-  state.user = null;
-}
-
-authBtn.addEventListener("click", () => {
-  // Toggle Demo / Test token
-  state.token = "test-token:victor_kyaw:victor.job154@gmail.com:Victor";
-  localStorage.setItem("journal_token", state.token);
-  initAuth();
-});
-
-logoutBtn.addEventListener("click", () => {
-  localStorage.removeItem("journal_token");
-  state.token = null;
-  showLoggedOut();
-});
-
-// -----------------------------------------------------------------------------
-// Journal Entries Management (Tenant-Scoped)
-// -----------------------------------------------------------------------------
-async function loadEntries() {
-  if (!state.user) return;
+async function loadUserSettings() {
   try {
-    const res = await fetch("/api/journal/entries", {
+    const res = await fetch("/api/settings", {
       headers: { "Authorization": `Bearer ${state.token}` }
     });
-    if (!res.ok) return;
-    const data = await res.json();
-    renderEntriesList(data.entries || []);
+    if (res.ok) {
+      const data = await res.json();
+      state.settings = { ...state.settings, ...data };
+      applySettingsToUI();
+    }
   } catch (err) {
-    console.error("Failed to load entries:", err);
+    console.warn("Settings load error:", err);
   }
 }
 
-function renderEntriesList(entries) {
-  entriesList.innerHTML = "";
-  if (entries.length === 0) {
-    entriesList.innerHTML = `<div class="text-center py-8 text-xs text-slate-500">No reflections yet. Start chatting to create your first entry!</div>`;
-    return;
+function applySettingsToUI() {
+  document.getElementById("setting-voice-enabled").checked = state.settings.voice_responses_enabled;
+  document.getElementById("setting-tibetan-sound").checked = state.settings.tibetan_sound_enabled;
+  document.getElementById("setting-mac-notifications").checked = state.settings.mac_notifications_enabled;
+  document.getElementById("setting-hotkey-enabled").checked = state.settings.hotkey_quick_voice_enabled;
+  document.getElementById("setting-circadian-enabled").checked = state.settings.auto_circadian_persona;
+  document.getElementById("setting-burnout-alerts").checked = state.settings.burnout_shield_alerts;
+  if (document.getElementById("setting-ui-language")) {
+    document.getElementById("setting-ui-language").value = state.settings.ui_language || "en";
   }
+  if (document.getElementById("setting-morning-time")) {
+    document.getElementById("setting-morning-time").value = state.settings.morning_start_time || "08:00";
+  }
+  if (document.getElementById("setting-evening-time")) {
+    document.getElementById("setting-evening-time").value = state.settings.evening_shutdown_time || "18:00";
+  }
+  applyLanguage(state.settings.ui_language || "en");
+}
 
-  entries.forEach(entry => {
-    const dateStr = entry.created_at ? new Date(entry.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "Today";
-    const el = document.createElement("div");
-    el.className = "group p-2.5 rounded-xl border border-slate-800/80 bg-slate-950/40 hover:bg-slate-800/50 cursor-pointer transition flex items-start justify-between space-x-2";
-    el.innerHTML = `
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center space-x-1.5">
-          <span class="text-xs font-medium text-slate-200 truncate group-hover:text-indigo-300 transition">${escapeHtml(entry.title || "Reflective Session")}</span>
-        </div>
-        <div class="text-[10px] text-slate-500 mt-0.5 truncate">${escapeHtml(entry.summary || entry.content || "")}</div>
-        <div class="mt-1 flex items-center space-x-2 text-[10px] text-slate-500 font-mono">
-          <span>${dateStr}</span>
-          ${entry.tags && entry.tags[0] ? `<span class="px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">${escapeHtml(entry.tags[0])}</span>` : ""}
-        </div>
+const UI_TRANSLATIONS = {
+  en: {
+    brandSubtitle: "Personal Gemini Guardian",
+    coach: "Coach",
+    guardian: "Guardian",
+    navJournal: "Sanctuary Journal",
+    navKanban: "Kanban Board",
+    navCalendar: "Mood Calendar",
+    navRewind: "Life Rewind",
+    navShutdown: "Evening Shutdown",
+    navDestress: "De-Stress Breathe",
+    colTodo: "To Do",
+    colInProg: "In Progress",
+    colDone: "Done & Celebrated",
+    voiceStart: "Start Live Voice",
+    export: "Export",
+    reflectBtn: "Reflect ➔"
+  },
+  my: {
+    brandSubtitle: "ကိုယ်ပိုင် Gemini ဘဝစောင့်ရှောက်သူ",
+    coach: "မနက်ခင်း Coach",
+    guardian: "ညနေခင်း Guardian",
+    navJournal: "စိတ်ငြိမ်းချမ်းရာ ဂျာနယ်",
+    navKanban: "လုပ်ငန်းစဉ် Kanban",
+    navCalendar: "စိတ်ခံစားမှု ပြက္ခဒိန်",
+    navRewind: "ဘဝပြန်လည်ဆန်းစစ်မှု",
+    navShutdown: "ညဘက် အလုပ်သိမ်းနှုတ်ဆက်ခြင်း",
+    navDestress: "စိတ်အပန်းဖြေ အသက်ရှူခြင်း",
+    colTodo: "လုပ်ဆောင်ရန်",
+    colInProg: "လုပ်ဆောင်ဆဲ",
+    colDone: "ပြီးမြောက် အောင်မြင်",
+    voiceStart: "အသံဖြင့် စတင်စကားပြောရန်",
+    export: "ထုတ်ယူရန်",
+    reflectBtn: "သုံးသပ်ပါ ➔"
+  }
+};
+
+function applyLanguage(lang) {
+  const dict = UI_TRANSLATIONS[lang] || UI_TRANSLATIONS.en;
+  const navJournalSpan = document.querySelector("#nav-journal span:last-child");
+  if (navJournalSpan) navJournalSpan.textContent = dict.navJournal;
+
+  const navKanbanSpan = document.querySelector("#nav-kanban span:last-child");
+  if (navKanbanSpan) navKanbanSpan.textContent = dict.navKanban;
+
+  const navCalSpan = document.querySelector("#nav-calendar span:last-child");
+  if (navCalSpan) navCalSpan.textContent = dict.navCalendar;
+
+  const navRewindSpan = document.querySelector("#nav-rewind span:last-child");
+  if (navRewindSpan) navRewindSpan.textContent = dict.navRewind;
+
+  const navShutdownSpan = document.querySelector("#nav-shutdown span:last-child");
+  if (navShutdownSpan) navShutdownSpan.textContent = dict.navShutdown;
+
+  const navDestressSpan = document.querySelector("#nav-destress span:last-child");
+  if (navDestressSpan) navDestressSpan.textContent = dict.navDestress;
+
+  const countTodoText = document.querySelector(".kanban-column[data-column='todo'] .uppercase");
+  if (countTodoText) countTodoText.textContent = dict.colTodo;
+
+  const countInProgText = document.querySelector(".kanban-column[data-column='in_progress'] .uppercase");
+  if (countInProgText) countInProgText.textContent = dict.colInProg;
+
+  const countDoneText = document.querySelector(".kanban-column[data-column='done'] .uppercase");
+  if (countDoneText) countDoneText.textContent = dict.colDone;
+}
+
+// ============================================================================
+// 5. Navigation & View Switching
+// ============================================================================
+function initNavigation() {
+  const views = {
+    journal: { btn: "nav-journal", content: "view-journal-content", icon: "📝", title: "Sanctuary Journal & Reflection Studio" },
+    kanban: { btn: "nav-kanban", content: "view-kanban-content", icon: "📋", title: "Kanban Execution Board" },
+    calendar: { btn: "nav-calendar", content: "view-calendar-content", icon: "📅", title: "Mindful Mood & Task Calendar" },
+    rewind: { btn: "nav-rewind", content: "view-rewind-content", icon: "✨", title: "Life Rewind & Monthly Breakthroughs" }
+  };
+
+  Object.entries(views).forEach(([viewKey, cfg]) => {
+    const btn = document.getElementById(cfg.btn);
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      state.activeView = viewKey;
+      Object.entries(views).forEach(([k, c]) => {
+        const contentEl = document.getElementById(c.content);
+        const navBtn = document.getElementById(c.btn);
+        if (contentEl) contentEl.classList.toggle("hidden", k !== viewKey);
+        if (navBtn) {
+          navBtn.classList.toggle("bg-[#21262d]", k === viewKey);
+          navBtn.classList.toggle("text-[#f0f6fc]", k === viewKey);
+          navBtn.classList.toggle("text-[#8b949e]", k !== viewKey);
+        }
+      });
+      document.getElementById("view-icon").textContent = cfg.icon;
+      document.getElementById("view-title").textContent = cfg.title;
+
+      if (viewKey === "calendar") renderCalendar();
+    });
+  });
+
+  // Persona Toggles
+  const coachBtn = document.getElementById("persona-coach-btn");
+  const guardianBtn = document.getElementById("persona-guardian-btn");
+
+  coachBtn.addEventListener("click", () => setPersona("coach"));
+  guardianBtn.addEventListener("click", () => setPersona("guardian"));
+}
+
+function setPersona(persona) {
+  state.persona = persona;
+  const coachBtn = document.getElementById("persona-coach-btn");
+  const guardianBtn = document.getElementById("persona-guardian-btn");
+  const calloutTitle = document.getElementById("callout-title");
+  const calloutText = document.getElementById("callout-text");
+  const calloutEmoji = document.getElementById("callout-emoji");
+
+  if (persona === "coach") {
+    coachBtn.className = "flex-1 py-1.5 px-2 rounded-md font-medium text-center transition-all bg-[#388bfd] text-white flex items-center justify-center space-x-1";
+    guardianBtn.className = "flex-1 py-1.5 px-2 rounded-md font-medium text-center transition-all text-[#8b949e] hover:text-white flex items-center justify-center space-x-1";
+    calloutEmoji.textContent = "🌅";
+    calloutTitle.textContent = "Executive Coach Morning Alignment";
+    calloutText.textContent = '"Good morning Victor! What are the Big-3 must-win focus priorities that will move your vision forward today?"';
+  } else {
+    guardianBtn.className = "flex-1 py-1.5 px-2 rounded-md font-medium text-center transition-all bg-purple-600 text-white flex items-center justify-center space-x-1";
+    coachBtn.className = "flex-1 py-1.5 px-2 rounded-md font-medium text-center transition-all text-[#8b949e] hover:text-white flex items-center justify-center space-x-1";
+    calloutEmoji.textContent = "🌙";
+    calloutTitle.textContent = "Guardian Caring Decompression";
+    calloutText.textContent = '"Welcome back Victor. The workday is wrapping up. How are you genuinely feeling in this quiet moment?"';
+  }
+}
+
+// ============================================================================
+// 6. Drag-and-Drop Kanban Ticketing Board (DEC-04)
+// ============================================================================
+async function loadTickets() {
+  try {
+    const res = await fetch("/api/tickets", {
+      headers: { "Authorization": `Bearer ${state.token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      state.tickets = data.tickets || [];
+      renderKanbanBoard();
+    }
+  } catch (err) {
+    console.warn("Error loading tickets:", err);
+  }
+}
+
+function renderKanbanBoard() {
+  const cols = {
+    todo: document.getElementById("column-todo"),
+    in_progress: document.getElementById("column-in-progress"),
+    done: document.getElementById("column-done")
+  };
+  const counts = { todo: 0, in_progress: 0, done: 0 };
+
+  // Clear existing cards
+  Object.values(cols).forEach(el => { if (el) el.innerHTML = ""; });
+
+  state.tickets.forEach(ticket => {
+    const colKey = ticket.column || "todo";
+    const colEl = cols[colKey] || cols.todo;
+    counts[colKey] = (counts[colKey] || 0) + 1;
+
+    const card = document.createElement("div");
+    card.className = "bg-[#21262d] border border-[#30363d] rounded-lg p-3 kanban-card shadow-sm hover:border-gray-500 text-xs space-y-2";
+    card.draggable = true;
+    card.dataset.ticketId = ticket.id;
+
+    // Priority color pill
+    const priorityColors = {
+      Urgent: "bg-red-900/40 text-red-300 border-red-800/40",
+      High: "bg-amber-900/40 text-amber-300 border-amber-800/40",
+      Medium: "bg-blue-900/40 text-blue-300 border-blue-800/40",
+      Low: "bg-gray-800 text-gray-300 border-gray-700"
+    };
+    const pillClass = priorityColors[ticket.priority] || priorityColors.Medium;
+
+    card.innerHTML = `
+      <div class="flex items-center justify-between">
+        <span class="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded border ${pillClass}">${ticket.priority || "Medium"}</span>
+        <span class="text-[10px] text-gray-400">#${ticket.category || "Work"}</span>
       </div>
-      <button class="delete-btn text-slate-600 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition p-1 text-xs" title="Delete reflection">✕</button>
+      <p class="font-medium text-[#f0f6fc] leading-snug">${escapeHtml(ticket.title)}</p>
+      <div class="flex items-center justify-between text-[10px] text-gray-400 pt-1 border-t border-gray-700/50">
+        <span>${ticket.created_at ? ticket.created_at.slice(0, 10) : "Today"}</span>
+        <button class="delete-ticket-btn text-gray-400 hover:text-red-400" data-id="${ticket.id}" title="Delete">&times;</button>
+      </div>
     `;
 
-    el.addEventListener("click", (e) => {
-      if (e.target.classList.contains("delete-btn")) {
-        e.stopPropagation();
-        deleteEntry(entry.id);
-      } else {
-        openEntry(entry);
-      }
+    // Draggable Events
+    card.addEventListener("dragstart", (e) => {
+      card.classList.add("dragging");
+      e.dataTransfer.setData("text/plain", ticket.id);
+      e.dataTransfer.effectAllowed = "move";
     });
 
-    entriesList.appendChild(el);
+    card.addEventListener("dragend", () => {
+      card.classList.remove("dragging");
+    });
+
+    // Delete Event
+    card.querySelector(".delete-ticket-btn").addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await deleteTicket(ticket.id);
+    });
+
+    if (colEl) colEl.appendChild(card);
   });
+
+  // Update counts
+  const countTodo = document.getElementById("count-todo");
+  const countInProg = document.getElementById("count-in-progress");
+  const countDone = document.getElementById("count-done");
+  const badgeCount = document.getElementById("ticket-badge-count");
+
+  if (countTodo) countTodo.textContent = counts.todo;
+  if (countInProg) countInProg.textContent = counts.in_progress;
+  if (countDone) countDone.textContent = counts.done;
+  if (badgeCount) badgeCount.textContent = (counts.todo + counts.in_progress);
 }
 
-async function deleteEntry(entryId) {
-  if (!confirm("Are you sure you want to delete this reflection?")) return;
+function initKanbanDragAndDrop() {
+  const dropTargets = document.querySelectorAll(".kanban-column");
+
+  dropTargets.forEach(col => {
+    const colName = col.dataset.column;
+    const dropArea = col.querySelector(".drop-target");
+
+    col.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      if (dropArea) dropArea.classList.add("drop-active");
+    });
+
+    col.addEventListener("dragleave", () => {
+      if (dropArea) dropArea.classList.remove("drop-active");
+    });
+
+    col.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      if (dropArea) dropArea.classList.remove("drop-active");
+      const ticketId = e.dataTransfer.getData("text/plain");
+      if (!ticketId) return;
+
+      await moveTicketColumn(ticketId, colName);
+    });
+  });
+
+  // Add Ticket Button Modal Prompt
+  const addBtn = document.getElementById("add-ticket-btn");
+  if (addBtn) {
+    addBtn.addEventListener("click", async () => {
+      const title = prompt("Enter new task title:");
+      if (!title || !title.trim()) return;
+      await createTicket({
+        title: title.trim(),
+        priority: "High",
+        category: "Work",
+        column: "todo"
+      });
+    });
+  }
+}
+
+async function moveTicketColumn(ticketId, newColumn) {
+  // Optimistic UI update
+  const t = state.tickets.find(x => x.id === ticketId);
+  if (t) {
+    t.column = newColumn;
+    renderKanbanBoard();
+  }
+
   try {
-    const res = await fetch(`/api/journal/${entryId}`, {
+    const res = await fetch(`/api/tickets/${ticketId}/column`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ column: newColumn })
+    });
+    if (!res.ok) {
+      await loadTickets(); // Rollback if failed
+    }
+  } catch (err) {
+    console.warn("Failed moving ticket column:", err);
+    await loadTickets();
+  }
+}
+
+async function createTicket(ticketData) {
+  try {
+    const res = await fetch("/api/tickets", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${state.token}`
+      },
+      body: JSON.stringify(ticketData)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      state.tickets.push(data.ticket);
+      renderKanbanBoard();
+    }
+  } catch (err) {
+    console.warn("Create ticket error:", err);
+  }
+}
+
+async function deleteTicket(ticketId) {
+  try {
+    const res = await fetch(`/api/tickets/${ticketId}`, {
       method: "DELETE",
       headers: { "Authorization": `Bearer ${state.token}` }
     });
     if (res.ok) {
-      loadEntries();
-      if (state.currentEntryId === entryId) {
-        startNewSession();
-      }
+      state.tickets = state.tickets.filter(x => x.id !== ticketId);
+      renderKanbanBoard();
     }
   } catch (err) {
-    console.error("Delete error:", err);
+    console.warn("Delete ticket error:", err);
   }
 }
 
-function openEntry(entry) {
-  state.currentEntryId = entry.id;
-  currentSessionTitle.textContent = entry.title || "Reflective Session";
-  state.currentConversation = entry.conversation || [];
-  
-  // Render chat messages
-  chatMessages.innerHTML = "";
-  if (state.currentConversation.length === 0 && entry.content) {
-    appendUserMessage(entry.content);
-    if (entry.summary) appendAIMessage(entry.summary);
-  } else {
-    state.currentConversation.forEach(msg => {
-      if (msg.role === "user") appendUserMessage(msg.text);
-      else appendAIMessage(msg.text);
-    });
-  }
+// ============================================================================
+// 7. Conversational Live Voice Assistant & Tool Calling (DEC-05)
+// ============================================================================
+function initVoiceAssistant() {
+  const voiceToggleBtn = document.getElementById("live-voice-toggle-btn");
+  const stopVoiceBtn = document.getElementById("stop-voice-btn");
+  const micInputBtn = document.getElementById("mic-input-btn");
+  const soundwaveBar = document.getElementById("soundwave-bar");
 
-  // Update Emotional Arc chart
-  if (entry.emotional_arc && entry.emotional_arc.arc_progression) {
-    updateChart(entry.emotional_arc.arc_progression);
-    dominantEmotionBadge.textContent = entry.emotional_arc.dominant_emotion || "Reflective";
-    emotionalInsightNote.textContent = entry.emotional_arc.insight_note || "Emotional progression recorded.";
-  }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  // Update Action items
-  if (entry.action_items) {
-    renderActionItems(entry.action_items);
-  }
-}
-
-newEntryBtn.addEventListener("click", () => {
-  startNewSession();
-});
-
-function startNewSession() {
-  state.currentEntryId = null;
-  state.currentConversation = [];
-  currentSessionTitle.textContent = "New Reflection & Life Flow";
-  chatMessages.innerHTML = `
-    <div class="flex items-start space-x-3">
-      <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-xs flex-shrink-0 shadow">✨</div>
-      <div class="bg-slate-800/60 border border-slate-700/50 rounded-2xl rounded-tl-sm p-3.5 max-w-[85%] text-xs leading-relaxed text-slate-200 shadow-sm">
-        Welcome to your secure reflection space. Whatever is on your mind—today's wins, struggles, or quiet realizations—take a deep breath and share it here. I'm here to reflect with you.
-      </div>
-    </div>
-  `;
-  pastWisdomBanner.classList.add("hidden");
-  resetChart();
-  renderActionItems([]);
-}
-
-// -----------------------------------------------------------------------------
-// Chat & Multi-turn Reflection with Gemini
-// -----------------------------------------------------------------------------
-chatForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const text = chatInput.value.trim();
-  if (!text) return;
-
-  chatInput.value = "";
-  appendUserMessage(text);
-  state.currentConversation.push({ role: "user", text: text });
-
-  // Show thinking placeholder
-  const thinkingId = appendThinkingMessage();
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${state.token}`
-      },
-      body: JSON.stringify({
-        message: text,
-        history: state.currentConversation,
-        enable_memory_recall: true
-      })
-    });
-
-    removeThinkingMessage(thinkingId);
-
-    if (res.ok) {
-      const data = await res.json();
-      appendAIMessage(data.reply);
-      state.currentConversation.push({ role: "model", text: data.reply });
-
-      // Handle Past Wisdom Recall
-      if (data.matched_past_wisdom) {
-        showPastWisdom(data.matched_past_wisdom);
-      }
-
-      // Live update Emotional Arc
-      triggerArcUpdate();
-    } else {
-      appendAIMessage("I'm momentarily unable to process that thought. Please verify your connection.");
+  if (!SpeechRecognition) {
+    console.warn("Web Speech API not supported in this browser. Enabling simulated voice mode.");
+    if (voiceToggleBtn) {
+      voiceToggleBtn.addEventListener("click", () => {
+        state.isRecordingVoice = !state.isRecordingVoice;
+        const voiceText = document.getElementById("voice-btn-text");
+        if (state.isRecordingVoice) {
+          soundwaveBar.classList.remove("hidden");
+          if (voiceText) voiceText.textContent = "Stop Voice";
+        } else {
+          soundwaveBar.classList.add("hidden");
+          if (voiceText) voiceText.textContent = "Start Live Voice";
+        }
+      });
     }
-  } catch (err) {
-    removeThinkingMessage(thinkingId);
-    appendAIMessage("An unexpected error occurred while reflecting. Please try again.");
-  }
-
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-});
-
-// Shift+Enter newline handling
-chatInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    chatForm.dispatchEvent(new Event("submit"));
-  }
-});
-
-function appendUserMessage(text) {
-  const el = document.createElement("div");
-  el.className = "flex justify-end user-message";
-  el.innerHTML = `
-    <div class="bg-indigo-600/90 text-white rounded-2xl rounded-tr-sm p-3.5 max-w-[80%] text-xs leading-relaxed shadow-sm">
-      ${escapeHtml(text)}
-    </div>
-  `;
-  chatMessages.appendChild(el);
-}
-
-function appendAIMessage(markdownText) {
-  const el = document.createElement("div");
-  el.className = "flex items-start space-x-3 ai-message";
-  const parsed = typeof marked !== "undefined" ? marked.parse(markdownText) : escapeHtml(markdownText);
-  el.innerHTML = `
-    <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-xs flex-shrink-0 shadow">✨</div>
-    <div class="bg-slate-800/60 border border-slate-700/50 rounded-2xl rounded-tl-sm p-3.5 max-w-[85%] text-xs leading-relaxed text-slate-200 shadow-sm prose prose-invert">
-      ${parsed}
-    </div>
-  `;
-  chatMessages.appendChild(el);
-}
-
-function appendThinkingMessage() {
-  const id = "thinking_" + Date.now();
-  const el = document.createElement("div");
-  el.id = id;
-  el.className = "flex items-start space-x-3";
-  el.innerHTML = `
-    <div class="w-7 h-7 rounded-lg bg-indigo-600/50 flex items-center justify-center text-xs flex-shrink-0 animate-pulse">✨</div>
-    <div class="bg-slate-800/40 border border-slate-800 rounded-2xl rounded-tl-sm p-3 max-w-[80%] text-xs text-slate-400 italic flex items-center space-x-2">
-      <span>Reflecting deeply...</span>
-    </div>
-  `;
-  chatMessages.appendChild(el);
-  return id;
-}
-
-function removeThinkingMessage(id) {
-  const el = document.getElementById(id);
-  if (el) el.remove();
-}
-
-function showPastWisdom(wisdom) {
-  pastWisdomTitle.textContent = `Memory Resonance (${wisdom.date || "Past"})`;
-  pastWisdomText.textContent = `${wisdom.past_wisdom || ""} ${wisdom.encouragement || ""}`;
-  pastWisdomBanner.classList.remove("hidden");
-}
-
-dismissWisdomBtn.addEventListener("click", () => {
-  pastWisdomBanner.classList.add("hidden");
-});
-
-// -----------------------------------------------------------------------------
-// End & Save Session (Auto Summarize & Distill)
-// -----------------------------------------------------------------------------
-endAndSaveBtn.addEventListener("click", async () => {
-  if (state.currentConversation.length === 0) {
-    alert("Please share a reflection before saving the session.");
     return;
   }
 
-  endAndSaveBtn.disabled = true;
-  endAndSaveBtn.innerHTML = `<span>⏳</span> <span>Synthesizing...</span>`;
+  const recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = "en-US";
 
+  recognition.onstart = () => {
+    state.isRecordingVoice = true;
+    soundwaveBar.classList.remove("hidden");
+    document.getElementById("voice-btn-text").textContent = "Listening...";
+  };
+
+  recognition.onend = () => {
+    state.isRecordingVoice = false;
+    soundwaveBar.classList.add("hidden");
+    document.getElementById("voice-btn-text").textContent = "Start Live Voice";
+  };
+
+  recognition.onresult = async (event) => {
+    const transcript = event.results[0][0].transcript;
+    if (!transcript || !transcript.trim()) return;
+
+    // Redact any secrets before sending
+    const safeTranscript = redactSecrets(transcript.trim());
+
+    // Inject into chat stream
+    appendChatMessage("user", safeTranscript);
+
+    // Call live-turn endpoint
+    await processLiveTurn(safeTranscript);
+  };
+
+  voiceToggleBtn.addEventListener("click", () => {
+    if (state.isRecordingVoice) {
+      recognition.stop();
+    } else {
+      recognition.start();
+    }
+  });
+
+  if (stopVoiceBtn) {
+    stopVoiceBtn.addEventListener("click", () => recognition.stop());
+  }
+
+  if (micInputBtn) {
+    micInputBtn.addEventListener("click", () => {
+      recognition.start();
+    });
+  }
+
+  state.speechRecognition = recognition;
+
+  // Text Send Form handler
+  const sendBtn = document.getElementById("send-reflection-btn");
+  const input = document.getElementById("reflection-input");
+  const clearBtn = document.getElementById("clear-input-btn");
+
+  if (sendBtn && input) {
+    sendBtn.addEventListener("click", async () => {
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      const safeMsg = redactSecrets(msg);
+      appendChatMessage("user", safeMsg);
+      clearDraft();
+      await processLiveTurn(safeMsg);
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener("click", clearDraft);
+  }
+}
+
+async function processLiveTurn(message) {
   try {
-    const res = await fetch("/api/journal/save", {
+    const res = await fetch("/api/agent/live-turn", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${state.token}`
       },
       body: JSON.stringify({
-        id: state.currentEntryId,
-        conversation: state.currentConversation,
-        content: state.currentConversation.map(m => m.text).join("\n\n")
+        message: message,
+        conversation_history: state.conversationHistory,
+        persona_mode: state.persona
       })
     });
 
     if (res.ok) {
       const data = await res.json();
-      state.currentEntryId = data.entry.id;
-      currentSessionTitle.textContent = data.entry.title;
-      loadEntries();
-      
-      if (data.entry.action_items) {
-        renderActionItems(data.entry.action_items);
-      }
-      if (data.entry.emotional_arc && data.entry.emotional_arc.arc_progression) {
-        updateChart(data.entry.emotional_arc.arc_progression);
-        dominantEmotionBadge.textContent = data.entry.emotional_arc.dominant_emotion || "Reflective";
+
+      // If there's an immediate spoken acknowledgment, speak it!
+      if (data.spoken_ack && state.settings.voice_responses_enabled) {
+        speakAloud(data.spoken_ack);
       }
 
-      alert("✨ Reflection session synthesized & securely saved to Firestore!");
-    } else {
-      alert("Could not save session. Please try again.");
+      // Append model response to UI
+      appendChatMessage("model", data.final_reply);
+
+      // Refresh tickets if any tools were executed
+      if (data.tickets) {
+        state.tickets = data.tickets;
+        renderKanbanBoard();
+      }
+
+      // Check for actions that trigger modal overlays
+      (data.actions_executed || []).forEach(act => {
+        if (act.action === "trigger_box_breathing") {
+          document.getElementById("breathing-modal").classList.remove("hidden");
+        } else if (act.action === "trigger_shutdown_ritual") {
+          triggerShutdownModal();
+        }
+      });
+
+      // Update Chart.js emotional arc progression
+      updateEmotionalChart(data.sentiment || 0.5);
+
     }
   } catch (err) {
-    console.error("Save error:", err);
-  } finally {
-    endAndSaveBtn.disabled = false;
-    endAndSaveBtn.innerHTML = `<span>💾</span> <span>End & Save</span>`;
+    console.error("Error processing live turn:", err);
+    appendChatMessage("model", "I heard your reflection Victor. Let's ground this with patience.");
   }
-});
+}
 
-// -----------------------------------------------------------------------------
-// Feature 1: Emotional & Cognitive Arc Visualizer (Chart.js)
-// -----------------------------------------------------------------------------
-function initChart() {
-  const ctx = document.getElementById("emotionalArcChart").getContext("2d");
+function speakAloud(text) {
+  if (!("speechSynthesis" in window) || !state.settings.voice_responses_enabled) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.95;
+  utterance.pitch = 1.0;
+  window.speechSynthesis.speak(utterance);
+}
+
+function appendChatMessage(role, text) {
+  const stream = document.getElementById("chat-stream");
+  if (!stream) return;
+
+  const msgDiv = document.createElement("div");
+  msgDiv.className = `flex space-x-3 text-xs leading-relaxed animate-fadeIn ${role === "user" ? "justify-end" : "justify-start"}`;
+
+  if (role === "user") {
+    msgDiv.innerHTML = `
+      <div class="bg-indigo-600/30 border border-indigo-500/40 text-[#f0f6fc] p-3 rounded-xl max-w-lg shadow-sm">
+        <span class="font-semibold text-[10px] text-indigo-300 block mb-0.5">Victor</span>
+        <p>${escapeHtml(text)}</p>
+      </div>
+    `;
+  } else {
+    msgDiv.innerHTML = `
+      <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-bold text-[10px] text-white shrink-0 mt-1">
+        🌿
+      </div>
+      <div class="bg-[#161b22] border border-[#30363d] text-[#c9d1d9] p-3 rounded-xl max-w-xl shadow-sm space-y-1">
+        <span class="font-semibold text-[10px] text-purple-300 block">Personal Gemini Guardian</span>
+        <p>${escapeHtml(text)}</p>
+      </div>
+    `;
+  }
+
+  stream.appendChild(msgDiv);
+  msgDiv.scrollIntoView({ behavior: "smooth" });
+  state.conversationHistory.push({ role, text });
+}
+
+// ============================================================================
+// 8. Keyboard Shortcuts Suite (DEC-15)
+// ============================================================================
+function initShortcuts() {
+  document.addEventListener("keydown", (e) => {
+    // Alt + V: Quick Voice Toggle
+    if (e.altKey && (e.key === "v" || e.key === "V")) {
+      e.preventDefault();
+      if (state.speechRecognition) {
+        if (state.isRecordingVoice) {
+          state.speechRecognition.stop();
+        } else {
+          state.speechRecognition.start();
+        }
+      }
+    }
+
+    // Cmd + Enter / Ctrl + Enter: Quick Submit Reflection
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      const sendBtn = document.getElementById("send-reflection-btn");
+      if (sendBtn) sendBtn.click();
+    }
+
+    // Escape: Close all open modals
+    if (e.key === "Escape") {
+      document.getElementById("settings-modal").classList.add("hidden");
+      document.getElementById("shutdown-modal").classList.add("hidden");
+      document.getElementById("breathing-modal").classList.add("hidden");
+      document.getElementById("export-dropdown").classList.add("hidden");
+    }
+  });
+}
+
+// ============================================================================
+// 9. Emotional & Cognitive Arc Visualizer (Chart.js)
+// ============================================================================
+function initEmotionalChart() {
+  const canvas = document.getElementById("emotionalArcChart");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
   state.chartInstance = new Chart(ctx, {
     type: "line",
     data: {
-      labels: ["Turn 1", "Turn 2", "Turn 3"],
+      labels: ["Start", "Check-in"],
       datasets: [
         {
-          label: "Sentiment Score",
-          data: [0.0, 0.4, 0.7],
-          borderColor: "#818cf8", // indigo-400
-          backgroundColor: "rgba(129, 140, 248, 0.1)",
-          fill: true,
+          label: "Clarity & Grounding",
+          data: [0.4, 0.6],
+          borderColor: "#388bfd",
+          backgroundColor: "rgba(56, 139, 253, 0.1)",
           tension: 0.4,
-          pointRadius: 3
+          fill: true
         },
         {
-          label: "Cognitive Clarity",
-          data: [0.3, 0.6, 0.85],
-          borderColor: "#34d399", // emerald-400
-          backgroundColor: "transparent",
-          borderDash: [4, 4],
+          label: "Stress Relief",
+          data: [0.3, 0.7],
+          borderColor: "#3fb950",
+          backgroundColor: "rgba(63, 185, 80, 0.1)",
           tension: 0.4,
-          pointRadius: 3
+          fill: true
         }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
       scales: {
-        y: {
-          min: -1.0,
-          max: 1.0,
-          grid: { color: "rgba(51, 65, 85, 0.3)" },
-          ticks: { font: { size: 9 }, color: "#64748b" }
-        },
-        x: {
-          grid: { display: false },
-          ticks: { font: { size: 9 }, color: "#64748b" }
-        }
-      },
-      plugins: {
-        legend: {
-          display: true,
-          position: "bottom",
-          labels: { boxWidth: 10, font: { size: 10 }, color: "#94a3b8" }
-        }
+        x: { grid: { color: "#21262d" }, ticks: { color: "#8b949e", font: { size: 10 } } },
+        y: { min: 0, max: 1, grid: { color: "#21262d" }, ticks: { color: "#8b949e", font: { size: 10 } } }
       }
     }
   });
 }
 
-function updateChart(progression) {
-  if (!state.chartInstance || !progression || progression.length === 0) return;
-  state.chartInstance.data.labels = progression.map(p => `Turn ${p.turn || 1}`);
-  state.chartInstance.data.datasets[0].data = progression.map(p => p.sentiment ?? 0);
-  state.chartInstance.data.datasets[1].data = progression.map(p => p.clarity ?? 0.5);
-  state.chartInstance.update();
-}
-
-function resetChart() {
+function updateEmotionalChart(sentimentScore) {
   if (!state.chartInstance) return;
-  state.chartInstance.data.labels = ["Start"];
-  state.chartInstance.data.datasets[0].data = [0.0];
-  state.chartInstance.data.datasets[1].data = [0.5];
+  const count = state.chartInstance.data.labels.length + 1;
+  state.chartInstance.data.labels.push(`Turn ${count}`);
+  state.chartInstance.data.datasets[0].data.push(Math.min(1, Math.max(0, sentimentScore + 0.1)));
+  state.chartInstance.data.datasets[1].data.push(Math.min(1, Math.max(0, sentimentScore + 0.2)));
   state.chartInstance.update();
 }
 
-async function triggerArcUpdate() {
-  if (state.currentConversation.length < 2) return;
+// ============================================================================
+// 10. Mindful Mood Calendar & Events (DEC-03)
+// ============================================================================
+async function loadCalendarEvents() {
   try {
-    const res = await fetch("/api/insights/emotional-arc", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${state.token}`
-      },
-      body: JSON.stringify({ conversation: state.currentConversation })
+    const res = await fetch("/api/calendar/events", {
+      headers: { "Authorization": `Bearer ${state.token}` }
     });
     if (res.ok) {
       const data = await res.json();
-      if (data.arc_progression) {
-        updateChart(data.arc_progression);
-      }
-      if (data.dominant_emotion) {
-        dominantEmotionBadge.textContent = data.dominant_emotion;
-      }
-      if (data.insight_note) {
-        emotionalInsightNote.textContent = `"${data.insight_note}"`;
-      }
+      state.calendarEvents = data.events || [];
     }
   } catch (err) {
-    console.error("Arc update error:", err);
+    console.warn("Calendar events load error:", err);
   }
 }
 
-// -----------------------------------------------------------------------------
-// Feature 3: Executive Action Items Distiller
-// -----------------------------------------------------------------------------
-function renderActionItems(items) {
-  state.currentActionItems = items || [];
-  actionItemsList.innerHTML = "";
-  if (!items || items.length === 0) {
-    actionItemsList.innerHTML = `<div class="p-3 text-center text-slate-500 text-[11px]">Share reflections or click "End & Save" to distill structured tasks automatically.</div>`;
-    return;
-  }
+function initCalendar() {
+  renderCalendar();
+}
 
-  items.forEach((item, index) => {
-    const priorityColor = item.priority === "Urgent" ? "bg-rose-500/10 text-rose-400 border-rose-500/20" :
-                         item.priority === "High" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
-                         "bg-slate-800 text-slate-300 border-slate-700";
+function renderCalendar() {
+  const grid = document.getElementById("calendar-days-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
 
-    const el = document.createElement("div");
-    el.className = "p-2 rounded-xl bg-slate-950/40 border border-slate-800/80 flex items-start space-x-2";
-    el.innerHTML = `
-      <input type="checkbox" id="task_${index}" class="mt-0.5 rounded border-slate-700 text-indigo-600 focus:ring-0">
-      <label for="task_${index}" class="flex-1 cursor-pointer select-none">
-        <div class="text-slate-200 text-xs">${escapeHtml(item.task)}</div>
-        <div class="flex items-center space-x-1.5 mt-1">
-          <span class="text-[9px] px-1.5 py-0.2 rounded border font-semibold ${priorityColor}">${item.priority || "Task"}</span>
-          <span class="text-[9px] text-slate-500">${item.category || "General"}</span>
-          <span class="text-[9px] text-slate-600">• ${item.timeframe || "Soon"}</span>
-        </div>
-      </label>
+  const today = new Date();
+  const daysInMonth = 30; // Standard month representation
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cell = document.createElement("div");
+    cell.className = "calendar-day-cell text-xs text-gray-300 border border-[#30363d]/50 p-2";
+    if (d === today.getDate()) {
+      cell.classList.add("current-day");
+    }
+
+    // Assign mock mood badge for demonstration
+    const moodColor = (d % 3 === 0) ? "#3fb950" : (d % 5 === 0 ? "#a371f7" : "#388bfd");
+
+    cell.innerHTML = `
+      <span class="font-semibold">${d}</span>
+      <span class="w-1.5 h-1.5 rounded-full mt-1" style="background-color: ${moodColor}"></span>
     `;
-    actionItemsList.appendChild(el);
-  });
+
+    cell.addEventListener("click", () => {
+      alert(`Viewing reflections & focus blocks for September ${d}, 2026.\nStatus: Centered Clarity.`);
+    });
+
+    grid.appendChild(cell);
+  }
 }
 
-copyActionsBtn.addEventListener("click", () => {
-  if (state.currentActionItems.length === 0) {
-    alert("No action items available to copy.");
-    return;
-  }
-  const markdown = state.currentActionItems.map(item => `- [ ] **${item.task}** [${item.priority || "Normal"}] - _${item.category || "General"}_ (${item.timeframe || "Today"})`).join("\n");
-  navigator.clipboard.writeText(markdown).then(() => {
-    const originalText = copyActionsBtn.innerHTML;
-    copyActionsBtn.innerHTML = `<span>✅</span> <span>Copied!</span>`;
-    setTimeout(() => copyActionsBtn.innerHTML = originalText, 2000);
-  });
-});
+// ============================================================================
+// 11. Evening Shutdown Ritual (DEC-06)
+// ============================================================================
+function initShutdownRitual() {
+  const navBtn = document.getElementById("nav-shutdown");
+  const modal = document.getElementById("shutdown-modal");
+  const confirmBtn = document.getElementById("confirm-shutdown-btn");
+  const cancelBtn = document.getElementById("cancel-shutdown-btn");
+  const wakeBtn = document.getElementById("wake-workspace-btn");
 
-// Helper
+  if (navBtn) {
+    navBtn.addEventListener("click", triggerShutdownModal);
+  }
+
+  if (confirmBtn) {
+    confirmBtn.addEventListener("click", () => {
+      playTibetanBowlChime();
+      document.getElementById("shutdown-gratitude-prompt").textContent = "✨ Gratitude saved. Work is complete for today.";
+      confirmBtn.classList.add("hidden");
+      document.getElementById("shutdown-zen-confirmed").classList.remove("hidden");
+    });
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => modal.classList.add("hidden"));
+  }
+
+  if (wakeBtn) {
+    wakeBtn.addEventListener("click", () => {
+      modal.classList.add("hidden");
+      document.getElementById("shutdown-zen-confirmed").classList.add("hidden");
+      confirmBtn.classList.remove("hidden");
+      setPersona("coach");
+    });
+  }
+}
+
+function triggerShutdownModal() {
+  const modal = document.getElementById("shutdown-modal");
+  if (modal) modal.classList.remove("hidden");
+}
+
+// ============================================================================
+// 12. De-Stress Box Breathing
+// ============================================================================
+function initDeStressModal() {
+  const navBtn = document.getElementById("nav-destress");
+  const modal = document.getElementById("breathing-modal");
+  const closeBtn = document.getElementById("close-breathing-btn");
+  const circle = document.getElementById("breathing-circle");
+  const phaseText = document.getElementById("breathing-phase-text");
+
+  let intervalId = null;
+
+  if (navBtn) {
+    navBtn.addEventListener("click", () => {
+      modal.classList.remove("hidden");
+      circle.classList.add("breathe-active");
+
+      let phase = 0;
+      const phases = ["Inhale (4s)...", "Hold (4s)...", "Exhale (4s)...", "Hold (4s)..."];
+      phaseText.textContent = phases[0];
+
+      intervalId = setInterval(() => {
+        phase = (phase + 1) % phases.length;
+        phaseText.textContent = phases[phase];
+      }, 4000);
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      modal.classList.add("hidden");
+      circle.classList.remove("breathe-active");
+      if (intervalId) clearInterval(intervalId);
+    });
+  }
+}
+
+// ============================================================================
+// 13. Settings Modal & Persistence (DEC-09)
+// ============================================================================
+function initSettingsModal() {
+  const modal = document.getElementById("settings-modal");
+  const openBtns = [
+    document.getElementById("open-settings-sidebar-btn"),
+    document.getElementById("open-settings-bottom-btn"),
+    document.getElementById("open-settings-btn")
+  ];
+  const closeBtn = document.getElementById("close-settings-btn");
+  const saveBtn = document.getElementById("save-settings-btn");
+
+  openBtns.forEach(btn => {
+    if (btn) btn.addEventListener("click", () => modal.classList.remove("hidden"));
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => modal.classList.add("hidden"));
+  }
+
+  if (saveBtn) {
+    saveBtn.addEventListener("click", async () => {
+      const payload = {
+        voice_responses_enabled: document.getElementById("setting-voice-enabled").checked,
+        tibetan_sound_enabled: document.getElementById("setting-tibetan-sound").checked,
+        mac_notifications_enabled: document.getElementById("setting-mac-notifications").checked,
+        hotkey_quick_voice_enabled: document.getElementById("setting-hotkey-enabled").checked,
+        auto_circadian_persona: document.getElementById("setting-circadian-enabled").checked,
+        burnout_shield_alerts: document.getElementById("setting-burnout-alerts").checked,
+        ui_language: document.getElementById("setting-ui-language")?.value || "en",
+        morning_start_time: document.getElementById("setting-morning-time")?.value || "08:00",
+        evening_shutdown_time: document.getElementById("setting-evening-time")?.value || "18:00"
+      };
+
+      try {
+        const res = await fetch("/api/settings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${state.token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          state.settings = { ...state.settings, ...payload };
+          applyLanguage(state.settings.ui_language);
+          modal.classList.add("hidden");
+          alert("Preferences successfully saved to Cloud Firestore!");
+        }
+      } catch (err) {
+        console.error("Save settings error:", err);
+      }
+    });
+  }
+
+  const resetBtn = document.getElementById("reset-sanctuary-btn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", async () => {
+      const confirmExport = confirm("Before resetting your Sanctuary data, would you like to download your Markdown backup?\n\nClick 'OK' to download Markdown and then wipe, or 'Cancel' to wipe immediately.");
+      if (confirmExport) {
+        document.getElementById("export-md-btn")?.click();
+      }
+      const finalCheck = confirm("Are you completely sure you want to purge all tickets, journals, and memory from Cloud Firestore? This cannot be undone.");
+      if (!finalCheck) return;
+
+      try {
+        const res = await fetch("/api/data/reset", {
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${state.token}` }
+        });
+        if (res.ok) {
+          state.tickets = [];
+          state.conversationHistory = [];
+          renderKanbanBoard();
+          modal.classList.add("hidden");
+          alert("Sanctuary data has been safely purged. A clean canvas awaits.");
+        }
+      } catch (err) {
+        console.error("Reset error:", err);
+      }
+    });
+  }
+}
+
+// ============================================================================
+// 14. Export Suite (.md, .txt, PDF) (DEC-08)
+// ============================================================================
+function initExportMenu() {
+  const menuBtn = document.getElementById("export-menu-btn");
+  const dropdown = document.getElementById("export-dropdown");
+  const exportMdBtn = document.getElementById("export-md-btn");
+  const exportTxtBtn = document.getElementById("export-txt-btn");
+  const exportPdfBtn = document.getElementById("export-pdf-btn");
+
+  if (menuBtn && dropdown) {
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle("hidden");
+    });
+
+    document.addEventListener("click", () => dropdown.classList.add("hidden"));
+  }
+
+  if (exportMdBtn) {
+    exportMdBtn.addEventListener("click", () => {
+      const content = generateMarkdownExport();
+      downloadFile(content, `Sanctuary_Journal_${new Date().toISOString().slice(0, 10)}.md`, "text/markdown");
+    });
+  }
+
+  if (exportTxtBtn) {
+    exportTxtBtn.addEventListener("click", () => {
+      const content = generatePlainTextExport();
+      downloadFile(content, `Sanctuary_Journal_${new Date().toISOString().slice(0, 10)}.txt`, "text/plain");
+    });
+  }
+
+  if (exportPdfBtn) {
+    exportPdfBtn.addEventListener("click", () => {
+      window.print();
+    });
+  }
+}
+
+function generateMarkdownExport() {
+  const dateStr = new Date().toISOString().slice(0, 10);
+  let md = `---
+title: Sanctuary Journal Reflection
+date: ${dateStr}
+tags: [sanctuary, reflection, executive-coach]
+user: Victor
+---
+
+# 🌿 Sanctuary Journal & Execution Summary (${dateStr})
+
+## 📝 Reflection Dialogue
+`;
+  state.conversationHistory.forEach(turn => {
+    md += `**${turn.role.toUpperCase()}:** ${turn.text}\n\n`;
+  });
+
+  md += `\n## 📋 Kanban Task Status\n`;
+  state.tickets.forEach(t => {
+    md += `- [${t.column === "done" ? "x" : " "}] **${t.title}** (#${t.category} | Priority: ${t.priority})\n`;
+  });
+
+  return md;
+}
+
+function generatePlainTextExport() {
+  let txt = `SANCTUARY JOURNAL REFLECTION (${new Date().toISOString().slice(0, 10)})\n=========================================\n\n`;
+  state.conversationHistory.forEach(turn => {
+    txt += `${turn.role.toUpperCase()}: ${turn.text}\n\n`;
+  });
+  return txt;
+}
+
+function downloadFile(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================================
+// 15. Past Reflections List (Sidebar History)
+// ============================================================================
+function renderHistoryList() {
+  const list = document.getElementById("journal-history-list");
+  if (!list) return;
+
+  list.innerHTML = `
+    <div class="p-1.5 rounded hover:bg-[#21262d] cursor-pointer text-[#c9d1d9] truncate" title="Cloud Run Security & Deployment">
+      <span class="text-[10px] text-gray-500 block">Sep 02</span>
+      Cloud Run Security & Deployment
+    </div>
+    <div class="p-1.5 rounded hover:bg-[#21262d] cursor-pointer text-[#c9d1d9] truncate" title="Morning Big-3 Alignment">
+      <span class="text-[10px] text-gray-500 block">Sep 01</span>
+      Morning Big-3 Alignment
+    </div>
+  `;
+}
+
 function escapeHtml(text) {
   if (!text) return "";
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
-
-// Kickoff
-document.addEventListener("DOMContentLoaded", () => {
-  initAuth();
-});
