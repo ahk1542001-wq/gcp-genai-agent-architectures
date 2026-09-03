@@ -204,10 +204,19 @@ class GeminiJournalService:
                 f"- Learned Preferences & Rules (Hermes Self-Learning): {user_profile.get('learned_rules', [])}\n"
             )
 
+        history_context = ""
+        if conversation_history:
+            formatted_turns = "\n".join([
+                f"{turn.get('role', 'user').title()}: {turn.get('text', '')}"
+                for turn in conversation_history[-8:]
+            ])
+            history_context = f"\nRecent Dialogue Context (Prior Turns in this Session):\n{formatted_turns}\n"
+
         prompt = f"""{system_prompt}
 {profile_context}
+{history_context}
 
-Analyze the user's latest statement and determine:
+Analyze the user's latest statement in context of their prior conversation and determine:
 1. Is the user asking to create a task, move a task, schedule an event, express high anxiety/burnout, or conclude their day?
 2. Did the user correct a past mistake, state an explicit personal preference, or clarify a rule? (Hermes Closed-Loop Learning)
 3. If so, generate structured tool action(s).
@@ -310,8 +319,17 @@ Output STRICT JSON:
         if past_wisdom:
             context_block = f"\n[Context from past journal wisdom]: {past_wisdom}\n"
 
+        history_block = ""
+        if conversation_history:
+            formatted_turns = "\n".join([
+                f"{turn.get('role', 'user').title()}: {turn.get('text', '')}"
+                for turn in conversation_history[-8:]
+            ])
+            history_block = f"\n[Conversation History]:\n{formatted_turns}\n"
+
         prompt = f"""{SYSTEM_INSTRUCTIONS_COACH}
 {context_block}
+{history_block}
 <user_journal_reflection>
 {sanitized_message}
 </user_journal_reflection>
