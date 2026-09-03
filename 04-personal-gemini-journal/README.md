@@ -65,30 +65,24 @@ flowchart TD
 
 ---
 
-## ✨ Original Feature Enhancements (Phase 3 Innovation)
+## ✨ The 4-Step Focused Sanctuary Loop
 
-Beyond the baseline requirements, this application introduces seven unique, high-impact features designed to foster emotional resilience and executive momentum:
+Rather than overwhelming the user with fragmented tools, Sanctuary OS guides the user through an intentional 4-step loop:
 
-### 1. 🤖 Coordinated Multi-Agent Team with Hermes-Inspired Self-Learning
-- **Unified Front Guardian:** Natural, empathetic life companion (Google ADK Supervisor pattern) without artificial persona flipping.
-- **Hermes Closed-Loop Learning:** Captures user corrections and synthesizes permanent operational rules into Firestore profile (`learned_rules`).
-- **Analyst Scribe Agent:** 3-Tier Cerebras-backed memory synthesis and real-time emotional scoring.
+1. **Reflect (Studio):** Express unfiltered thoughts via live speech or text. The Guardian listens, reflects Socratically, and helps calm cognitive chatter.
+2. **Approve One Action (Human-in-the-Loop Gate):** Gemini proposes exactly ONE concrete action card (e.g., create a task, move a card, schedule a focus block). The model NEVER auto-writes to the database; the user must explicitly click **Approve** or **Dismiss**.
+3. **Act (Kanban & Calendar):** Move approved tasks across the tactile drag-and-drop board (`To Do` ➔ `In Progress` ➔ `Done & Celebrated`) and manage scheduled focus blocks.
+4. **Rewind (Grounded Growth):** Celebrate authentic progress with real reflection counts, real words written, real consecutive streaks, and genuine living memories (0 mock or fabricated metrics).
 
-### 2. 📋 Interactive Drag-and-Drop Kanban Board
-- Native HTML5 draggable task cards (`To Do` ➔ `In Progress` ➔ `Done`) with live Firestore sync.
+---
 
-### 3. 🎙️ Live Voice Assistant with Real-Time Tool Execution
-- Spoken conversational feedback with live tool triggers (`create_ticket`, `move_ticket`, `schedule_calendar`, `trigger_box_breathing`, `trigger_shutdown_ritual`, `save_memory`).
+## 🛡️ Core Security Architecture & Governance
 
-### 4. 📈 Emotional & Cognitive Arc Visualizer
-- Automatically extracts turn-by-turn **Sentiment Score** (-1.0 to +1.0) and **Energy Level** (0.0 to 1.0) with real-time Chart.js progression.
-
-### 5. 🌙 24-Hour Circadian Routine with Tibetan Chime
-- Morning kickstart and evening shutdown ritual with synthetic Tibetan singing bowl sound chime (Web Audio API).
-
-### 6. 🌐 Dual Language Toggle & GDPR Data Sovereignty
-- Seamless real-time toggle between English and Burmese (`မြန်မာ`).
-- 1-Click "Reset My Sanctuary" data purge with pre-wipe Markdown export prompt.
+- **Zero-Trust Tenant Isolation:** Strict user-partitioned Firestore paths (`/users/{uid}/*`).
+- **Fail-Closed Authentication:** Deterministic/mock tokens are strictly rejected in production (`ENVIRONMENT=production`).
+- **Delimiter Prompt Injection Defense:** All user input is contained inside `<user_journal_reflection>` boundaries.
+- **Client-Side Secret Redaction:** Scrubbing of API keys, tokens, and passwords in the browser before transmission.
+- **Zero Hardcoded Secrets:** Application Default Credentials (ADC) load API keys dynamically from Google Secret Manager.
 
 ---
 
@@ -112,24 +106,22 @@ See the full directives in [AI_STUDIO_SECURITY_CONSTITUTION.md](./AI_STUDIO_SECU
 
 ---
 
-## 🧪 Security & Multi-Tenant Automated Test Suite
+## 🧪 Security & Multi-Tenant Automated Test Suite (50/50 Passing)
 
-Run the automated pytest suite verifying cross-tenant isolation and security:
+Run the complete 50-test suite (29 backend security/isolation tests + 21 browser UI tests):
 
 ```bash
 cd 04-personal-gemini-journal
-python3 -m pytest tests/test_security_isolation.py -v
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m playwright install chromium
+ENVIRONMENT=test ALLOW_TEST_AUTH=true USE_MOCK_DB=true GEMINI_API_KEY=placeholder_key python -m pytest tests/test_security_isolation.py tests/test_ui_playwright.py -v
 ```
 
-### Verified Test Cases:
-- `test_health_endpoint`: Verifies service health probe.
-- `test_unauthenticated_request_rejected`: Confirms unauthenticated requests fail with HTTP 401.
-- `test_invalid_token_rejected`: Confirms forged tokens fail with HTTP 401.
-- `test_user_profile_identification`: Verifies identity claims extraction.
-- `test_cross_tenant_isolation_zero_leakage`: **Critical Gate** — Verifies User A's private entry cannot be viewed, listed, or deleted by User B (returns HTTP 404/403).
-- `test_prompt_injection_defense_containment`: Confirms delimiter override attacks are safely contained.
-- `test_feature_emotional_arc_endpoint`: Confirms dynamic sentiment & clarity scoring.
-- `test_feature_action_items_distillation_endpoint`: Confirms structured task extraction.
+### Verified Test Categories:
+- **Backend Security & Tenant Isolation (29 tests):** Health checks, unauthenticated/forged token rejection (401), cross-tenant zero-leakage, delimiter prompt injection containment, ticket CRUD isolation, calendar event CRUD & delete isolation, rewind metrics tenant grounding, living memory isolation, fail-closed production auth gate matrix.
+- **Playwright Browser End-to-End Suite (21 tests):** Unauthenticated landing state, authenticated app reveal & sign-out, hermetic test auth adapter gate, human-in-the-loop action proposal approval & dismissal flow, genuine rewind metrics display, rewind clean empty state, calendar focus event CRUD & deletion, 401 session expiry draft preservation, mobile 390×844 responsive layout & touch targets (≥44px), desktop 1440×900 collapsible sidebar, drag-and-drop Kanban, and Burmese language localization.
 
 ---
 

@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import time
 import socket
 import threading
@@ -7,7 +8,10 @@ import uvicorn
 import pytest
 from playwright.sync_api import sync_playwright
 
-# Set up test environment
+# Set up hermetic test environment before importing app
+os.environ["ENVIRONMENT"] = "test"
+os.environ["ALLOW_TEST_AUTH"] = "true"
+os.environ["USE_MOCK_DB"] = "true"
 os.environ["SECRET_MANAGER_PROJECT_ID"] = "test-project"
 os.environ["GEMINI_API_KEY"] = "placeholder_key"
 os.environ["IS_TEST_MODE"] = "true"
@@ -40,6 +44,12 @@ def run_test_server():
     yield
     server.should_exit = True
 
+def goto_authenticated(page, name="Alice"):
+    """Loads Sanctuary OS and authenticates via hermetic test adapter."""
+    page.goto(BASE_URL, wait_until="networkidle")
+    page.evaluate(f"() => {{ if (window.__SANCTUARY_TEST_AUTH__) {{ window.__SANCTUARY_TEST_AUTH__.signIn('test_user', 'user@test.local', '{name}'); }} }}")
+    page.wait_for_selector("#app-shell:not(.hidden)", timeout=5000)
+
 def test_browser_ui_shell_and_navigation():
     """Verify Notion shell loading, persona switching, and view toggling with zero console errors."""
     console_errors = []
@@ -52,12 +62,12 @@ def test_browser_ui_shell_and_navigation():
         page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else None)
 
         # 1. Load the Sanctuary OS SPA
-        page.goto(BASE_URL, wait_until="networkidle")
-        page.wait_for_timeout(500)
+        goto_authenticated(page)
+        page.wait_for_timeout(300)
 
         # 2. Verify Title & Core Brand Header
         assert "Personal Gemini Life Guardian" in page.title()
-        brand = page.locator("text=Sanctuary OS").first
+        brand = page.locator("#app-shell").get_by_text("Sanctuary OS").first
         assert brand.is_visible()
 
         # 3. Verify Unified Guardian Sanctuary Callout
@@ -101,7 +111,7 @@ def test_browser_ui_settings_modal_and_toggles():
         page = browser.new_page()
         page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else None)
 
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Open Settings Modal
         settings_btn = page.locator("#open-settings-btn")
@@ -132,7 +142,7 @@ def test_browser_ui_kanban_card_creation():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Navigate to Kanban
         page.locator("#nav-kanban").click()
@@ -150,7 +160,7 @@ def test_browser_ui_language_toggle_burmese():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Open Settings Modal
         page.locator("#open-settings-btn").click()
@@ -185,7 +195,7 @@ def test_browser_ui_export_dropdown_and_options():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Click Export Menu button
         export_btn = page.locator("#export-menu-btn")
@@ -204,7 +214,7 @@ def test_browser_ui_offline_draft_preservation():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Type draft in reflection input
         draft_text = "Late night reflection: Finished the Playwright tests and feeling proud."
@@ -227,7 +237,7 @@ def test_browser_ui_voice_assistant_button_toggle():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         voice_btn = page.locator("#live-voice-toggle-btn")
         assert "Start Live Voice" in voice_btn.text_content()
@@ -250,7 +260,7 @@ def test_browser_ui_add_ticket_button_modal_prompt():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Switch to Kanban view
         page.locator("#nav-kanban").click()
@@ -275,7 +285,7 @@ def test_browser_ui_clear_and_reflect_buttons():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         textarea = page.locator("#reflection-input")
         clear_btn = page.locator("#clear-input-btn")
@@ -305,7 +315,7 @@ def test_browser_ui_destress_breathing_modal_cycle():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Click De-Stress Breathe in sidebar
         page.locator("#nav-destress").click()
@@ -328,7 +338,7 @@ def test_browser_ui_shutdown_ritual_modal():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Click Evening Shutdown in sidebar
         page.locator("#nav-shutdown").click()
@@ -342,5 +352,436 @@ def test_browser_ui_shutdown_ritual_modal():
         page.locator("#cancel-shutdown-btn").click()
         page.wait_for_timeout(200)
         assert not modal.is_visible()
+
+        browser.close()
+
+
+# ==============================================================================
+# Phase 2 RED Tests: Real Firebase Sign-In, Session UX & Secret Absence
+# ==============================================================================
+
+def test_browser_unauthenticated_landing_state():
+    """
+    RED TEST: Fresh visitor must see unauthenticated landing state with:
+    - #auth-landing visible, #app-shell hidden
+    - Google sign-in CTA, product promise & privacy note
+    - Zero previous owner email or test token in loaded page/source
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+
+        page.goto(BASE_URL, wait_until="networkidle")
+        page.wait_for_timeout(300)
+
+        # 1. Landing state must be visible
+        landing = page.locator("#auth-landing")
+        assert landing.is_visible(), "Expected #auth-landing to be visible for unauthenticated user"
+
+        # 2. Main app shell must be hidden
+        app_shell = page.locator("#app-shell")
+        assert not app_shell.is_visible(), "Expected #app-shell to be hidden before sign-in"
+
+        # 3. Google Sign-In button must be present
+        signin_btn = page.locator("#google-signin-btn")
+        assert signin_btn.is_visible(), "Expected #google-signin-btn to be visible"
+
+        # 4. Zero hardcoded owner identity or tokens in loaded source or text
+        content = page.content().lower()
+        assert "victor.job154@gmail.com" not in content, "Owner personal email leaked in frontend source/DOM!"
+        assert "test-token:victor_kyaw" not in content, "Hardcoded identity token found in frontend source/DOM!"
+
+        browser.close()
+
+
+def test_browser_authenticated_app_reveal_and_signout():
+    """
+    RED TEST: Signing in reveals the application shell with user identity,
+    and clicking Sign Out returns to the landing screen.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+
+        page.goto(BASE_URL, wait_until="networkidle")
+        page.wait_for_timeout(300)
+
+        # Sign in through hermetic test auth adapter
+        page.evaluate("window.__SANCTUARY_TEST_AUTH__ && window.__SANCTUARY_TEST_AUTH__.signIn('alice_1', 'alice@test.com', 'Alice')")
+        page.wait_for_timeout(300)
+
+        # App shell must now be visible, landing hidden
+        assert page.locator("#app-shell").is_visible(), "Expected #app-shell to be visible after sign-in"
+        assert not page.locator("#auth-landing").is_visible(), "Expected #auth-landing to be hidden after sign-in"
+
+        # User identity must be displayed
+        user_name = page.locator("#user-display-name").text_content()
+        assert "Alice" in user_name
+
+        # Sign Out button must be present and functional
+        signout_btn = page.locator("#signout-btn")
+        assert signout_btn.is_visible(), "Expected #signout-btn to be visible"
+        signout_btn.click()
+        page.wait_for_timeout(300)
+
+        # After sign-out, return to landing state
+        assert page.locator("#auth-landing").is_visible(), "Expected #auth-landing to be visible after sign-out"
+        assert not page.locator("#app-shell").is_visible(), "Expected #app-shell to be hidden after sign-out"
+
+        browser.close()
+
+
+def test_hermetic_test_auth_adapter_security_gate():
+    """
+    SECURITY GATE: When auth_mode is 'firebase', the test adapter window.__SANCTUARY_TEST_AUTH__
+    must be strictly undefined/unreachable in client context.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Intercept /api/public-config to simulate production Firebase mode
+        page.route("**/api/public-config", lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body='{"auth_mode": "firebase", "environment": "production", "firebase": {"apiKey": "fake_public_key", "projectId": "intelligent-arc-488111-s0"}}'
+        ))
+
+        page.goto(BASE_URL, wait_until="networkidle")
+        page.wait_for_timeout(300)
+
+        adapter_exists = page.evaluate("typeof window.__SANCTUARY_TEST_AUTH__ !== 'undefined'")
+        assert not adapter_exists, "Security Gate Violation: Test auth adapter is exposed in Firebase auth mode!"
+
+        # Test auth helper section must not be visible
+        test_section = page.locator("#test-auth-section")
+        assert not test_section.is_visible()
+
+        browser.close()
+
+
+def test_browser_action_proposal_approval_and_dismissal_flow():
+    """
+    Verify Human-in-the-Loop approval:
+    1. Agent returns proposed action (not auto-executed)
+    2. Proposal card appears with Approve and Dismiss buttons
+    3. User clicks Approve -> action executes -> feedback displayed -> card clears
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Intercept /api/agent/live-turn to propose a ticket creation
+        page.route("**/api/agent/live-turn", lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps({
+                "spoken_ack": "I propose creating a task for you.",
+                "final_reply": "Should I schedule this in your To Do board?",
+                "proposed_actions": [{
+                    "tool": "create_ticket",
+                    "params": {
+                        "title": "Verified Action Approval Task",
+                        "priority": "High",
+                        "category": "Work",
+                        "column": "todo"
+                    }
+                }],
+                "ui_actions": [],
+                "sentiment": 0.8,
+                "detected_mode": "coach",
+                "tickets": []
+            })
+        ))
+
+        goto_authenticated(page)
+
+        # Trigger reflection turn
+        page.locator("#reflection-input").fill("Propose a new task for me")
+        page.locator("#send-reflection-btn").click()
+        page.wait_for_timeout(500)
+
+        # Action proposal card must become visible
+        proposal_container = page.locator("#action-proposal-container")
+        assert proposal_container.is_visible()
+        desc = page.locator("#proposal-description").text_content()
+        assert "Verified Action Approval Task" in desc
+
+        # Click Approve
+        approve_btn = page.locator("#proposal-approve-btn")
+        assert approve_btn.is_visible()
+        approve_btn.click()
+
+        # Feedback should appear
+        page.wait_for_timeout(400)
+        feedback = page.locator("#proposal-feedback")
+        assert feedback.is_visible()
+        assert "approved" in feedback.text_content().lower()
+
+        # After brief moment, container should disappear (queue drained)
+        page.wait_for_timeout(1200)
+        assert not proposal_container.is_visible()
+
+        # 2. Test Dismiss flow: trigger another proposal and click Dismiss
+        confirm_called = []
+        page.route("**/api/agent/actions/confirm", lambda route: (confirm_called.append(True), route.continue_()))
+
+        page.locator("#reflection-input").fill("Propose second task")
+        page.locator("#send-reflection-btn").click()
+        page.wait_for_timeout(500)
+
+        assert proposal_container.is_visible()
+        dismiss_btn = page.locator("#proposal-dismiss-btn")
+        assert dismiss_btn.is_visible()
+        dismiss_btn.click()
+        page.wait_for_timeout(300)
+
+        # Card must be dismissed immediately without calling /api/agent/actions/confirm
+        assert not proposal_container.is_visible()
+        assert len(confirm_called) == 0, "Dismiss must NOT trigger any confirmation API write!"
+
+        browser.close()
+
+
+def test_browser_rewind_empty_state_and_no_fake_metrics():
+    """
+    RED TEST: Rewind view renders genuine user metrics or clean empty state.
+    Must never render '100% Streak' or 'Found emotional stability during hackathon crunch'
+    or random mood badges.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Mock empty rewind response
+        page.route("**/api/rewind", lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps({
+                "total_entries": 0,
+                "total_words": 0,
+                "streak_days": 0,
+                "completed_tickets": 0,
+                "open_tickets": 0,
+                "living_memories_count": 0,
+                "recent_tags": [],
+                "recent_reflections": []
+            })
+        ))
+
+        goto_authenticated(page)
+
+        # Navigate to Rewind
+        page.locator("#nav-rewind").click()
+        page.wait_for_timeout(400)
+
+        content = page.content()
+        # Verify no hardcoded mock text exists
+        assert "100% Streak" not in content
+        assert "Found emotional stability during hackathon crunch" not in content
+        assert "Mastered enterprise multi-tenant Firestore security" not in content
+
+        # Verify clean empty state is visible
+        empty_el = page.locator("#rewind-empty-state")
+        assert empty_el.is_visible()
+        assert "begins with your first reflection" in empty_el.text_content()
+
+        browser.close()
+
+
+def test_browser_rewind_genuine_metrics():
+    """
+    RED TEST: Rewind view accurately presents calculated real metrics from /api/rewind.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        page.route("**/api/rewind", lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps({
+                "total_entries": 7,
+                "total_words": 1420,
+                "streak_days": 5,
+                "completed_tickets": 12,
+                "open_tickets": 3,
+                "living_memories_count": 4,
+                "recent_tags": ["wellness", "focus"],
+                "recent_reflections": [
+                    {"id": "r1", "title": "First Step", "date": "2026-09-01", "excerpt": "Clear mind"}
+                ]
+            })
+        ))
+
+        goto_authenticated(page)
+
+        page.locator("#nav-rewind").click()
+        page.wait_for_timeout(400)
+
+        # Check genuine metric elements
+        assert page.locator("#rewind-total-entries").text_content() == "7"
+        assert page.locator("#rewind-total-words").text_content() == "1420"
+        assert page.locator("#rewind-streak-days").text_content() == "5"
+        assert page.locator("#rewind-completed-tickets").text_content() == "12"
+
+        browser.close()
+
+
+def test_browser_calendar_crud_and_empty_state():
+    """
+    RED TEST: Calendar supports adding focus events for a date/time block,
+    viewing events, and deleting events with immediate DOM updates.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        goto_authenticated(page)
+
+        page.locator("#nav-calendar").click()
+        page.wait_for_timeout(400)
+
+        # Calendar view must have an event list / management container
+        assert page.locator("#calendar-events-section").is_visible()
+
+        # Add event
+        page.locator("#new-event-title").fill("Deep Architecture Focus")
+        page.locator("#new-event-date").fill("2026-09-04")
+        page.locator("#new-event-timeblock").select_option("Morning Focus")
+        page.locator("#add-event-btn").click()
+        page.wait_for_timeout(500)
+
+        # Verify event appears in list
+        event_item = page.locator(".calendar-event-item", has_text="Deep Architecture Focus").first
+        assert event_item.is_visible()
+
+        # Delete event
+        event_item.locator(".delete-event-btn").click()
+        page.wait_for_timeout(500)
+
+        # Verify deleted
+        assert not page.locator(".calendar-event-item", has_text="Deep Architecture Focus").is_visible()
+
+        browser.close()
+
+
+def test_browser_api_fetch_401_session_expiry_preserves_draft():
+    """
+    RED TEST: When any authenticated API call fails with 401 Unauthorized,
+    the app transitions safely to the signed-out state without losing unsaved draft text.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        goto_authenticated(page)
+
+        # User writes a valuable draft
+        draft_content = "Crucial uncommitted ideas: building the APAC GenAI Sanctuary."
+        textarea = page.locator("#reflection-input")
+        textarea.fill(draft_content)
+        page.wait_for_timeout(200)
+
+        # Trigger an API call that returns 401 (e.g. simulated session expired on saving journal)
+        page.route("**/api/agent/live-turn", lambda route: route.fulfill(
+            status=401,
+            content_type="application/json",
+            body='{"detail": "Session expired or invalid credentials."}'
+        ))
+
+        page.locator("#send-reflection-btn").click()
+        page.wait_for_timeout(500)
+
+        # Must transition to auth landing screen with explanatory banner
+        assert page.locator("#auth-landing").is_visible(), "Expected app to show auth landing on 401"
+        assert not page.locator("#app-shell").is_visible(), "Expected app shell to hide on 401"
+
+        # Draft must be preserved in LocalStorage
+        saved_draft = page.evaluate("localStorage.getItem('journal_draft')")
+        assert saved_draft == draft_content, "Draft was lost upon 401 session expiry!"
+
+        browser.close()
+
+
+def test_browser_responsive_mobile_390x844_layout_and_touch_targets():
+    """
+    RED TEST: Mobile 390x844 viewport:
+    - Mobile bottom navigation bar is visible with 4 Sanctuary Loop tabs.
+    - Sidebar is hidden.
+    - Touch targets are at least 44x44px.
+    - No horizontal scroll overflow exists.
+    - Mobile nav buttons switch views seamlessly.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 390, "height": 844})
+
+        goto_authenticated(page)
+
+        # 1. Mobile bottom nav must be visible
+        bottom_nav = page.locator("#mobile-bottom-nav")
+        assert bottom_nav.is_visible(), "Mobile bottom nav must be visible on 390px viewport"
+
+        # 2. Main desktop sidebar must be hidden
+        sidebar = page.locator("#main-sidebar")
+        assert not sidebar.is_visible(), "Desktop sidebar must be hidden on mobile viewport"
+
+        # 3. Touch target sizes for mobile navigation buttons must be >= 44x44px
+        for btn_id in ["#mobile-nav-journal", "#mobile-nav-kanban", "#mobile-nav-calendar", "#mobile-nav-rewind"]:
+            btn = page.locator(btn_id)
+            assert btn.is_visible()
+            box = btn.bounding_box()
+            assert box is not None
+            assert box["height"] >= 44, f"{btn_id} touch height must be >= 44px, got {box['height']}"
+            assert box["width"] >= 44, f"{btn_id} touch width must be >= 44px, got {box['width']}"
+
+        # 4. Zero horizontal overflow
+        no_overflow = page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+        assert no_overflow, "Horizontal overflow detected on mobile viewport!"
+
+        # 5. Mobile nav switching works
+        page.locator("#mobile-nav-kanban").click()
+        page.wait_for_timeout(300)
+        assert page.locator("#view-kanban-content").is_visible()
+        assert not page.locator("#view-journal-content").is_visible()
+
+        browser.close()
+
+
+def test_browser_responsive_desktop_1440x900_sidebar_and_collapse():
+    """
+    RED TEST: Desktop 1440x900 viewport:
+    - Mobile bottom nav is hidden.
+    - Main sidebar is visible and collapsible via #sidebar-toggle-btn.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1440, "height": 900})
+
+        goto_authenticated(page)
+
+        # 1. Mobile bottom nav must be hidden
+        assert not page.locator("#mobile-bottom-nav").is_visible(), "Mobile bottom nav must be hidden on desktop"
+
+        # 2. Desktop sidebar must be visible
+        sidebar = page.locator("#main-sidebar")
+        assert sidebar.is_visible(), "Desktop sidebar must be visible on 1440px desktop"
+
+        # 3. Sidebar toggle button collapses and expands sidebar
+        toggle_btn = page.locator("#sidebar-toggle-btn")
+        assert toggle_btn.is_visible()
+
+        # Click to collapse
+        toggle_btn.click()
+        page.wait_for_timeout(300)
+        assert not sidebar.is_visible()
+
+        # Click to expand
+        toggle_btn.click()
+        page.wait_for_timeout(300)
+        assert sidebar.is_visible()
 
         browser.close()

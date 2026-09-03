@@ -261,23 +261,235 @@ def test_calendar_events_tenant_isolation():
     assert events_b.status_code == 200
     assert all(e["id"] != evt_a["id"] for e in events_b.json()["events"])
 
-def test_live_agent_turn_autonomous_tool_calling():
-    """Verify Live Agent conversational voice turn triggers autonomous tools."""
-    # User A speaks: "Create a task for me: Complete the Cloud Run audit"
+def test_calendar_event_delete_and_tenant_isolation():
+    """Verify Calendar Event deletion and tenant isolation."""
+    # 1. User A creates event
+    evt_res = client.post(
+        "/api/calendar/events",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "title": "Phase 4 Focus Block",
+            "date": "2026-09-04",
+            "time_block": "Afternoon Sprint"
+        }
+    )
+    assert evt_res.status_code == 200
+    evt_id = evt_res.json()["event"]["id"]
+
+    # 2. User B cannot delete User A's event
+    b_del = client.delete(
+        f"/api/calendar/events/{evt_id}",
+        headers={"Authorization": f"Bearer {USER_B_TOKEN}"}
+    )
+    assert b_del.status_code == 404
+
+    # 3. User A can delete their own event
+    a_del = client.delete(
+        f"/api/calendar/events/{evt_id}",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"}
+    )
+    assert a_del.status_code == 200
+    assert a_del.json()["status"] == "deleted"
+
+    # 4. Repeated delete yields 404
+    a_del_repeat = client.delete(
+        f"/api/calendar/events/{evt_id}",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"}
+    )
+    assert a_del_repeat.status_code == 404
+
+def test_rewind_metrics_endpoint_tenant_isolation():
+    """Verify /api/rewind computes genuine metrics scoped strictly to authenticated tenant."""
+    # Create distinct data for User A
+    client.post(
+        "/api/tickets",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={"title": "Done Task A", "priority": "High", "category": "Core", "column": "done"}
+    )
+    client.post(
+        "/api/tickets",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={"title": "Todo Task A", "priority": "Low", "category": "Core", "column": "todo"}
+    )
+    client.post(
+        "/api/journal/save",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={"content": "Writing ten words reflection for tenant isolation verification in this test suite.", "tags": ["grounded", "sanctuary"]}
+    )
+
+    res_a = client.get("/api/rewind", headers={"Authorization": f"Bearer {USER_A_TOKEN}"})
+    assert res_a.status_code == 200
+    data_a = res_a.json()
+    assert data_a["total_entries"] >= 1
+    assert data_a["total_words"] >= 10
+    assert data_a["completed_tickets"] >= 1
+    assert data_a["open_tickets"] >= 1
+    assert "grounded" in data_a["recent_tags"]
+
+    # Unauthenticated request rejected
+    unauth = client.get("/api/rewind")
+    assert unauth.status_code == 401
+
+def test_synthesize_learned_rule_success_with_timezone_aware_datetime():
+    """Verify synthesize_learned_rule executes with timezone-aware ISO string without NameError."""
+    res = client.post(
+        "/api/agent/actions/confirm",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "action": {
+                "tool": "synthesize_learned_rule",
+                "params": {
+                    "trigger_context": "Morning sprints",
+                    "learned_preference": "No meetings before 11 AM",
+                    "rationale": "High focus window"
+                }
+            },
+            "confirmed": True
+        }
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "executed"
+    assert data["result"]["preference"] == "No meetings before 11 AM"
+    assert "learned_at" in data["result"]
+    assert "+00:00" in data["result"]["learned_at"] or "Z" in data["result"]["learned_at"]
+
+def test_live_turn_proposes_actions_without_persistent_mutation(monkeypatch):
+    """
+    RED TEST: /api/agent/live-turn returns proposed_actions and ui_actions,
+    WITHOUT executing any persistent database writes until explicit user confirmation.
+    """
+    from main import gemini_service, db_service
+    monkeypatch.setattr(
+        gemini_service,
+        "live_agent_turn",
+        lambda **kwargs: {
+            "spoken_ack": "I can create that task for you.",
+            "final_reply": "Should I add this task to your To Do list?",
+            "actions": [
+                {
+                    "tool": "create_ticket",
+                    "params": {
+                        "title": "Unconfirmed Auto-Write Probe",
+                        "priority": "High",
+                        "category": "Work",
+                        "column": "todo"
+                    }
+                },
+                {
+                    "tool": "trigger_box_breathing",
+                    "params": {"reason": "Stress relief requested"}
+                }
+            ],
+            "sentiment": 0.8,
+            "detected_mode": "coach"
+        }
+    )
+
+    initial_tickets = len(db_service.get_tickets(uid="user_alpha"))
+
     res = client.post(
         "/api/agent/live-turn",
         headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
         json={
-            "message": "Please create a task for me: Complete the Cloud Run audit today",
+            "message": "Create task: Unconfirmed Auto-Write Probe",
             "persona_mode": "coach"
         }
     )
     assert res.status_code == 200
     data = res.json()
-    assert "spoken_ack" in data
-    assert "final_reply" in data
-    assert len(data["actions_executed"]) >= 1
-    assert data["actions_executed"][0]["action"] == "ticket_created"
+    assert "proposed_actions" in data, "Expected proposed_actions in live-turn response"
+    assert "ui_actions" in data, "Expected ui_actions in live-turn response"
+    assert len(data["proposed_actions"]) == 1
+    assert data["proposed_actions"][0]["tool"] == "create_ticket"
+    assert len(data["ui_actions"]) == 1
+    assert data["ui_actions"][0]["tool"] == "trigger_box_breathing"
+
+    # ZERO persistent mutation occurred!
+    after_tickets = len(db_service.get_tickets(uid="user_alpha"))
+    assert after_tickets == initial_tickets, "Persistent write occurred without user confirmation!"
+
+
+def test_actions_confirm_executes_single_persistent_action_for_tenant():
+    """
+    RED TEST: POST /api/agent/actions/confirm executes exactly one validated persistent action
+    for the authenticated tenant.
+    """
+    res = client.post(
+        "/api/agent/actions/confirm",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "action": {
+                "tool": "create_ticket",
+                "params": {
+                    "title": "Confirmed Focus Sprint Task",
+                    "priority": "Urgent",
+                    "category": "Work",
+                    "column": "todo"
+                }
+            },
+            "confirmed": True
+        }
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "executed"
+    assert data["action"]["tool"] == "create_ticket"
+    assert data["result"]["title"] == "Confirmed Focus Sprint Task"
+    assert data["result"]["uid"] == "user_alpha"
+
+
+def test_actions_confirm_validations_and_rejections():
+    """
+    RED TEST: Bounded validations:
+    - confirmed=False rejected
+    - invalid tool rejected
+    - invalid column rejected
+    - empty learned preference rejected
+    """
+    # 1. confirmed=False -> 400
+    res1 = client.post(
+        "/api/agent/actions/confirm",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "action": {"tool": "create_ticket", "params": {"title": "Task 1"}},
+            "confirmed": False
+        }
+    )
+    assert res1.status_code == 400
+
+    # 2. invalid tool -> 422
+    res2 = client.post(
+        "/api/agent/actions/confirm",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "action": {"tool": "drop_database", "params": {}},
+            "confirmed": True
+        }
+    )
+    assert res2.status_code == 422
+
+    # 3. invalid column -> 422
+    res3 = client.post(
+        "/api/agent/actions/confirm",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "action": {"tool": "create_ticket", "params": {"title": "Task 2", "column": "non_existent_column"}},
+            "confirmed": True
+        }
+    )
+    assert res3.status_code == 422
+
+    # 4. empty learned preference -> 400
+    res4 = client.post(
+        "/api/agent/actions/confirm",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "action": {"tool": "synthesize_learned_rule", "params": {"learned_preference": "   "}},
+            "confirmed": True
+        }
+    )
+    assert res4.status_code == 400
 
 def test_three_tier_living_memory_isolation():
     """Verify 3-tier living memory storage and strict tenant isolation."""
@@ -329,4 +541,72 @@ def test_user_data_reset_and_tenant_safety():
     # User B's ticket is STILL INTACT! Zero damage across tenants!
     list_b = client.get("/api/tickets", headers={"Authorization": f"Bearer {USER_B_TOKEN}"})
     assert any(t["title"] == "User B Important Safe Task" for t in list_b.json()["tickets"])
+
+
+# ==============================================================================
+# Phase 1 RED Tests: Fail-Closed Production Authentication & Public Config
+# ==============================================================================
+
+@pytest.mark.parametrize("deterministic_token", [
+    "test-token:alpha:alpha@test.com",
+    "mock-token:beta:beta@test.com",
+    "demo-guest-token",
+])
+def test_production_rejects_deterministic_tokens_even_if_allow_test_auth(monkeypatch, deterministic_token):
+    """
+    RED TEST: In production, test-token:*, mock-token:*, and demo-guest-token
+    MUST receive HTTP 401, even if ALLOW_TEST_AUTH=true.
+    """
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("ALLOW_TEST_AUTH", "true")
+    res = client.get("/api/journal/entries", headers={"Authorization": f"Bearer {deterministic_token}"})
+    assert res.status_code == 401
+    detail = res.json().get("detail", "")
+    assert "Invalid or expired" in detail or "disabled" in detail
+
+
+@pytest.mark.parametrize("env,allow_test,expected_status", [
+    ("test", "true", 200),
+    ("test", "false", 401),
+    ("production", "true", 401),
+    ("production", "false", 401),
+    ("staging", "true", 401),
+    ("development", "false", 401),
+])
+def test_deterministic_tokens_require_both_test_env_and_allow_flag(monkeypatch, env, allow_test, expected_status):
+    """
+    RED TEST: Deterministic tokens work ONLY when ENVIRONMENT is 'test' (or 'development')
+    AND ALLOW_TEST_AUTH='true'. If either is absent/false, must receive HTTP 401.
+    """
+    monkeypatch.setenv("ENVIRONMENT", env)
+    monkeypatch.setenv("ALLOW_TEST_AUTH", allow_test)
+    res = client.get("/api/journal/entries", headers={"Authorization": f"Bearer {USER_A_TOKEN}"})
+    assert res.status_code == expected_status
+
+
+def test_public_config_endpoint_contract_and_security(monkeypatch):
+    """
+    RED TEST: GET /api/public-config returns auth_mode='firebase' in production,
+    and NEVER returns secrets (private_key, bearer token, email, or sensitive keys).
+    """
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("ALLOW_TEST_AUTH", "false")
+    monkeypatch.setenv("FIREBASE_API_KEY", "AIzaSyFakePublicKeyForClient123")
+    monkeypatch.setenv("FIREBASE_AUTH_DOMAIN", "intelligent-arc-488111-s0.firebaseapp.com")
+    monkeypatch.setenv("GCP_PROJECT_ID", "intelligent-arc-488111-s0")
+    monkeypatch.setenv("FIREBASE_APP_ID", "1:1234567890:web:abcdef")
+
+    res = client.get("/api/public-config")
+    assert res.status_code == 200
+    data = res.json()
+    assert data.get("auth_mode") == "firebase"
+    assert "firebase" in data
+    fb_config = data["firebase"]
+    assert fb_config.get("projectId") == "intelligent-arc-488111-s0"
+    assert fb_config.get("apiKey") == "AIzaSyFakePublicKeyForClient123"
+
+    # Leakage check: ensure no private keys, client secrets, or emails are exposed
+    raw_text = res.text.lower()
+    for forbidden in ["private_key", "client_secret", "bearer", "gemini_api_key", "service_account", "@"]:
+        assert forbidden not in raw_text, f"Potential secret or sensitive leak found in /api/public-config: {forbidden}"
 

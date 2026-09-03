@@ -8,13 +8,15 @@
 
 // Application State
 const state = {
-  token: localStorage.getItem("journal_token") || "test-token:victor_kyaw:victor.job154@gmail.com:Victor",
+  token: localStorage.getItem("journal_token") || null,
   user: null,
+  authConfig: null,
   persona: "coach", // "coach" (morning) or "guardian" (evening)
   activeView: "journal", // "journal", "kanban", "calendar", "rewind"
   conversationHistory: [],
   tickets: [],
   calendarEvents: [],
+  pendingProposals: [],
   settings: {
     voice_responses_enabled: true,
     tibetan_sound_enabled: true,
@@ -68,7 +70,7 @@ function initDraftAutoSave() {
   if (!input) return;
 
   // Restore existing draft
-  const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+  const savedDraft = localStorage.getItem("journal_draft") || localStorage.getItem(DRAFT_STORAGE_KEY);
   if (savedDraft && !input.value) {
     input.value = savedDraft;
   }
@@ -76,11 +78,13 @@ function initDraftAutoSave() {
   // Auto-save on every keystroke
   input.addEventListener("input", () => {
     localStorage.setItem(DRAFT_STORAGE_KEY, input.value);
+    localStorage.setItem("journal_draft", input.value);
   });
 }
 
 function clearDraft() {
   localStorage.removeItem(DRAFT_STORAGE_KEY);
+  localStorage.removeItem("journal_draft");
   const input = document.getElementById("reflection-input");
   if (input) input.value = "";
 }
@@ -124,12 +128,225 @@ function playTibetanBowlChime() {
 // ============================================================================
 // 4. Initialization & Authentication
 // ============================================================================
-document.addEventListener("DOMContentLoaded", async () => {
-  initDraftAutoSave();
-  await initAuth();
+
+function showAuthLanding(errorMsg = null) {
+  const landing = document.getElementById("auth-landing");
+  const shell = document.getElementById("app-shell");
+  if (landing) landing.classList.remove("hidden");
+  if (shell) shell.classList.add("hidden");
+  const errEl = document.getElementById("auth-error-msg");
+  if (errEl) {
+    if (errorMsg) {
+      errEl.textContent = errorMsg;
+      errEl.classList.remove("hidden");
+    } else {
+      errEl.textContent = "";
+      errEl.classList.add("hidden");
+    }
+  }
+}
+
+function showAppShell() {
+  const landing = document.getElementById("auth-landing");
+  const shell = document.getElementById("app-shell");
+  if (landing) landing.classList.add("hidden");
+  if (shell) shell.classList.remove("hidden");
+  if (state.user) {
+    const nameEl = document.getElementById("user-display-name");
+    const avatarEl = document.getElementById("user-avatar-initial");
+    if (nameEl) nameEl.textContent = state.user.name || state.user.email || "Journaler";
+    if (avatarEl) {
+      const initial = (state.user.name || state.user.email || "J").charAt(0).toUpperCase();
+      avatarEl.textContent = initial;
+    }
+  }
+}
+
+async function getAuthorizationHeaders() {
+  if (state.authConfig && state.authConfig.auth_mode === "firebase" && typeof firebase !== "undefined" && firebase.auth && firebase.auth().currentUser) {
+    try {
+      state.token = await firebase.auth().currentUser.getIdToken();
+    } catch (e) {
+      console.warn("Token refresh fallback:", e);
+    }
+  }
+  return {
+    "Authorization": state.token ? `Bearer ${state.token}` : "",
+    "Content-Type": "application/json"
+  };
+}
+
+async function apiFetch(input, init = {}) {
+  const authHeaders = await getAuthorizationHeaders();
+  init.headers = {
+    ...authHeaders,
+    ...(init.headers || {})
+  };
+
+  const res = await fetch(input, init);
+
+  if (res.status === 401) {
+    // Preserve unsaved reflection draft to localStorage
+    const inputEl = document.getElementById("reflection-input");
+    const currentVal = (inputEl && inputEl.value) ? inputEl.value : (state.currentDraftAttempt || "");
+    if (currentVal) {
+      localStorage.setItem("journal_draft", currentVal);
+      localStorage.setItem(DRAFT_STORAGE_KEY, currentVal);
+    }
+    // Fail closed: clear session credentials and show auth landing
+    state.token = null;
+    state.user = null;
+    localStorage.removeItem("journal_token");
+    showAuthLanding("Your session expired. Please sign in again to continue. Your draft has been safely preserved.");
+  }
+
+  return res;
+}
+
+async function signInWithGoogle() {
+  const errEl = document.getElementById("auth-error-msg");
+  if (errEl) errEl.classList.add("hidden");
+
+  if (state.authConfig && state.authConfig.auth_mode === "test") {
+    if (window.__SANCTUARY_TEST_AUTH__) {
+      window.__SANCTUARY_TEST_AUTH__.signIn();
+      return;
+    }
+  }
+
+  if (typeof firebase === "undefined" || !firebase.auth) {
+    showAuthLanding("Authentication library could not be loaded.");
+    return;
+  }
+
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    if (window.innerWidth <= 768) {
+      await firebase.auth().signInWithRedirect(provider);
+    } else {
+      await firebase.auth().signInWithPopup(provider);
+    }
+  } catch (err) {
+    console.error("Google sign in error:", err);
+    showAuthLanding(err.message || "Sign in failed. Please try again.");
+  }
+}
+
+async function signOutUser() {
+  try {
+    if (typeof firebase !== "undefined" && firebase.auth && firebase.auth().currentUser) {
+      await firebase.auth().signOut();
+    }
+  } catch (e) {
+    console.warn("Sign out error:", e);
+  }
+  state.token = null;
+  state.user = null;
+  localStorage.removeItem("journal_token");
+  showAuthLanding();
+}
+
+async function loadUserData() {
   await loadUserSettings();
   await loadTickets();
   await loadCalendarEvents();
+  renderHistoryList();
+}
+
+async function initializeAuthentication() {
+  try {
+    const res = await fetch("/api/public-config");
+    if (!res.ok) {
+      throw new Error(`Failed to load public configuration: HTTP ${res.status}`);
+    }
+    const config = await res.json();
+    state.authConfig = config;
+
+    if (config.auth_mode === "test") {
+      const testSection = document.getElementById("test-auth-section");
+      if (testSection) testSection.classList.remove("hidden");
+
+      window.__SANCTUARY_TEST_AUTH__ = {
+        signIn: (uid = "test_user", email = "test@local.test", name = "Test User") => {
+          const token = `test-token:${uid}:${email}:${name}`;
+          state.token = token;
+          state.user = { uid, email, name, auth_provider: "test_harness" };
+          localStorage.setItem("journal_token", token);
+          showAppShell();
+          loadUserData();
+        },
+        signOut: async () => {
+          await signOutUser();
+        }
+      };
+
+      const testBtn = document.getElementById("test-signin-quick-btn");
+      if (testBtn) {
+        testBtn.onclick = () => window.__SANCTUARY_TEST_AUTH__.signIn();
+      }
+
+      if (state.token && state.token.startsWith("test-token:")) {
+        const parts = state.token.split(":");
+        state.user = {
+          uid: parts[1] || "test_user",
+          email: parts[2] || "test@local.test",
+          name: parts[3] || "Test User",
+          auth_provider: "test_harness"
+        };
+        showAppShell();
+        loadUserData();
+      } else {
+        showAuthLanding();
+      }
+    } else {
+      // Production Firebase mode: ensure hermetic adapter is unreachable
+      window.__SANCTUARY_TEST_AUTH__ = undefined;
+      const testSection = document.getElementById("test-auth-section");
+      if (testSection) testSection.classList.add("hidden");
+
+      if (typeof firebase === "undefined" || !config.firebase || !config.firebase.apiKey) {
+        showAuthLanding("Firebase Authentication is not configured on this host.");
+        return;
+      }
+
+      if (!firebase.apps.length) {
+        firebase.initializeApp(config.firebase);
+      }
+
+      firebase.auth().onAuthStateChanged(async (fbUser) => {
+        if (fbUser) {
+          try {
+            const token = await fbUser.getIdToken();
+            state.token = token;
+            state.user = {
+              uid: fbUser.uid,
+              email: fbUser.email,
+              name: fbUser.displayName || (fbUser.email ? fbUser.email.split("@")[0] : "Journaler"),
+              auth_provider: "firebase"
+            };
+            localStorage.setItem("journal_token", token);
+            showAppShell();
+            loadUserData();
+          } catch (err) {
+            console.error("Token acquisition error:", err);
+            showAuthLanding("Could not retrieve session credentials.");
+          }
+        } else {
+          state.token = null;
+          state.user = null;
+          localStorage.removeItem("journal_token");
+          showAuthLanding();
+        }
+      });
+    }
+  } catch (err) {
+    console.error("Authentication initialization failed:", err);
+    showAuthLanding("Could not establish connection to authentication service.");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  initDraftAutoSave();
   initNavigation();
   initKanbanDragAndDrop();
   initVoiceAssistant();
@@ -140,28 +357,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   initSettingsModal();
   initShutdownRitual();
   initDeStressModal();
-  renderHistoryList();
-});
+  initProposalCard();
 
-async function initAuth() {
-  try {
-    const res = await fetch("/api/auth/me", {
-      headers: { "Authorization": `Bearer ${state.token}` }
-    });
-    if (res.ok) {
-      state.user = await res.json();
-      document.getElementById("user-display-name").textContent = state.user.name || "Victor";
-    }
-  } catch (err) {
-    console.warn("Auth initialization fallback:", err);
-  }
-}
+  // Auth buttons
+  const googleBtn = document.getElementById("google-signin-btn");
+  if (googleBtn) googleBtn.onclick = signInWithGoogle;
+
+  const signoutBtn = document.getElementById("signout-btn");
+  if (signoutBtn) signoutBtn.onclick = signOutUser;
+
+  await initializeAuthentication();
+});
 
 async function loadUserSettings() {
   try {
-    const res = await fetch("/api/settings", {
-      headers: { "Authorization": `Bearer ${state.token}` }
-    });
+    const res = await apiFetch("/api/settings");
     if (res.ok) {
       const data = await res.json();
       state.settings = { ...state.settings, ...data };
@@ -269,27 +479,64 @@ function initNavigation() {
     rewind: { btn: "nav-rewind", content: "view-rewind-content", icon: "✨", title: "Life Rewind & Monthly Breakthroughs" }
   };
 
+  const mobileNavBtns = {
+    journal: document.getElementById("mobile-nav-journal"),
+    kanban: document.getElementById("mobile-nav-kanban"),
+    calendar: document.getElementById("mobile-nav-calendar"),
+    rewind: document.getElementById("mobile-nav-rewind")
+  };
+
+  function switchView(viewKey) {
+    state.activeView = viewKey;
+    const cfg = views[viewKey];
+    if (!cfg) return;
+
+    Object.entries(views).forEach(([k, c]) => {
+      const contentEl = document.getElementById(c.content);
+      const navBtn = document.getElementById(c.btn);
+      if (contentEl) contentEl.classList.toggle("hidden", k !== viewKey);
+      if (navBtn) {
+        navBtn.classList.toggle("bg-[#21262d]", k === viewKey);
+        navBtn.classList.toggle("text-[#f0f6fc]", k === viewKey);
+        navBtn.classList.toggle("text-[#8b949e]", k !== viewKey);
+      }
+    });
+
+    Object.entries(mobileNavBtns).forEach(([k, mobBtn]) => {
+      if (mobBtn) {
+        mobBtn.classList.toggle("text-indigo-400", k === viewKey);
+        mobBtn.classList.toggle("text-gray-400", k !== viewKey);
+      }
+    });
+
+    document.getElementById("view-icon").textContent = cfg.icon;
+    document.getElementById("view-title").textContent = cfg.title;
+
+    if (viewKey === "calendar") loadCalendarEvents();
+    if (viewKey === "rewind") loadRewindMetrics();
+  }
+
   Object.entries(views).forEach(([viewKey, cfg]) => {
     const btn = document.getElementById(cfg.btn);
-    if (!btn) return;
-    btn.addEventListener("click", () => {
-      state.activeView = viewKey;
-      Object.entries(views).forEach(([k, c]) => {
-        const contentEl = document.getElementById(c.content);
-        const navBtn = document.getElementById(c.btn);
-        if (contentEl) contentEl.classList.toggle("hidden", k !== viewKey);
-        if (navBtn) {
-          navBtn.classList.toggle("bg-[#21262d]", k === viewKey);
-          navBtn.classList.toggle("text-[#f0f6fc]", k === viewKey);
-          navBtn.classList.toggle("text-[#8b949e]", k !== viewKey);
-        }
-      });
-      document.getElementById("view-icon").textContent = cfg.icon;
-      document.getElementById("view-title").textContent = cfg.title;
-
-      if (viewKey === "calendar") renderCalendar();
-    });
+    if (btn) btn.addEventListener("click", () => switchView(viewKey));
   });
+
+  Object.entries(mobileNavBtns).forEach(([viewKey, mobBtn]) => {
+    if (mobBtn) mobBtn.addEventListener("click", () => switchView(viewKey));
+  });
+
+  // Desktop Sidebar Toggle
+  const sidebarToggleBtn = document.getElementById("sidebar-toggle-btn");
+  const mainSidebar = document.getElementById("main-sidebar");
+  if (sidebarToggleBtn && mainSidebar) {
+    sidebarToggleBtn.addEventListener("click", () => {
+      if (mainSidebar.style.display === "none") {
+        mainSidebar.style.display = "";
+      } else {
+        mainSidebar.style.display = "none";
+      }
+    });
+  }
 
   // Persona Toggles (Safely handled if present)
   const coachBtn = document.getElementById("persona-coach-btn");
@@ -307,7 +554,7 @@ function setPersona(persona) {
 
   calloutEmoji.textContent = "🌿";
   calloutTitle.textContent = "Guardian Socratic Sanctuary";
-  calloutText.textContent = '"Welcome back Victor. What is occupying your headspace or focus right now?"';
+  calloutText.textContent = '"Welcome to your sanctuary. What is occupying your headspace or focus right now?"';
 }
 
 // ============================================================================
@@ -315,9 +562,7 @@ function setPersona(persona) {
 // ============================================================================
 async function loadTickets() {
   try {
-    const res = await fetch("/api/tickets", {
-      headers: { "Authorization": `Bearer ${state.token}` }
-    });
+    const res = await apiFetch("/api/tickets");
     if (res.ok) {
       const data = await res.json();
       state.tickets = data.tickets || [];
@@ -454,12 +699,8 @@ async function moveTicketColumn(ticketId, newColumn) {
   }
 
   try {
-    const res = await fetch(`/api/tickets/${ticketId}/column`, {
+    const res = await apiFetch(`/api/tickets/${ticketId}/column`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${state.token}`
-      },
       body: JSON.stringify({ column: newColumn })
     });
     if (!res.ok) {
@@ -473,12 +714,8 @@ async function moveTicketColumn(ticketId, newColumn) {
 
 async function createTicket(ticketData) {
   try {
-    const res = await fetch("/api/tickets", {
+    const res = await apiFetch("/api/tickets", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${state.token}`
-      },
       body: JSON.stringify(ticketData)
     });
     if (res.ok) {
@@ -493,9 +730,8 @@ async function createTicket(ticketData) {
 
 async function deleteTicket(ticketId) {
   try {
-    const res = await fetch(`/api/tickets/${ticketId}`, {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${state.token}` }
+    const res = await apiFetch(`/api/tickets/${ticketId}`, {
+      method: "DELETE"
     });
     if (res.ok) {
       state.tickets = state.tickets.filter(x => x.id !== ticketId);
@@ -526,10 +762,14 @@ function initVoiceAssistant() {
       const msg = input.value.trim();
       if (!msg) return;
 
+      state.currentDraftAttempt = msg;
       const safeMsg = redactSecrets(msg);
       appendChatMessage("user", safeMsg);
-      clearDraft();
-      await processLiveTurn(safeMsg);
+      const success = await processLiveTurn(safeMsg);
+      if (success) {
+        clearDraft();
+        state.currentDraftAttempt = null;
+      }
     });
   }
 
@@ -626,12 +866,8 @@ function initVoiceAssistant() {
 
 async function processLiveTurn(message) {
   try {
-    const res = await fetch("/api/agent/live-turn", {
+    const res = await apiFetch("/api/agent/live-turn", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${state.token}`
-      },
       body: JSON.stringify({
         message: message,
         conversation_history: state.conversationHistory,
@@ -650,29 +886,177 @@ async function processLiveTurn(message) {
       // Append model response to UI
       appendChatMessage("model", data.final_reply);
 
-      // Refresh tickets if any tools were executed
-      if (data.tickets) {
-        state.tickets = data.tickets;
-        renderKanbanBoard();
-      }
-
-      // Check for actions that trigger modal overlays
-      (data.actions_executed || []).forEach(act => {
-        if (act.action === "trigger_box_breathing") {
+      // Handle non-persistent UI actions immediately
+      (data.ui_actions || []).forEach(act => {
+        if (act.tool === "trigger_box_breathing") {
           document.getElementById("breathing-modal").classList.remove("hidden");
-        } else if (act.action === "trigger_shutdown_ritual") {
+        } else if (act.tool === "trigger_shutdown_ritual") {
           triggerShutdownModal();
         }
       });
 
+      // Queue proposed persistent actions for explicit user approval (Human-in-the-Loop)
+      if (data.proposed_actions && data.proposed_actions.length > 0) {
+        state.pendingProposals = [...(state.pendingProposals || []), ...data.proposed_actions];
+        displayActiveProposal();
+      }
+
       // Update Chart.js emotional arc progression
       updateEmotionalChart(data.sentiment || 0.5);
 
+      return true;
     }
+    return false;
   } catch (err) {
     console.error("Error processing live turn:", err);
-    appendChatMessage("model", "I heard your reflection Victor. Let's ground this with patience.");
+    appendChatMessage("model", "I heard your reflection. Let's ground this with patience.");
+    return false;
   }
+}
+
+// ============================================================================
+// Action Proposal (Human-in-the-Loop Confirmation Gate)
+// ============================================================================
+
+function formatProposalDescription(proposal) {
+  const tool = proposal.tool;
+  const p = proposal.params || {};
+  switch (tool) {
+    case "create_ticket":
+      return `Create task: "${p.title || 'New Task'}" in column "${p.column || 'todo'}"`;
+    case "move_ticket":
+      return `Move task "${p.ticket_title_or_id || 'ticket'}" to "${p.new_column || 'done'}"`;
+    case "schedule_calendar":
+      return `Schedule calendar focus: "${p.title || 'Scheduled Focus'}" on ${p.date || 'today'}`;
+    case "save_memory":
+      return `Save breakthrough/habit into Living Memory`;
+    case "synthesize_learned_rule":
+      return `Adopt learned preference: "${p.learned_preference || ''}"`;
+    default:
+      return `Execute persistent action: ${tool}`;
+  }
+}
+
+function formatProposalDetails(proposal) {
+  const p = proposal.params || {};
+  return JSON.stringify(p, null, 2);
+}
+
+function displayActiveProposal() {
+  const container = document.getElementById("action-proposal-container");
+  if (!container) return;
+
+  if (!state.pendingProposals || state.pendingProposals.length === 0) {
+    container.classList.add("hidden");
+    return;
+  }
+
+  const proposal = state.pendingProposals[0];
+  const descEl = document.getElementById("proposal-description");
+  const detailsEl = document.getElementById("proposal-details");
+  const indicatorEl = document.getElementById("proposal-step-indicator");
+  const feedbackEl = document.getElementById("proposal-feedback");
+
+  if (feedbackEl) {
+    feedbackEl.classList.add("hidden");
+    feedbackEl.textContent = "";
+  }
+
+  if (descEl) descEl.textContent = formatProposalDescription(proposal);
+  if (detailsEl) detailsEl.textContent = formatProposalDetails(proposal);
+  if (indicatorEl) indicatorEl.textContent = `1 of ${state.pendingProposals.length}`;
+
+  const approveBtn = document.getElementById("proposal-approve-btn");
+  const dismissBtn = document.getElementById("proposal-dismiss-btn");
+  if (approveBtn) {
+    approveBtn.disabled = false;
+    approveBtn.innerHTML = `<span>✓</span><span>Approve Action</span>`;
+  }
+  if (dismissBtn) dismissBtn.disabled = false;
+
+  container.classList.remove("hidden");
+}
+
+function dismissActiveProposal() {
+  if (!state.pendingProposals || state.pendingProposals.length === 0) return;
+  const dismissed = state.pendingProposals.shift();
+  appendChatMessage("model", `Action dismissed: ${formatProposalDescription(dismissed)}.`);
+  displayActiveProposal();
+}
+
+async function approveActiveProposal() {
+  if (!state.pendingProposals || state.pendingProposals.length === 0) return;
+  const proposal = state.pendingProposals[0];
+  const approveBtn = document.getElementById("proposal-approve-btn");
+  const dismissBtn = document.getElementById("proposal-dismiss-btn");
+  const feedbackEl = document.getElementById("proposal-feedback");
+
+  if (approveBtn) {
+    approveBtn.disabled = true;
+    approveBtn.innerHTML = `<span>⏳</span><span>Executing...</span>`;
+  }
+  if (dismissBtn) dismissBtn.disabled = true;
+
+  try {
+    const res = await apiFetch("/api/agent/actions/confirm", {
+      method: "POST",
+      body: JSON.stringify({
+        action: proposal,
+        confirmed: true
+      })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (feedbackEl) {
+      feedbackEl.className = "mt-2 text-xs font-medium text-center py-1 rounded bg-emerald-950/60 border border-emerald-500/40 text-emerald-300";
+      feedbackEl.textContent = "✓ Action approved and persisted.";
+      feedbackEl.classList.remove("hidden");
+    }
+
+    // Refresh only the affected view
+    if (proposal.tool === "create_ticket" || proposal.tool === "move_ticket") {
+      if (data.tickets) {
+        state.tickets = data.tickets;
+        renderKanbanBoard();
+      } else {
+        await loadTickets();
+      }
+    } else if (proposal.tool === "schedule_calendar") {
+      await loadCalendarEvents();
+    }
+
+    // Advance to next proposal after brief visual confirmation
+    setTimeout(() => {
+      state.pendingProposals.shift();
+      displayActiveProposal();
+    }, 700);
+
+  } catch (err) {
+    console.error("Action confirmation failed:", err);
+    if (feedbackEl) {
+      feedbackEl.className = "mt-2 text-xs font-medium text-center py-1 rounded bg-rose-950/60 border border-rose-500/40 text-rose-300";
+      feedbackEl.textContent = `Confirmation failed: ${err.message}`;
+      feedbackEl.classList.remove("hidden");
+    }
+    if (approveBtn) {
+      approveBtn.disabled = false;
+      approveBtn.innerHTML = `<span>✓</span><span>Retry Approve</span>`;
+    }
+    if (dismissBtn) dismissBtn.disabled = false;
+  }
+}
+
+function initProposalCard() {
+  const approveBtn = document.getElementById("proposal-approve-btn");
+  if (approveBtn) approveBtn.onclick = approveActiveProposal;
+
+  const dismissBtn = document.getElementById("proposal-dismiss-btn");
+  if (dismissBtn) dismissBtn.onclick = dismissActiveProposal;
 }
 
 function speakAloud(text) {
@@ -691,9 +1075,10 @@ function appendChatMessage(role, text) {
   msgDiv.className = `flex space-x-3 text-xs leading-relaxed animate-fadeIn ${role === "user" ? "justify-end" : "justify-start"}`;
 
   if (role === "user") {
+    const senderName = (state.user && state.user.name) ? state.user.name : "You";
     msgDiv.innerHTML = `
       <div class="bg-indigo-600/30 border border-indigo-500/40 text-[#f0f6fc] p-3 rounded-xl max-w-lg shadow-sm">
-        <span class="font-semibold text-[10px] text-indigo-300 block mb-0.5">Victor</span>
+        <span class="font-semibold text-[10px] text-indigo-300 block mb-0.5">${escapeHtml(senderName)}</span>
         <p>${escapeHtml(text)}</p>
       </div>
     `;
@@ -804,12 +1189,12 @@ function updateEmotionalChart(sentimentScore) {
 // ============================================================================
 async function loadCalendarEvents() {
   try {
-    const res = await fetch("/api/calendar/events", {
-      headers: { "Authorization": `Bearer ${state.token}` }
-    });
+    const res = await apiFetch("/api/calendar/events");
     if (res.ok) {
       const data = await res.json();
       state.calendarEvents = data.events || [];
+      renderCalendarEvents();
+      renderCalendarGrid();
     }
   } catch (err) {
     console.warn("Calendar events load error:", err);
@@ -817,37 +1202,211 @@ async function loadCalendarEvents() {
 }
 
 function initCalendar() {
-  renderCalendar();
+  const addBtn = document.getElementById("add-event-btn");
+  if (addBtn) addBtn.onclick = addCalendarEvent;
+  renderCalendarEvents();
+  renderCalendarGrid();
 }
 
-function renderCalendar() {
+function renderCalendarEvents() {
+  const listEl = document.getElementById("calendar-events-list");
+  const emptyEl = document.getElementById("calendar-events-empty");
+  const countEl = document.getElementById("calendar-events-count");
+  if (!listEl) return;
+
+  listEl.innerHTML = "";
+  const events = state.calendarEvents || [];
+  if (countEl) countEl.textContent = `${events.length} event${events.length === 1 ? '' : 's'}`;
+
+  if (events.length === 0) {
+    if (emptyEl) emptyEl.classList.remove("hidden");
+    return;
+  }
+  if (emptyEl) emptyEl.classList.add("hidden");
+
+  events.forEach(evt => {
+    const item = document.createElement("div");
+    item.className = "calendar-event-item flex items-center justify-between p-2.5 rounded-lg bg-[#0e1117] border border-[#30363d] text-xs";
+    item.innerHTML = `
+      <div class="flex items-center space-x-2.5">
+        <span class="w-2 h-2 rounded-full bg-indigo-400 shrink-0"></span>
+        <div>
+          <span class="font-medium text-[#f0f6fc] block">${escapeHtml(evt.title)}</span>
+          <span class="text-[10px] text-gray-400">${evt.date} • ${escapeHtml(evt.time_block || 'Morning Focus')}</span>
+        </div>
+      </div>
+      <button class="delete-event-btn text-gray-400 hover:text-red-400 p-1 text-xs transition-colors" title="Delete event">
+        ✕
+      </button>
+    `;
+
+    const delBtn = item.querySelector(".delete-event-btn");
+    if (delBtn) {
+      delBtn.onclick = async () => {
+        await deleteCalendarEvent(evt.id);
+      };
+    }
+
+    listEl.appendChild(item);
+  });
+}
+
+async function addCalendarEvent() {
+  const titleInput = document.getElementById("new-event-title");
+  const dateInput = document.getElementById("new-event-date");
+  const blockSelect = document.getElementById("new-event-timeblock");
+
+  const title = (titleInput ? titleInput.value : "").trim();
+  const date = (dateInput ? dateInput.value : "").trim();
+  const time_block = blockSelect ? blockSelect.value : "Morning Focus";
+
+  if (!title || !date) {
+    return;
+  }
+
+  try {
+    const res = await apiFetch("/api/calendar/events", {
+      method: "POST",
+      body: JSON.stringify({ title, date, time_block })
+    });
+    if (res.ok) {
+      if (titleInput) titleInput.value = "";
+      await loadCalendarEvents();
+    }
+  } catch (err) {
+    console.error("Add event error:", err);
+  }
+}
+
+async function deleteCalendarEvent(eventId) {
+  try {
+    const res = await apiFetch(`/api/calendar/events/${eventId}`, {
+      method: "DELETE"
+    });
+    if (res.ok) {
+      state.calendarEvents = (state.calendarEvents || []).filter(e => e.id !== eventId);
+      renderCalendarEvents();
+      renderCalendarGrid();
+    }
+  } catch (err) {
+    console.error("Delete event error:", err);
+  }
+}
+
+function renderCalendarGrid() {
   const grid = document.getElementById("calendar-days-grid");
   if (!grid) return;
   grid.innerHTML = "";
 
   const today = new Date();
-  const daysInMonth = 30; // Standard month representation
+  const daysInMonth = 30;
+
+  // Real scheduled event lookup
+  const eventDays = new Set();
+  (state.calendarEvents || []).forEach(e => {
+    if (e.date) {
+      const parts = e.date.split("-");
+      if (parts.length === 3) {
+        const d = parseInt(parts[2], 10);
+        if (!isNaN(d)) eventDays.add(d);
+      }
+    }
+  });
 
   for (let d = 1; d <= daysInMonth; d++) {
     const cell = document.createElement("div");
-    cell.className = "calendar-day-cell text-xs text-gray-300 border border-[#30363d]/50 p-2";
+    cell.className = "calendar-day-cell text-xs text-gray-300 border border-[#30363d]/50 p-2 min-h-[44px] flex flex-col justify-between rounded cursor-pointer hover:border-gray-500 transition-colors";
     if (d === today.getDate()) {
-      cell.classList.add("current-day");
+      cell.classList.add("current-day", "border-indigo-500/80", "bg-indigo-950/20");
     }
 
-    // Assign mock mood badge for demonstration
-    const moodColor = (d % 3 === 0) ? "#3fb950" : (d % 5 === 0 ? "#a371f7" : "#388bfd");
-
+    const hasEvent = eventDays.has(d);
     cell.innerHTML = `
-      <span class="font-semibold">${d}</span>
-      <span class="w-1.5 h-1.5 rounded-full mt-1" style="background-color: ${moodColor}"></span>
+      <span class="font-semibold text-[11px]">${d}</span>
+      ${hasEvent ? '<span class="w-1.5 h-1.5 rounded-full bg-indigo-400 self-end"></span>' : '<span></span>'}
     `;
 
-    cell.addEventListener("click", () => {
-      alert(`Viewing reflections & focus blocks for September ${d}, 2026.\nStatus: Centered Clarity.`);
-    });
+    cell.onclick = () => {
+      const dateInput = document.getElementById("new-event-date");
+      if (dateInput) {
+        const monthStr = String(today.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(d).padStart(2, '0');
+        dateInput.value = `${today.getFullYear()}-${monthStr}-${dayStr}`;
+      }
+    };
 
     grid.appendChild(cell);
+  }
+}
+
+// ============================================================================
+// Life Rewind & Grounded Analytics
+// ============================================================================
+async function loadRewindMetrics() {
+  const emptyEl = document.getElementById("rewind-empty-state");
+  const metricsEl = document.getElementById("rewind-metrics-container");
+
+  try {
+    const res = await apiFetch("/api/rewind");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (data.total_entries === 0 && data.completed_tickets === 0 && data.streak_days === 0) {
+      if (emptyEl) emptyEl.classList.remove("hidden");
+      if (metricsEl) metricsEl.classList.add("hidden");
+      return;
+    }
+
+    if (emptyEl) emptyEl.classList.add("hidden");
+    if (metricsEl) metricsEl.classList.remove("hidden");
+
+    const entriesEl = document.getElementById("rewind-total-entries");
+    const wordsEl = document.getElementById("rewind-total-words");
+    const streakEl = document.getElementById("rewind-streak-days");
+    const ticketsEl = document.getElementById("rewind-completed-tickets");
+    const memsEl = document.getElementById("rewind-memories-count");
+
+    if (entriesEl) entriesEl.textContent = String(data.total_entries || 0);
+    if (wordsEl) wordsEl.textContent = String(data.total_words || 0);
+    if (streakEl) streakEl.textContent = String(data.streak_days || 0);
+    if (ticketsEl) ticketsEl.textContent = String(data.completed_tickets || 0);
+    if (memsEl) memsEl.textContent = String(data.living_memories_count || 0);
+
+    const tagsContainer = document.getElementById("rewind-tags-container");
+    if (tagsContainer) {
+      tagsContainer.innerHTML = "";
+      (data.recent_tags || []).forEach(tag => {
+        const badge = document.createElement("span");
+        badge.className = "px-2 py-0.5 rounded-md bg-indigo-950/60 border border-indigo-500/40 text-indigo-300 text-[10px]";
+        badge.textContent = `#${tag}`;
+        tagsContainer.appendChild(badge);
+      });
+      if (!data.recent_tags || data.recent_tags.length === 0) {
+        tagsContainer.innerHTML = '<span class="text-[10px] text-gray-500 italic">No tags yet</span>';
+      }
+    }
+
+    const recentList = document.getElementById("rewind-recent-list");
+    if (recentList) {
+      recentList.innerHTML = "";
+      (data.recent_reflections || []).forEach(ref => {
+        const item = document.createElement("div");
+        item.className = "p-2 rounded-lg bg-[#0e1117] border border-[#30363d]/70 text-[11px]";
+        item.innerHTML = `
+          <div class="flex justify-between items-center text-gray-400 mb-0.5">
+            <span class="font-medium text-gray-200">${escapeHtml(ref.title)}</span>
+            <span class="text-[10px]">${ref.date}</span>
+          </div>
+          <p class="text-gray-400 truncate">${escapeHtml(ref.excerpt)}</p>
+        `;
+        recentList.appendChild(item);
+      });
+      if (!data.recent_reflections || data.recent_reflections.length === 0) {
+        recentList.innerHTML = '<span class="text-[10px] text-gray-500 italic">No reflections yet</span>';
+      }
+    }
+  } catch (err) {
+    console.warn("Rewind load fallback:", err);
   }
 }
 
@@ -966,12 +1525,8 @@ function initSettingsModal() {
       };
 
       try {
-        const res = await fetch("/api/settings", {
+        const res = await apiFetch("/api/settings", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${state.token}`
-          },
           body: JSON.stringify(payload)
         });
         if (res.ok) {
@@ -997,9 +1552,8 @@ function initSettingsModal() {
       if (!finalCheck) return;
 
       try {
-        const res = await fetch("/api/data/reset", {
-          method: "DELETE",
-          headers: { "Authorization": `Bearer ${state.token}` }
+        const res = await apiFetch("/api/data/reset", {
+          method: "DELETE"
         });
         if (res.ok) {
           state.tickets = [];
@@ -1061,7 +1615,7 @@ function generateMarkdownExport() {
 title: Sanctuary Journal Reflection
 date: ${dateStr}
 tags: [sanctuary, reflection, executive-coach]
-user: Victor
+user: ${(state.user && state.user.name) ? state.user.name : "Journaler"}
 ---
 
 # 🌿 Sanctuary Journal & Execution Summary (${dateStr})

@@ -81,6 +81,11 @@ flowchart TD
 | **DEC-13** | Privacy | **Client-Side Zero-Knowledge Secret Redactor** | Backend regex only, System instruction only | Masks API keys, tokens, and passwords in the browser before sending to Gemini API. |
 | **DEC-14** | Offline Resilience| **Hybrid Auto-Sync (Local Draft + Cloud Sync)** | Cloud-only direct save | Guarantees zero lost thoughts if Wi-Fi drops or tab accidentally closes. |
 | **DEC-15** | Testing Stack | **Hybrid Pytest Backend + Playwright Browser UI** | Backend tests only, Manual browser review | Automated verification of backend security isolation AND real Chromium UI drag-and-drop & animations. |
+| **DEC-16** | Agent Agency | **Human-in-the-Loop Confirmation Gate** | Autonomous Auto-Writing by LLM | Zero autonomous state mutations; Gemini proposes actions as cards, user explicitly approves before DB writes. |
+| **DEC-17** | Analytics | **Grounded Authentic Rewind & Zero Mock Metrics** | Hardcoded 100% streaks, random mood dots | Pure user sovereignty: renders real computed journal words, real consecutive streaks, and genuine living memories. |
+| **DEC-18** | Security Gate | **Fail-Closed Production Authentication** | Acceptance of test tokens in production | Strict rejection of all deterministic tokens (`test-token:*`, `demo-guest-token`) when `ENVIRONMENT=production`. |
+| **DEC-19** | Auth UX | **Adaptive Auth Flow with 401 Draft Preservation** | Hard redirects losing unsaved user work | Desktop popup + mobile redirect; on 401 session expiry, user is gracefully transitioned to sign-in while uncommitted drafts are safely preserved. |
+| **DEC-20** | Responsive Shell | **Mobile-First Responsive Sanctuary Loop Shell** | Desktop-only fixed layout | Dedicated bottom navigation bar with ≥44px touch targets on 390×844 mobile; collapsible Notion sidebar on 1440×900 desktop. |
 
 ---
 

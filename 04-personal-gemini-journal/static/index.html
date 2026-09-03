@@ -6,17 +6,67 @@
   <title>Personal Gemini Life Guardian | Notion-Style Workspace</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Pinned Firebase Web SDK (compat mode for vanilla SPA) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
 </head>
-<body class="bg-[#0e1117] text-[#e6edf3] font-sans antialiased h-screen overflow-hidden flex">
+<body class="bg-[#0e1117] text-[#e6edf3] font-sans antialiased h-screen overflow-hidden flex flex-col">
+
+  <!-- ===================================================================== -->
+  <!-- 0. Unauthenticated Landing Screen (Zero-Trust Gate) -->
+  <!-- ===================================================================== -->
+  <div id="auth-landing" class="h-screen w-screen flex flex-col items-center justify-center bg-[#0d1117] text-[#e6edf3] p-6 relative z-40 overflow-y-auto">
+    <div class="max-w-md w-full text-center space-y-6 p-8 rounded-2xl bg-[#161b22] border border-[#30363d] shadow-2xl">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-indigo-500/20 border border-emerald-500/30 mx-auto flex items-center justify-center text-3xl shadow-lg">
+        🌿
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-[#f0f6fc]">Sanctuary OS</h1>
+        <p class="text-xs text-[#8b949e] mt-1">Personal Gemini Guardian & Executive Reflection Studio</p>
+      </div>
+      <div class="p-4 rounded-xl bg-[#0e1117] border border-[#30363d]/80 text-left text-xs text-[#c9d1d9] space-y-2">
+        <div class="flex items-center space-x-2 text-emerald-400 font-medium">
+          <span>🛡️</span>
+          <span>Zero-Trust Privacy & Multi-Tenant Isolation</span>
+        </div>
+        <p class="text-[11px] text-[#8b949e] leading-relaxed">
+          Your reflections, tasks, and memory are cryptographically locked under your private identity (<code class="text-indigo-300">/users/{uid}/*</code>). Zero cross-user leakage, zero data selling.
+        </p>
+      </div>
+      <div class="space-y-3">
+        <button id="google-signin-btn" class="w-full flex items-center justify-center space-x-3 bg-white hover:bg-gray-100 text-gray-900 font-medium text-sm py-2.5 px-4 rounded-lg shadow transition-all">
+          <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Continue with Google</span>
+        </button>
+        <div id="auth-error-msg" class="hidden text-xs text-rose-400 bg-rose-500/10 p-2.5 rounded border border-rose-500/20 text-center"></div>
+      </div>
+      <div id="test-auth-section" class="hidden pt-3 border-t border-[#30363d]/60 text-left">
+        <div class="text-[10px] text-amber-300 font-mono mb-1.5 flex items-center justify-between">
+          <span>⚡ Hermetic Test Mode Enabled</span>
+          <button id="test-signin-quick-btn" class="text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-2 py-0.5 rounded border border-amber-500/30">Sign In as Test User</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- Authenticated Application Shell (Revealed Only After Verification) -->
+  <!-- ===================================================================== -->
+  <div id="app-shell" class="hidden h-screen w-screen overflow-hidden flex flex-1">
 
   <!-- ===================================================================== -->
   <!-- Notion-Style Sidebar (Left) -->
   <!-- ===================================================================== -->
-  <aside class="w-64 bg-[#161b22] border-r border-[#30363d] flex flex-col justify-between shrink-0 select-none">
+  <aside id="main-sidebar" class="hidden md:flex w-64 bg-[#161b22] border-r border-[#30363d] flex-col justify-between shrink-0 select-none transition-all duration-200">
     <div>
       <!-- Workspace Brand -->
       <div class="p-4 border-b border-[#30363d] flex items-center justify-between">
@@ -79,24 +129,29 @@
     <div class="p-3 border-t border-[#30363d] bg-[#161b22]">
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center space-x-2 overflow-hidden">
-          <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0">
-            V
+          <div id="user-avatar-initial" class="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0">
+            J
           </div>
           <div class="truncate">
-            <div id="user-display-name" class="text-xs font-medium text-[#f0f6fc] truncate">Victor</div>
+            <div id="user-display-name" class="text-xs font-medium text-[#f0f6fc] truncate">Journaler</div>
             <div class="text-[10px] text-[#3fb950] flex items-center space-x-1">
               <span class="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse"></span>
               <span>Tenant Isolated</span>
             </div>
           </div>
         </div>
-        <button id="open-settings-bottom-btn" class="text-xs text-gray-400 hover:text-white" title="Preferences">
-          ⚙️
-        </button>
+        <div class="flex items-center space-x-1 shrink-0">
+          <button id="signout-btn" class="text-[11px] text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 px-1.5 py-1 rounded transition-colors" title="Sign Out">
+            Sign Out
+          </button>
+          <button id="open-settings-bottom-btn" class="text-xs text-gray-400 hover:text-white p-1" title="Preferences">
+            ⚙️
+          </button>
+        </div>
       </div>
       <div class="bg-[#0e1117] p-2 rounded border border-[#30363d] flex items-center justify-between">
-        <span class="text-[10px] text-[#8b949e]">Burnout Radar</span>
-        <span id="burnout-status-pill" class="text-[10px] font-medium text-[#3fb950] bg-[#238636]/20 px-1.5 py-0.5 rounded border border-[#238636]/30">Optimal Balance</span>
+        <span class="text-[10px] text-[#8b949e]">Sanctuary Mode</span>
+        <span id="sanctuary-status-pill" class="text-[10px] font-medium text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/30">Private Tenant</span>
       </div>
     </div>
   </aside>
@@ -109,6 +164,9 @@
     <!-- Notion-Style Top Header Bar -->
     <header class="h-14 border-b border-[#30363d] bg-[#161b22]/70 backdrop-blur-md px-6 flex items-center justify-between shrink-0">
       <div class="flex items-center space-x-3">
+        <button id="sidebar-toggle-btn" class="hidden md:flex p-1.5 rounded text-gray-400 hover:text-white hover:bg-[#21262d] transition-colors" title="Toggle Sidebar">
+          ☰
+        </button>
         <span id="view-icon" class="text-xl">📝</span>
         <h2 id="view-title" class="text-sm font-semibold text-[#f0f6fc]">Sanctuary Journal & Reflection Studio</h2>
         <span class="text-xs text-[#8b949e] border-l border-[#30363d] pl-3" id="current-date-display">Today</span>
@@ -179,13 +237,40 @@
           <span class="text-2xl shrink-0" id="callout-emoji">💡</span>
           <div class="flex-1 text-xs leading-relaxed text-[#c9d1d9]">
             <strong class="text-[#f0f6fc] block mb-0.5" id="callout-title">Guardian Socratic Check-In</strong>
-            <p id="callout-text">"Welcome back Victor. What is the single most important challenge or feeling occupying your headspace right now?"</p>
+            <p id="callout-text">"Welcome to your sanctuary. What is the single most important challenge or feeling occupying your headspace right now?"</p>
           </div>
         </div>
 
         <!-- Conversational Chat Stream -->
         <div id="chat-stream" class="space-y-4 min-h-[200px]">
           <!-- Chat messages rendered dynamically -->
+        </div>
+
+        <!-- Action Proposal Card Container (Human Confirmation Gate) -->
+        <div id="action-proposal-container" class="hidden space-y-3 animate-fadeIn">
+          <div class="bg-gradient-to-r from-purple-950/40 to-indigo-950/40 border border-purple-500/50 rounded-xl p-4 shadow-lg backdrop-blur-sm">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="text-base" id="proposal-icon">⚡</span>
+                <span class="text-xs font-semibold uppercase tracking-wider text-purple-300">Proposed Agent Action</span>
+              </div>
+              <span id="proposal-step-indicator" class="text-[10px] text-gray-400 bg-[#161b22] px-2 py-0.5 rounded-full border border-[#30363d]">1 of 1</span>
+            </div>
+            <div class="mt-2 text-xs text-gray-200">
+              <p id="proposal-description" class="font-medium text-white mb-1.5"></p>
+              <div id="proposal-details" class="bg-[#0e1117]/80 rounded-lg p-2.5 text-[11px] text-gray-300 border border-[#30363d] font-mono whitespace-pre-wrap"></div>
+            </div>
+            <div class="flex items-center justify-end space-x-2 mt-3 pt-2 border-t border-purple-500/20">
+              <button id="proposal-dismiss-btn" class="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white bg-[#21262d] hover:bg-[#30363d] rounded-lg transition-colors border border-[#30363d]">
+                Dismiss
+              </button>
+              <button id="proposal-approve-btn" class="px-3.5 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-lg shadow-sm transition-all flex items-center space-x-1.5">
+                <span>✓</span>
+                <span>Approve Action</span>
+              </button>
+            </div>
+            <div id="proposal-feedback" class="hidden mt-2 text-xs font-medium text-center py-1 rounded"></div>
+          </div>
         </div>
 
         <!-- Brain Dump & Reflection Input Box -->
@@ -292,54 +377,134 @@
       <!-- ================================================================= -->
       <!-- VIEW 3: INTERACTIVE MOOD & HABIT CALENDAR -->
       <!-- ================================================================= -->
-      <section id="view-calendar-content" class="hidden max-w-4xl mx-auto space-y-4">
+      <section id="view-calendar-content" class="hidden max-w-4xl mx-auto space-y-5">
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-base font-semibold text-[#f0f6fc]">Mindful Calendar</h3>
-            <p class="text-xs text-[#8b949e]">Daily reflection mood badges and scheduled time blocks</p>
+            <p class="text-xs text-[#8b949e]">Ground scheduled focus blocks and reflection days</p>
           </div>
           <div class="flex items-center space-x-2">
-            <span class="text-xs font-medium text-[#f0f6fc]" id="cal-month-year">September 2026</span>
+            <span class="text-xs font-medium text-[#f0f6fc]" id="cal-month-year">Current Month</span>
           </div>
         </div>
 
+        <!-- Month Grid -->
         <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
           <div class="grid grid-cols-7 text-center text-xs font-semibold text-[#8b949e] pb-2 border-b border-[#30363d]">
             <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
           </div>
           <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 pt-2">
-            <!-- Calendar day cells dynamically injected -->
+            <!-- Calendar day cells dynamically injected from genuine dates -->
           </div>
+        </div>
+
+        <!-- Calendar Events Management Section -->
+        <div id="calendar-events-section" class="bg-[#161b22] border border-[#30363d] rounded-xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-semibold text-[#f0f6fc]">Scheduled Focus Blocks</h4>
+            <span id="calendar-events-count" class="text-xs text-gray-400">0 events</span>
+          </div>
+
+          <!-- Add Event Form -->
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
+            <input type="text" id="new-event-title" placeholder="Event / Focus block title..." class="sm:col-span-2 bg-[#0e1117] border border-[#30363d] rounded-lg px-3 py-2 text-[#f0f6fc] focus:outline-none focus:border-indigo-500">
+            <input type="date" id="new-event-date" class="bg-[#0e1117] border border-[#30363d] rounded-lg px-2.5 py-2 text-[#f0f6fc] focus:outline-none focus:border-indigo-500">
+            <select id="new-event-timeblock" class="bg-[#0e1117] border border-[#30363d] rounded-lg px-2.5 py-2 text-[#f0f6fc] focus:outline-none focus:border-indigo-500">
+              <option value="Morning Focus">Morning Focus</option>
+              <option value="Afternoon Sprint">Afternoon Sprint</option>
+              <option value="Evening Wind-down">Evening Wind-down</option>
+            </select>
+          </div>
+          <div class="flex justify-end">
+            <button id="add-event-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium px-4 py-1.5 rounded-lg transition-colors shadow-sm">
+              + Add Event
+            </button>
+          </div>
+
+          <!-- Event List -->
+          <div id="calendar-events-list" class="space-y-2 pt-2 border-t border-[#30363d]">
+            <!-- Injected dynamically -->
+          </div>
+          <p id="calendar-events-empty" class="text-xs text-gray-500 italic text-center py-3">No focus events scheduled yet. Add your first time block above.</p>
         </div>
       </section>
 
       <!-- ================================================================= -->
-      <!-- VIEW 4: LIFE REWIND (WRAPPED) -->
+      <!-- VIEW 4: LIFE REWIND (GENUINE USER METRICS) -->
       <!-- ================================================================= -->
       <section id="view-rewind-content" class="hidden max-w-3xl mx-auto space-y-6">
         <div class="text-center space-y-1">
-          <span class="text-4xl">✨</span>
-          <h3 class="text-xl font-bold text-[#f0f6fc]">Victor's Life Rewind & Growth</h3>
-          <p class="text-xs text-[#8b949e]">Celebrating breakthroughs, consistency, and resilience</p>
+          <span class="text-3xl">✨</span>
+          <h3 class="text-xl font-bold text-[#f0f6fc]">Your Sanctuary Rewind</h3>
+          <p class="text-xs text-[#8b949e]">Grounding your growth in authentic reflections and actions</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-gradient-to-br from-purple-900/40 to-indigo-900/40 border border-purple-500/30 rounded-xl p-5 space-y-2">
-            <span class="text-2xl">🏆</span>
-            <h4 class="text-sm font-semibold text-white">Top Breakthrough of the Month</h4>
-            <p class="text-xs text-purple-200 leading-relaxed italic" id="rewind-breakthrough-text">"Mastered enterprise multi-tenant Firestore security and passed all Google Cloud challenges with 100% scores."</p>
+        <!-- Clean Empty State (When no entries exist) -->
+        <div id="rewind-empty-state" class="hidden bg-[#161b22] border border-[#30363d] rounded-xl p-8 text-center space-y-3">
+          <span class="text-3xl">🌱</span>
+          <h4 class="text-sm font-semibold text-white">Your Sanctuary journey begins with your first reflection.</h4>
+          <p class="text-xs text-gray-400 max-w-md mx-auto">Take a breath, dump your unfiltered thoughts, or check in with your Guardian coach to start recording your authentic journey.</p>
+        </div>
+
+        <!-- Genuine Metrics Container -->
+        <div id="rewind-metrics-container" class="space-y-4">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-3.5 text-center">
+              <span class="text-xs text-gray-400 block mb-1">Reflections</span>
+              <span id="rewind-total-entries" class="text-2xl font-bold text-indigo-400">0</span>
+            </div>
+            <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-3.5 text-center">
+              <span class="text-xs text-gray-400 block mb-1">Words Written</span>
+              <span id="rewind-total-words" class="text-2xl font-bold text-purple-400">0</span>
+            </div>
+            <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-3.5 text-center">
+              <span class="text-xs text-gray-400 block mb-1">Habit Streak</span>
+              <div class="flex items-center justify-center space-x-1">
+                <span id="rewind-streak-days" class="text-2xl font-bold text-amber-400">0</span>
+                <span class="text-xs text-gray-400">days</span>
+              </div>
+            </div>
+            <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-3.5 text-center">
+              <span class="text-xs text-gray-400 block mb-1">Tasks Done</span>
+              <span id="rewind-completed-tickets" class="text-2xl font-bold text-emerald-400">0</span>
+            </div>
           </div>
 
-          <div class="bg-gradient-to-br from-emerald-900/40 to-teal-900/40 border border-emerald-500/30 rounded-xl p-5 space-y-2">
-            <span class="text-2xl">🔥</span>
-            <h4 class="text-sm font-semibold text-white">Consistency & Habit Streak</h4>
-            <p class="text-2xl font-bold text-emerald-400" id="rewind-streak-text">100%</p>
-            <p class="text-xs text-emerald-200">Daily check-ins completed with zero cross-tenant leakage.</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4 space-y-2">
+              <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400">Living Memory Insights</h4>
+              <p class="text-xs text-gray-300">Total insights accumulated: <span id="rewind-memories-count" class="font-bold text-white">0</span></p>
+              <div id="rewind-tags-container" class="flex flex-wrap gap-1.5 pt-1"></div>
+            </div>
+            <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4 space-y-2">
+              <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400">Recent Reflections</h4>
+              <div id="rewind-recent-list" class="space-y-1.5 text-xs text-gray-300"></div>
+            </div>
           </div>
         </div>
       </section>
 
     </div>
+
+    <!-- Mobile Bottom Navigation Bar (Visible only on < md screens) -->
+    <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#161b22] border-t border-[#30363d] flex items-center justify-around px-2 z-40">
+      <button id="mobile-nav-journal" class="mobile-nav-btn flex flex-col items-center justify-center min-w-[44px] min-h-[44px] text-xs text-indigo-400" title="Reflect">
+        <span class="text-base">📝</span>
+        <span class="text-[10px] font-medium">Reflect</span>
+      </button>
+      <button id="mobile-nav-kanban" class="mobile-nav-btn flex flex-col items-center justify-center min-w-[44px] min-h-[44px] text-xs text-gray-400 hover:text-white" title="Act / Board">
+        <span class="text-base">📋</span>
+        <span class="text-[10px] font-medium">Act</span>
+      </button>
+      <button id="mobile-nav-calendar" class="mobile-nav-btn flex flex-col items-center justify-center min-w-[44px] min-h-[44px] text-xs text-gray-400 hover:text-white" title="Calendar">
+        <span class="text-base">📅</span>
+        <span class="text-[10px] font-medium">Calendar</span>
+      </button>
+      <button id="mobile-nav-rewind" class="mobile-nav-btn flex flex-col items-center justify-center min-w-[44px] min-h-[44px] text-xs text-gray-400 hover:text-white" title="Rewind">
+        <span class="text-base">✨</span>
+        <span class="text-[10px] font-medium">Rewind</span>
+      </button>
+    </nav>
   </main>
 
   <!-- ===================================================================== -->
@@ -413,7 +578,7 @@
           </div>
           <!-- Live Preview Box -->
           <div id="burnout-preview-box" class="p-2 rounded bg-purple-900/20 border border-purple-500/30 text-[11px] text-purple-200 leading-relaxed">
-            💡 <strong>Live Example:</strong> <em>"Victor ရေ၊ စိတ်ဖိစီးမှု မြင့်တက်နေတာ သတိထားမိပါတယ်။ ၄ စက္ကန့် အသက်ရှူလေ့ကျင့်ခန်း (Box Breathing) လေး ခဏ လုပ်ကြည့်မလားခင်ဗျာ?"</em>
+            💡 <strong>Live Example:</strong> <em>"စိတ်ဖိစီးမှု မြင့်တက်နေတာ သတိထားမိပါတယ်။ ၄ စက္ကန့် အသက်ရှူလေ့ကျင့်ခန်း (Box Breathing) လေး ခဏ လုပ်ကြည့်မလားခင်ဗျာ?"</em>
           </div>
         </div>
 
@@ -477,7 +642,7 @@
       <span class="text-5xl animate-bounce">🌙</span>
       <h3 class="text-xl font-bold text-amber-200">Evening Shutdown Sanctuary</h3>
       <p class="text-xs text-amber-100/80 leading-relaxed" id="shutdown-gratitude-prompt">
-        "ဒီနေ့ တစ်နေကုန် Victor အကောင်းဆုံး ကြိုးစားခဲ့ပါတယ်။ အလုပ်တွေ အကုန်လုံး မနက်ဖြန်အတွက် စနစ်တကျ သိမ်းပြီးပါပြီ။ အိပ်ရာမဝင်ခင်လေး... 'ဒီနေ့မှာ Victor ကိုယ်တိုင်အတွက် စိတ်အကျေနပ်ဆုံး ဖြစ်ခဲ့တဲ့ အရာ ၁ ခု' က ဘာဖြစ်မလဲခင်ဗျာ?"
+        "ဒီနေ့ တစ်နေကုန် အကောင်းဆုံး ကြိုးစားခဲ့ပါတယ်။ အလုပ်တွေ အကုန်လုံး မနက်ဖြန်အတွက် စနစ်တကျ သိမ်းပြီးပါပြီ။ အိပ်ရာမဝင်ခင်လေး... 'ဒီနေ့မှာ ကိုယ်တိုင်အတွက် စိတ်အကျေနပ်ဆုံး ဖြစ်ခဲ့တဲ့ အရာ ၁ ခု' က ဘာဖြစ်မလဲခင်ဗျာ?"
       </p>
 
       <div class="bg-[#161b22] border border-amber-500/30 rounded-xl p-3 text-left">
@@ -492,7 +657,7 @@
       </div>
 
       <div id="shutdown-zen-confirmed" class="hidden space-y-3 pt-4">
-        <p class="text-sm font-medium text-emerald-300">✨ Work is officially closed. Rest well, Victor.</p>
+        <p class="text-sm font-medium text-emerald-300">✨ Work is officially closed. Rest well.</p>
         <button id="wake-workspace-btn" class="bg-[#21262d] hover:bg-[#30363d] text-xs text-white px-4 py-1.5 rounded-full border border-[#30363d]">
           Wake Workspace 🌅
         </button>
@@ -519,6 +684,8 @@
       </button>
     </div>
   </div>
+
+  </div> <!-- /#app-shell -->
 
   <script src="/static/app.js"></script>
 </body>
