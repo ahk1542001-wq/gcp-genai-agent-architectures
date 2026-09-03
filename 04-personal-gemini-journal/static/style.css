@@ -177,3 +177,33 @@ html, body {
   align-items: center;
   justify-content: center;
 }
+
+/* ==========================================================================
+   Ambient Sanctuary Glow & Fluid Voice Orb (Design Spells & Frontend Design)
+   ========================================================================== */
+.nav-item.active-glow {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.16), rgba(168, 85, 247, 0.08)) !important;
+  border-left: 3px solid #818cf8 !important;
+  color: #f0f6fc !important;
+  box-shadow: 0 0 25px -4px rgba(99, 102, 241, 0.3);
+}
+
+@keyframes orbPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.7);
+  }
+  70% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 8px rgba(129, 140, 248, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(129, 140, 248, 0);
+  }
+}
+
+.orb-live {
+  display: inline-block !important;
+  animation: orbPulse 1.8s infinite cubic-bezier(0.4, 0, 0.6, 1) !important;
+}

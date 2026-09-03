@@ -68,6 +68,64 @@ You are the "Personal Gemini Analyst Scribe" operating as the background cogniti
 Your mission is to distill unstructured rambling reflections into prioritized Kanban tickets, calculate emotional progression arcs, and synthesize lasting memories.
 """
 
+# ==============================================================================
+# Google ADK (Agent Development Kit) Specification & Tool Registry
+# ==============================================================================
+try:
+    from google.adk.tools import FunctionTool
+    from google.adk.agents import LlmAgent
+    ADK_AVAILABLE = True
+except ImportError:
+    FunctionTool = None
+    LlmAgent = None
+    ADK_AVAILABLE = False
+
+def adk_create_ticket(title: str, priority: str = "Medium", category: str = "General", column: str = "todo") -> Dict[str, Any]:
+    """Creates a new Kanban task on the execution board."""
+    return {"status": "proposed", "tool": "create_ticket", "params": {"title": title, "priority": priority, "category": category, "column": column}}
+
+def adk_move_ticket(ticket_title_or_id: str, new_column: str = "done") -> Dict[str, Any]:
+    """Moves an existing task between Kanban columns."""
+    return {"status": "proposed", "tool": "move_ticket", "params": {"ticket_title_or_id": ticket_title_or_id, "new_column": new_column}}
+
+def adk_schedule_calendar(title: str, date: str, time_block: str = "Morning Focus") -> Dict[str, Any]:
+    """Schedules a deep work focus block on the calendar."""
+    return {"status": "proposed", "tool": "schedule_calendar", "params": {"title": title, "date": date, "time_block": time_block}}
+
+def adk_save_memory(memory_item: str) -> Dict[str, Any]:
+    """Appends an extracted habit, insight, or breakthrough into Living Memory."""
+    return {"status": "proposed", "tool": "save_memory", "params": {"memory_item": memory_item}}
+
+def adk_synthesize_learned_rule(trigger_context: str, learned_preference: str, rationale: str = "") -> Dict[str, Any]:
+    """Adopts a continuous self-improving preference or constraint."""
+    return {"status": "proposed", "tool": "synthesize_learned_rule", "params": {"trigger_context": trigger_context, "learned_preference": learned_preference, "rationale": rationale}}
+
+def adk_trigger_box_breathing(reason: str = "De-stress regulation") -> Dict[str, Any]:
+    """Triggers an interactive 4-4-4-4 Box Breathing modal."""
+    return {"status": "executed", "tool": "trigger_box_breathing", "params": {"reason": reason}}
+
+def adk_trigger_shutdown_ritual(summary: str = "Conclude workday") -> Dict[str, Any]:
+    """Triggers the evening shutdown ritual and gratitude prompt."""
+    return {"status": "executed", "tool": "trigger_shutdown_ritual", "params": {"summary": summary}}
+
+ADK_SANCTUARY_TOOLS = [
+    FunctionTool(func=adk_create_ticket),
+    FunctionTool(func=adk_move_ticket),
+    FunctionTool(func=adk_schedule_calendar),
+    FunctionTool(func=adk_save_memory),
+    FunctionTool(func=adk_synthesize_learned_rule),
+    FunctionTool(func=adk_trigger_box_breathing),
+    FunctionTool(func=adk_trigger_shutdown_ritual),
+] if FunctionTool else []
+
+ADK_ROOT_AGENT = LlmAgent(
+    name="sanctuary_guardian",
+    model=MODEL_NAME,
+    instruction=SYSTEM_INSTRUCTIONS_GUARDIAN,
+    description="Notion-style Personal Gemini Life Guardian & Executive Coach Agent with strict Human-in-the-Loop confirmation gate.",
+    tools=ADK_SANCTUARY_TOOLS
+) if LlmAgent else None
+
 class GeminiJournalService:
     def __init__(self):
         self.api_key = resolve_gemini_api_key()

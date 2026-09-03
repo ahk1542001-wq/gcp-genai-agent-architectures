@@ -610,3 +610,44 @@ def test_public_config_endpoint_contract_and_security(monkeypatch):
     for forbidden in ["private_key", "client_secret", "bearer", "gemini_api_key", "service_account", "@"]:
         assert forbidden not in raw_text, f"Potential secret or sensitive leak found in /api/public-config: {forbidden}"
 
+
+def test_journals_endpoint_alias_and_executive_report():
+    """
+    Verify GET /api/journals alias and authentic calculations in GET /api/report/executive.
+    """
+    # 1. Verify /api/journals alias works
+    res_alias = client.get("/api/journals", headers={"Authorization": f"Bearer {USER_A_TOKEN}"})
+    assert res_alias.status_code == 200
+    assert "entries" in res_alias.json()
+
+    # 2. Verify /api/report/executive calculates authentic metrics
+    res_report = client.get("/api/report/executive", headers={"Authorization": f"Bearer {USER_A_TOKEN}"})
+    assert res_report.status_code == 200
+    data = res_report.json()
+    assert "productivity" in data
+    assert "total_words_written" in data["productivity"]
+    assert "completed_tasks" in data["productivity"]
+    assert "living_intelligence" in data
+    assert "recent_reflections" in data
+
+
+def test_voice_synthesize_endpoint():
+    """
+    Verify POST /api/voice/synthesize requires authentication and returns audio.
+    """
+    # Unauthenticated rejected
+    unauth = client.post("/api/voice/synthesize", json={"text": "Hello world"})
+    assert unauth.status_code == 401
+
+    # Authenticated in test mode returns mock base64 audio
+    res = client.post(
+        "/api/voice/synthesize",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={"text": "Grounding your thoughts with calm clarity."}
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+    assert data["audio_base64"] is not None
+    assert data["format"] == "mp3"
+

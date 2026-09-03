@@ -173,11 +173,20 @@
       </div>
 
       <!-- Action Utilities -->
-      <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2.5">
+        <!-- Live Voice Pulsing Breathing Orb -->
+        <div id="voice-breathing-orb" class="hidden w-3 h-3 rounded-full bg-gradient-to-tr from-indigo-400 to-purple-400 animate-pulse shadow-md shadow-indigo-500/50" title="Voice Channel Active"></div>
+
         <!-- Live Voice Button -->
         <button id="live-voice-toggle-btn" class="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-md transition-all">
           <span id="voice-icon" class="animate-pulse">🎙️</span>
           <span id="voice-btn-text">Start Live Voice</span>
+        </button>
+
+        <!-- Executive Data Report Button -->
+        <button id="executive-report-btn" class="flex items-center space-x-1.5 bg-[#21262d] hover:bg-[#30363d] text-xs font-medium px-2.5 py-1.5 rounded-md border border-[#30363d] transition-colors text-indigo-300 hover:text-white" title="Cognitive & Productivity Data Report">
+          <span>📊</span>
+          <span>Report</span>
         </button>
 
         <!-- Export Dropdown -->
@@ -682,6 +691,130 @@
       <button id="close-breathing-btn" class="bg-[#21262d] hover:bg-[#30363d] text-white text-xs px-5 py-2 rounded-full border border-[#30363d]">
         I Feel Centered Now ➔
       </button>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- Journal Reflection Review Drawer / Modal -->
+  <!-- ===================================================================== -->
+  <div id="journal-review-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-[#161b22] border border-[#30363d] rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl animate-fadeIn overflow-hidden">
+      <div class="p-5 border-b border-[#30363d] flex items-center justify-between bg-[#1b2230]/50 shrink-0">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-indigo-400 text-sm">📖</span>
+            <h3 id="review-modal-title" class="text-base font-semibold text-white">Past Reflection</h3>
+          </div>
+          <p id="review-modal-date" class="text-xs text-gray-400 mt-0.5">Recorded on --</p>
+        </div>
+        <button id="close-review-modal-btn" class="text-gray-400 hover:text-white text-xl p-1">&times;</button>
+      </div>
+      <div class="p-6 space-y-5 overflow-y-auto text-xs text-gray-200 leading-relaxed">
+        <div id="review-modal-summary-box" class="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-500/20 text-indigo-200">
+          <span class="font-semibold block text-[11px] text-indigo-300 uppercase tracking-wider mb-1">Executive Summary</span>
+          <p id="review-modal-summary">Loading summary...</p>
+        </div>
+        <div class="space-y-2">
+          <span class="font-semibold block text-[11px] text-gray-400 uppercase tracking-wider">Reflection Transcript</span>
+          <div id="review-modal-content" class="bg-[#0e1117] p-4 rounded-xl border border-[#30363d] space-y-2 whitespace-pre-wrap font-serif text-[13px] text-gray-300 max-h-60 overflow-y-auto"></div>
+        </div>
+        <div id="review-modal-actions-box" class="space-y-2">
+          <span class="font-semibold block text-[11px] text-gray-400 uppercase tracking-wider">Associated Action Items</span>
+          <div id="review-modal-actions" class="space-y-1"></div>
+        </div>
+      </div>
+      <div class="p-4 border-t border-[#30363d] bg-[#161b22] flex justify-end shrink-0">
+        <button id="close-review-modal-bottom-btn" class="bg-[#21262d] hover:bg-[#30363d] text-xs text-white px-4 py-2 rounded-lg border border-[#30363d] transition-colors">
+          Close Review
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- Executive Cognitive & Productivity Data Report Modal -->
+  <!-- ===================================================================== -->
+  <div id="executive-report-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-[#161b22] border border-[#30363d] rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl animate-fadeIn overflow-hidden">
+      <!-- Report Header -->
+      <div class="p-6 border-b border-[#30363d] flex items-center justify-between bg-gradient-to-r from-indigo-950/40 to-purple-950/40 shrink-0">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-lg">
+            📊
+          </div>
+          <div>
+            <h3 class="text-base font-semibold text-white">Executive Cognitive & Productivity Report</h3>
+            <p class="text-xs text-indigo-300/80">Authentic Firestore Data Synthesis • Zero Synthetic Metrics</p>
+          </div>
+        </div>
+        <button id="close-executive-report-btn" class="text-gray-400 hover:text-white text-2xl leading-none p-1">&times;</button>
+      </div>
+
+      <!-- Report Body -->
+      <div class="p-6 space-y-6 overflow-y-auto text-xs">
+        <!-- 4 Authentic Metric KPI Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-[#0e1117] border border-[#30363d] rounded-xl p-3.5 space-y-1">
+            <span class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Reflective Words</span>
+            <div id="report-word-count" class="text-xl font-bold text-indigo-400">0</div>
+            <span class="text-[10px] text-gray-500 block">Total words penned</span>
+          </div>
+          <div class="bg-[#0e1117] border border-[#30363d] rounded-xl p-3.5 space-y-1">
+            <span class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Done Tasks</span>
+            <div id="report-done-tasks" class="text-xl font-bold text-emerald-400">0</div>
+            <span class="text-[10px] text-gray-500 block">Kanban cards completed</span>
+          </div>
+          <div class="bg-[#0e1117] border border-[#30363d] rounded-xl p-3.5 space-y-1">
+            <span class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Deep Focus</span>
+            <div id="report-focus-blocks" class="text-xl font-bold text-purple-400">0</div>
+            <span class="text-[10px] text-gray-500 block">Calendar focus blocks</span>
+          </div>
+          <div class="bg-[#0e1117] border border-[#30363d] rounded-xl p-3.5 space-y-1">
+            <span class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Burnout Shield</span>
+            <div id="report-burnout-risk" class="text-xl font-bold text-emerald-400">Low</div>
+            <span class="text-[10px] text-gray-500 block">Circadian psychological state</span>
+          </div>
+        </div>
+
+        <!-- Living Intelligence & Self-Learned Rules Section -->
+        <div class="bg-[#0e1117] border border-[#30363d] rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-semibold text-white uppercase tracking-wider flex items-center space-x-1.5">
+              <span>🧠</span>
+              <span>Evolved Living Intelligence (Hermes Engine)</span>
+            </h4>
+            <span id="report-rules-count" class="text-[10px] text-indigo-400 bg-indigo-950/50 px-2 py-0.5 rounded border border-indigo-500/20">0 Rules Active</span>
+          </div>
+          <div id="report-rules-list" class="space-y-2">
+            <div class="text-gray-500 italic text-[11px]">No learned rules recorded yet. Speak personal preferences to train Gemini.</div>
+          </div>
+        </div>
+
+        <!-- Recent Real Reflections Timeline -->
+        <div class="bg-[#0e1117] border border-[#30363d] rounded-xl p-4 space-y-3">
+          <h4 class="text-xs font-semibold text-white uppercase tracking-wider flex items-center space-x-1.5">
+            <span>📝</span>
+            <span>Recorded Journal Archives</span>
+          </h4>
+          <div id="report-reflections-list" class="space-y-2 max-h-48 overflow-y-auto">
+            <div class="text-gray-500 italic text-[11px]">No journal reflections found.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report Footer & 1-Click Export -->
+      <div class="p-4 border-t border-[#30363d] bg-[#161b22] flex items-center justify-between shrink-0">
+        <span class="text-[10px] text-gray-500">Confidential • Isolated at /users/{uid}</span>
+        <div class="flex items-center space-x-2">
+          <button id="download-report-md-btn" class="bg-indigo-600 hover:bg-indigo-500 text-xs text-white font-medium px-4 py-2 rounded-lg shadow-sm transition-colors flex items-center space-x-1.5">
+            <span>📓</span>
+            <span>Download Report (.md)</span>
+          </button>
+          <button id="print-report-btn" class="bg-[#21262d] hover:bg-[#30363d] text-xs text-gray-200 px-3 py-2 rounded-lg border border-[#30363d] transition-colors">
+            🖨️ Print / PDF
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

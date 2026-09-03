@@ -785,3 +785,102 @@ def test_browser_responsive_desktop_1440x900_sidebar_and_collapse():
         assert sidebar.is_visible()
 
         browser.close()
+
+
+def test_browser_dynamic_history_and_review_drawer():
+    """
+    Verify dynamic past reflections list rendering (with zero hardcoding)
+    and review drawer modal interaction.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1280, "height": 800})
+
+        goto_authenticated(page, name="HistoryTester")
+
+        # 1. Past reflections container exists
+        history_list = page.locator("#journal-history-list")
+        assert history_list.is_visible()
+
+        # 2. Hardcoded mock entries ("Cloud Run Security & Deployment") must NOT exist
+        assert "Cloud Run Security & Deployment" not in history_list.inner_text()
+
+        # 3. Create a real journal entry via API so dynamic history displays it
+        page.evaluate("""
+            async () => {
+                await fetch('/api/journal/save', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('journal_token'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: 'Playwright Dynamic Journal 101',
+                        content: 'Reflecting on zero-hardcode architecture in Cloud Run.',
+                        conversation: [{role: 'user', text: 'How do I scale to zero?'}],
+                        action_items: [{title: 'Deploy to Cloud Run with labels'}]
+                    })
+                });
+            }
+        """)
+
+        # 4. Refresh history list
+        page.locator("#refresh-history-btn").click()
+        page.wait_for_timeout(500)
+
+        # 5. Entry should now appear in the sidebar
+        entry_item = page.locator("#journal-history-list .history-item", has_text="Playwright Dynamic Journal 101")
+        assert entry_item.is_visible()
+
+        # 6. Clicking entry opens Review Drawer
+        entry_item.click()
+        review_modal = page.locator("#journal-review-modal")
+        page.wait_for_selector("#journal-review-modal", state="visible", timeout=5000)
+        assert review_modal.is_visible()
+        assert "Playwright Dynamic Journal 101" in page.locator("#review-modal-title").inner_text()
+
+        # 7. Close review drawer
+        page.locator("#close-review-modal-btn").click()
+        page.wait_for_selector("#journal-review-modal", state="hidden", timeout=5000)
+        assert not review_modal.is_visible()
+
+        browser.close()
+
+
+def test_browser_executive_data_report_modal():
+    """
+    Verify Executive Cognitive & Productivity Data Report modal:
+    - Button opens modal
+    - Loads authentic metrics (word count, done tasks, focus blocks, learned rules)
+    - Modal can be closed
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1280, "height": 800})
+
+        goto_authenticated(page, name="ExecutiveUser")
+
+        # 1. Click Executive Report button
+        report_btn = page.locator("#executive-report-btn")
+        assert report_btn.is_visible()
+        report_btn.click()
+
+        # 2. Modal appears
+        report_modal = page.locator("#executive-report-modal")
+        page.wait_for_selector("#executive-report-modal", state="visible", timeout=5000)
+        assert report_modal.is_visible()
+
+        # 3. KPI values are rendered
+        word_count = page.locator("#report-word-count")
+        assert word_count.is_visible()
+        assert int(word_count.inner_text().replace(",", "")) >= 0
+
+        # 4. Download Markdown button is present
+        assert page.locator("#download-report-md-btn").is_visible()
+
+        # 5. Close modal
+        page.locator("#close-executive-report-btn").click()
+        page.wait_for_selector("#executive-report-modal", state="hidden", timeout=5000)
+        assert not report_modal.is_visible()
+
+        browser.close()

@@ -358,6 +358,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   initShutdownRitual();
   initDeStressModal();
   initProposalCard();
+  initExecutiveReport();
+  initHistoryReviewModal();
 
   // Auth buttons
   const googleBtn = document.getElementById("google-signin-btn");
@@ -496,6 +498,7 @@ function initNavigation() {
       const navBtn = document.getElementById(c.btn);
       if (contentEl) contentEl.classList.toggle("hidden", k !== viewKey);
       if (navBtn) {
+        navBtn.classList.toggle("active-glow", k === viewKey);
         navBtn.classList.toggle("bg-[#21262d]", k === viewKey);
         navBtn.classList.toggle("text-[#f0f6fc]", k === viewKey);
         navBtn.classList.toggle("text-[#8b949e]", k !== viewKey);
@@ -514,6 +517,7 @@ function initNavigation() {
 
     if (viewKey === "calendar") loadCalendarEvents();
     if (viewKey === "rewind") loadRewindMetrics();
+    trackEvent("view_switched", { view: viewKey });
   }
 
   Object.entries(views).forEach(([viewKey, cfg]) => {
@@ -1059,11 +1063,56 @@ function initProposalCard() {
   if (dismissBtn) dismissBtn.onclick = dismissActiveProposal;
 }
 
-function speakAloud(text) {
-  if (!("speechSynthesis" in window) || !state.settings.voice_responses_enabled) return;
+function setVoiceOrbActive(active) {
+  const orb = document.getElementById("voice-breathing-orb");
+  if (!orb) return;
+  if (active) {
+    orb.classList.remove("hidden");
+    orb.classList.add("orb-live");
+  } else {
+    orb.classList.remove("orb-live");
+    orb.classList.add("hidden");
+  }
+}
+
+async function speakAloud(text) {
+  if (!state.settings.voice_responses_enabled || !text) return;
+  setVoiceOrbActive(true);
+
+  try {
+    const res = await apiFetch("/api/voice/synthesize", {
+      method: "POST",
+      body: JSON.stringify({ text: text })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.audio_base64) {
+        const audio = new Audio("data:audio/mp3;base64," + data.audio_base64);
+        audio.onended = () => setVoiceOrbActive(false);
+        audio.onerror = () => {
+          setVoiceOrbActive(false);
+          fallbackSpeechSynthesis(text);
+        };
+        await audio.play();
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn("[Voice] Cloud TTS error, falling back to Web Speech:", e);
+  }
+  fallbackSpeechSynthesis(text);
+}
+
+function fallbackSpeechSynthesis(text) {
+  if (!("speechSynthesis" in window)) {
+    setVoiceOrbActive(false);
+    return;
+  }
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.rate = 0.95;
   utterance.pitch = 1.0;
+  utterance.onend = () => setVoiceOrbActive(false);
+  utterance.onerror = () => setVoiceOrbActive(false);
   window.speechSynthesis.speak(utterance);
 }
 
@@ -1657,20 +1706,266 @@ function downloadFile(content, filename, mimeType) {
 // ============================================================================
 // 15. Past Reflections List (Sidebar History)
 // ============================================================================
-function renderHistoryList() {
+// ============================================================================
+// 15. Past Reflections List (Sidebar History & Review Drawer)
+// ============================================================================
+async function renderHistoryList() {
   const list = document.getElementById("journal-history-list");
   if (!list) return;
 
-  list.innerHTML = `
-    <div class="p-1.5 rounded hover:bg-[#21262d] cursor-pointer text-[#c9d1d9] truncate" title="Cloud Run Security & Deployment">
-      <span class="text-[10px] text-gray-500 block">Sep 02</span>
-      Cloud Run Security & Deployment
-    </div>
-    <div class="p-1.5 rounded hover:bg-[#21262d] cursor-pointer text-[#c9d1d9] truncate" title="Morning Big-3 Alignment">
-      <span class="text-[10px] text-gray-500 block">Sep 01</span>
-      Morning Big-3 Alignment
-    </div>
-  `;
+  try {
+    const res = await apiFetch("/api/journals");
+    if (!res.ok) {
+      list.innerHTML = `<div class="text-[#8b949e] italic px-2 py-1 text-[11px]">No reflections yet</div>`;
+      return;
+    }
+    const data = await res.json();
+    const entries = data.entries || [];
+    state.journalEntries = entries;
+
+    if (entries.length === 0) {
+      list.innerHTML = `
+        <div class="p-2 text-[11px] text-gray-500 italic text-center leading-normal">
+          No reflections recorded yet.<br>Begin your first reflection above.
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = "";
+    entries.forEach(entry => {
+      const item = document.createElement("div");
+      item.className = "history-item p-1.5 rounded hover:bg-[#21262d] cursor-pointer text-[#c9d1d9] hover:text-white transition-colors truncate group";
+      const dateStr = (entry.created_at || "").slice(0, 10);
+      const title = entry.title || "Reflective Journal";
+      item.title = `${title} (${dateStr})`;
+      item.innerHTML = `
+        <span class="text-[10px] text-indigo-400 font-medium block">${escapeHtml(dateStr)}</span>
+        <span class="truncate block text-xs group-hover:text-indigo-200">${escapeHtml(title)}</span>
+      `;
+      item.onclick = () => openJournalReviewModal(entry);
+      list.appendChild(item);
+    });
+  } catch (err) {
+    console.warn("Failed to load history list:", err);
+    list.innerHTML = `<div class="text-gray-500 italic text-xs p-1">No reflections yet</div>`;
+  }
+}
+
+function openJournalReviewModal(entry) {
+  const modal = document.getElementById("journal-review-modal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+
+  try {
+    const titleEl = document.getElementById("review-modal-title");
+    const dateEl = document.getElementById("review-modal-date");
+    const summaryEl = document.getElementById("review-modal-summary");
+    const contentEl = document.getElementById("review-modal-content");
+    const actionsEl = document.getElementById("review-modal-actions");
+
+    const dateStr = (entry.created_at || "").slice(0, 10);
+    if (titleEl) titleEl.textContent = entry.title || "Past Reflection";
+    if (dateEl) dateEl.textContent = `Recorded on ${dateStr} • Tenant Isolated`;
+    if (summaryEl) summaryEl.textContent = entry.summary || entry.content || "Reflective dialogue captured with Gemini Guardian.";
+
+    if (contentEl) {
+      contentEl.innerHTML = "";
+      if (entry.conversation && Array.isArray(entry.conversation) && entry.conversation.length > 0) {
+        entry.conversation.forEach(msg => {
+          const div = document.createElement("div");
+          div.className = msg.role === "user" ? "text-indigo-300 font-medium" : "text-gray-300 pl-2.5 border-l-2 border-purple-500/40";
+          div.innerHTML = `<strong class="text-[10px] uppercase tracking-wider block text-gray-500">${escapeHtml(msg.role)}:</strong> ${escapeHtml(msg.text)}`;
+          contentEl.appendChild(div);
+        });
+      } else {
+        contentEl.textContent = entry.content || "No transcript available.";
+      }
+    }
+
+    if (actionsEl) {
+      actionsEl.innerHTML = "";
+      const items = entry.action_items || [];
+      if (items.length === 0) {
+        actionsEl.innerHTML = `<span class="text-gray-500 italic text-[11px]">No tasks created during this session.</span>`;
+      } else {
+        items.forEach(act => {
+          const actTitle = typeof act === "object" ? (act.title || JSON.stringify(act)) : String(act);
+          const badge = document.createElement("div");
+          badge.className = "p-2 bg-[#0e1117] rounded-lg border border-[#30363d] flex items-center justify-between text-[11px]";
+          badge.innerHTML = `<span>📋 ${escapeHtml(actTitle)}</span><span class="text-[9px] text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/30">Action</span>`;
+          actionsEl.appendChild(badge);
+        });
+      }
+    }
+    trackEvent("reflection_reviewed", { entry_id: entry.id });
+  } catch (err) {
+    console.error("Error populating review drawer:", err);
+  }
+}
+
+function initHistoryReviewModal() {
+  const modal = document.getElementById("journal-review-modal");
+  const closeBtn = document.getElementById("close-review-modal-btn");
+  const bottomCloseBtn = document.getElementById("close-review-modal-bottom-btn");
+  const refreshBtn = document.getElementById("refresh-history-btn");
+
+  if (closeBtn && modal) closeBtn.onclick = () => modal.classList.add("hidden");
+  if (bottomCloseBtn && modal) bottomCloseBtn.onclick = () => modal.classList.add("hidden");
+  if (refreshBtn) refreshBtn.onclick = () => renderHistoryList();
+}
+
+// ============================================================================
+// 16. Executive Cognitive & Productivity Data Report (Zero-Hardcode Synthesis)
+// ============================================================================
+function initExecutiveReport() {
+  const reportBtn = document.getElementById("executive-report-btn");
+  const modal = document.getElementById("executive-report-modal");
+  const closeBtn = document.getElementById("close-executive-report-btn");
+  const downloadMdBtn = document.getElementById("download-report-md-btn");
+  const printBtn = document.getElementById("print-report-btn");
+
+  if (!reportBtn || !modal) return;
+
+  reportBtn.onclick = async () => {
+    modal.classList.remove("hidden");
+    await loadExecutiveReportData();
+    trackEvent("executive_report_opened");
+  };
+
+  if (closeBtn) closeBtn.onclick = () => modal.classList.add("hidden");
+
+  if (downloadMdBtn) {
+    downloadMdBtn.onclick = () => {
+      const mdContent = generateExecutiveReportMarkdown(state.latestReportData);
+      downloadFile(mdContent, `Executive_Sanctuary_Report_${new Date().toISOString().slice(0, 10)}.md`, "text/markdown");
+      trackEvent("executive_report_downloaded");
+    };
+  }
+
+  if (printBtn) {
+    printBtn.onclick = () => window.print();
+  }
+}
+
+async function loadExecutiveReportData() {
+  try {
+    const res = await apiFetch("/api/report/executive");
+    if (!res.ok) return;
+    const data = await res.json();
+    state.latestReportData = data;
+
+    const prod = data.productivity || {};
+    const intel = data.living_intelligence || {};
+
+    const wordEl = document.getElementById("report-word-count");
+    if (wordEl) wordEl.textContent = (prod.total_words_written || 0).toLocaleString();
+
+    const doneEl = document.getElementById("report-done-tasks");
+    if (doneEl) doneEl.textContent = (prod.completed_tasks || 0).toLocaleString();
+
+    const focusEl = document.getElementById("report-focus-blocks");
+    if (focusEl) focusEl.textContent = (prod.focus_blocks_scheduled || 0).toLocaleString();
+
+    const riskEl = document.getElementById("report-burnout-risk");
+    if (riskEl) riskEl.textContent = intel.burnout_risk || "Low";
+
+    const rulesCountEl = document.getElementById("report-rules-count");
+    if (rulesCountEl) rulesCountEl.textContent = `${intel.learned_rules_count || 0} Rules Active`;
+
+    const rulesListEl = document.getElementById("report-rules-list");
+    if (rulesListEl) {
+      rulesListEl.innerHTML = "";
+      const rules = intel.recent_rules || [];
+      if (rules.length === 0) {
+        rulesListEl.innerHTML = `<div class="text-gray-500 italic text-[11px]">No learned rules recorded yet. Speak personal preferences to train Gemini.</div>`;
+      } else {
+        rules.forEach(r => {
+          const card = document.createElement("div");
+          card.className = "p-2 bg-[#161b22] rounded-lg border border-[#30363d] space-y-0.5";
+          card.innerHTML = `
+            <div class="text-indigo-300 font-semibold text-[11px]">${escapeHtml(r.preference || "")}</div>
+            <div class="text-gray-400 text-[10px]">Context: ${escapeHtml(r.trigger || "General")} ${r.rationale ? "• " + escapeHtml(r.rationale) : ""}</div>
+          `;
+          rulesListEl.appendChild(card);
+        });
+      }
+    }
+
+    const refListEl = document.getElementById("report-reflections-list");
+    if (refListEl) {
+      refListEl.innerHTML = "";
+      const refs = data.recent_reflections || [];
+      if (refs.length === 0) {
+        refListEl.innerHTML = `<div class="text-gray-500 italic text-[11px]">No journal reflections found.</div>`;
+      } else {
+        refs.forEach(r => {
+          const row = document.createElement("div");
+          row.className = "p-2 bg-[#161b22] rounded-lg border border-[#30363d] flex items-center justify-between";
+          row.innerHTML = `
+            <div class="truncate pr-2">
+              <span class="text-white font-medium text-[11px] block truncate">${escapeHtml(r.title)}</span>
+              <span class="text-gray-400 text-[10px] truncate block">${escapeHtml(r.summary || "Reflection")}</span>
+            </div>
+            <span class="text-indigo-400 font-mono text-[10px] shrink-0">${escapeHtml(r.date)}</span>
+          `;
+          refListEl.appendChild(row);
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("Could not load executive report data:", err);
+  }
+}
+
+function generateExecutiveReportMarkdown(data) {
+  if (!data) return "# Executive Sanctuary Report\n\nNo data available.";
+  const p = data.productivity || {};
+  const intel = data.living_intelligence || {};
+  const dateStr = new Date().toISOString().slice(0, 10);
+  return `---
+title: Executive Cognitive & Productivity Report
+date: ${dateStr}
+user: ${data.user_name || "Journaler"}
+---
+
+# 📊 Executive Sanctuary Report (${dateStr})
+**Confidential • Tenant-Isolated Synthesis**
+
+## 🎯 Productivity Summary
+- **Total Reflective Words Written:** ${p.total_words_written || 0}
+- **Total Reflections Recorded:** ${p.total_reflections || 0}
+- **Completed Tasks (Done):** ${p.completed_tasks || 0}
+- **Tasks In Progress:** ${p.in_progress_tasks || 0}
+- **Backlog Tasks (To Do):** ${p.todo_tasks || 0}
+- **Deep Focus Blocks Scheduled:** ${p.focus_blocks_scheduled || 0}
+
+## 🧠 Evolved Living Intelligence (Hermes Engine)
+- **Active Learned Rules:** ${intel.learned_rules_count || 0}
+- **Burnout Risk Assessment:** ${intel.burnout_risk || "Low"}
+
+${(intel.recent_rules || []).map(r => `- **Rule:** ${r.preference} *(Trigger: ${r.trigger})*`).join("\n")}
+
+## 📝 Recent Journal Reflections
+${(data.recent_reflections || []).map(r => `- **${r.date}:** ${r.title} — ${r.summary}`).join("\n")}
+`;
+}
+
+// ============================================================================
+// 17. Product Analytics Tracking (Privacy-Preserving Funnel Telemetry)
+// ============================================================================
+function trackEvent(eventName, properties = {}) {
+  const event = {
+    event: eventName,
+    properties: properties,
+    timestamp: new Date().toISOString(),
+    uid: state.user ? state.user.uid : "anonymous"
+  };
+  if (!window.__SANCTUARY_ANALYTICS__) {
+    window.__SANCTUARY_ANALYTICS__ = [];
+  }
+  window.__SANCTUARY_ANALYTICS__.push(event);
+  console.log("[Sanctuary Analytics]", eventName, properties);
 }
 
 function escapeHtml(text) {
