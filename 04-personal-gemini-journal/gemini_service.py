@@ -134,9 +134,17 @@ class GeminiJournalService:
             try:
                 from google import genai
                 self.client = genai.Client(api_key=self.api_key)
-                print(f"[GeminiService] Initialized Google GenAI client with model: {MODEL_NAME}")
+                print(f"[GeminiService] Initialized Google GenAI client with API key and model: {MODEL_NAME}")
             except Exception as e:
-                print(f"[GeminiService] Notice: Could not initialize google-genai client: {e}")
+                print(f"[GeminiService] Notice: Could not initialize google-genai client with API key: {e}")
+        elif os.environ.get("GCP_PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT"):
+            try:
+                from google import genai
+                project = os.environ.get("GCP_PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT")
+                self.client = genai.Client(vertexai=True, project=project, location="us-central1")
+                print(f"[GeminiService] Initialized Google GenAI Vertex AI client for project {project} with model: {MODEL_NAME}")
+            except Exception as e:
+                print(f"[GeminiService] Notice: Could not initialize Vertex AI client: {e}")
 
     # --------------------------------------------------------------------------
     # Live Conversational Agent with Autonomous Tool Calling & Hermes Self-Learning

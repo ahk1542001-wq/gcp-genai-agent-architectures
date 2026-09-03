@@ -23,6 +23,7 @@ gcloud services enable \
     run.googleapis.com \
     firestore.googleapis.com \
     secretmanager.googleapis.com \
+    aiplatform.googleapis.com \
     speech.googleapis.com \
     texttospeech.googleapis.com \
     --project="${PROJECT_ID}"
