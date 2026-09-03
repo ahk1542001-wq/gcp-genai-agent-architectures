@@ -651,3 +651,52 @@ def test_voice_synthesize_endpoint():
     assert data["audio_base64"] is not None
     assert data["format"] == "mp3"
 
+
+def test_agent_summarize_endpoint_and_security():
+    """
+    Verify POST /api/agent/summarize requires authentication and returns structured takeaways.
+    """
+    # Unauthenticated rejected
+    unauth = client.post("/api/agent/summarize", json={"conversation": [{"role": "user", "text": "Testing summary"}]})
+    assert unauth.status_code == 401
+
+    # Authenticated returns structured summary
+    res = client.post(
+        "/api/agent/summarize",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "conversation": [
+                {"role": "user", "text": "Feeling overwhelmed with sprint backlogs."},
+                {"role": "model", "text": "Let us prioritize the single highest-leverage task."}
+            ]
+        }
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert "title" in data
+    assert "summary" in data
+    assert "breakthrough" in data
+    assert "tags" in data
+    assert isinstance(data["tags"], list)
+
+
+def test_live_turn_reflection_style_modes():
+    """
+    Verify all 4 reflection style modes (balanced, actionable, philosophy, brainstorm)
+    pass validation and are routed correctly by /api/agent/live-turn.
+    """
+    for mode in ("balanced", "actionable", "philosophy", "brainstorm"):
+        res = client.post(
+            "/api/agent/live-turn",
+            headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+            json={
+                "message": f"Exploring thoughts under {mode} reflection style.",
+                "persona_mode": mode
+            }
+        )
+        assert res.status_code == 200, f"Mode '{mode}' failed with status {res.status_code}"
+        data = res.json()
+        assert "final_reply" in data
+        assert len(data["final_reply"]) > 0
+
+

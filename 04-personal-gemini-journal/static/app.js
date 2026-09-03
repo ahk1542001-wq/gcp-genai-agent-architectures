@@ -11,12 +11,16 @@ const state = {
   token: localStorage.getItem("journal_token") || null,
   user: null,
   authConfig: null,
-  persona: "coach", // "coach" (morning) or "guardian" (evening)
+  reflectionStyle: "balanced",
+  persona: "balanced", // "balanced", "actionable", "philosophy", "brainstorm", or legacy "coach"/"guardian"
   activeView: "journal", // "journal", "kanban", "calendar", "rewind"
   conversationHistory: [],
   tickets: [],
   calendarEvents: [],
   pendingProposals: [],
+  journalEntries: [],
+  activeHistoryFilter: "all",
+  historySearchQuery: "",
   settings: {
     voice_responses_enabled: true,
     tibetan_sound_enabled: true,
@@ -360,6 +364,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   initProposalCard();
   initExecutiveReport();
   initHistoryReviewModal();
+  initReflectionStyleSelector();
+  initMultiTurnActionBar();
+  initHistoryFilters();
 
   // Auth buttons
   const googleBtn = document.getElementById("google-signin-btn");
@@ -550,15 +557,75 @@ function initNavigation() {
 }
 
 function setPersona(persona) {
-  state.persona = "guardian";
+  if (persona === "coach") {
+    setReflectionStyle("actionable");
+  } else {
+    setReflectionStyle("balanced");
+  }
+}
+
+function setReflectionStyle(style) {
+  state.reflectionStyle = style;
+  state.persona = style;
+
+  // Update style cards visual state
+  const cards = document.querySelectorAll(".reflection-style-card");
+  cards.forEach(card => {
+    const cardStyle = card.getAttribute("data-style");
+    if (cardStyle === style) {
+      card.classList.add("active", "border-indigo-500/50", "bg-[#1c2128]");
+      card.classList.remove("border-[#30363d]", "bg-[#161b22]");
+    } else {
+      card.classList.remove("active", "border-indigo-500/50", "bg-[#1c2128]");
+      card.classList.add("border-[#30363d]", "bg-[#161b22]");
+    }
+  });
+
+  // Update label
+  const label = document.getElementById("active-style-label");
+  const styleNames = {
+    balanced: "Balanced",
+    actionable: "Actionable",
+    philosophy: "Deep Philosophy",
+    brainstorm: "Brainstorm"
+  };
+  if (label) {
+    label.textContent = `Mode: ${styleNames[style] || "Balanced"}`;
+  }
+
+  // Update Notion callout block
   const calloutTitle = document.getElementById("callout-title");
   const calloutText = document.getElementById("callout-text");
   const calloutEmoji = document.getElementById("callout-emoji");
-  if (!calloutTitle) return;
+  if (calloutTitle && calloutText && calloutEmoji) {
+    if (style === "actionable") {
+      calloutEmoji.textContent = "🎯";
+      calloutTitle.textContent = "Actionable Momentum & Next Steps";
+      calloutText.textContent = '"Let\'s break down what\'s in front of you into high-leverage habits and immediate execution."';
+    } else if (style === "philosophy") {
+      calloutEmoji.textContent = "📜";
+      calloutTitle.textContent = "Deep Philosophy & Socratic Reframing";
+      calloutText.textContent = '"Step back and reframe this from a higher vantage point. What assumptions can we examine together?"';
+    } else if (style === "brainstorm") {
+      calloutEmoji.textContent = "💡";
+      calloutTitle.textContent = "Lateral Sparks & Creative Brainstorm";
+      calloutText.textContent = '"No limits or early filters. What unconventional possibilities or ideas can we explore?"';
+    } else {
+      calloutEmoji.textContent = "🧭";
+      calloutTitle.textContent = "Balanced Clarity & Sanctuary";
+      calloutText.textContent = '"Welcome to your sanctuary. What is occupying your headspace or focus right now?"';
+    }
+  }
+}
 
-  calloutEmoji.textContent = "🌿";
-  calloutTitle.textContent = "Guardian Socratic Sanctuary";
-  calloutText.textContent = '"Welcome to your sanctuary. What is occupying your headspace or focus right now?"';
+function initReflectionStyleSelector() {
+  const cards = document.querySelectorAll(".reflection-style-card");
+  cards.forEach(card => {
+    card.addEventListener("click", () => {
+      const style = card.getAttribute("data-style") || "balanced";
+      setReflectionStyle(style);
+    });
+  });
 }
 
 // ============================================================================
@@ -1116,6 +1183,12 @@ function fallbackSpeechSynthesis(text) {
   window.speechSynthesis.speak(utterance);
 }
 
+function formatChatMessageText(text) {
+  if (!text) return "";
+  const escaped = escapeHtml(text);
+  return escaped.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-medium">$1</strong>');
+}
+
 function appendChatMessage(role, text) {
   const stream = document.getElementById("chat-stream");
   if (!stream) return;
@@ -1123,22 +1196,33 @@ function appendChatMessage(role, text) {
   const msgDiv = document.createElement("div");
   msgDiv.className = `flex space-x-3 text-xs leading-relaxed animate-fadeIn ${role === "user" ? "justify-end" : "justify-start"}`;
 
+  const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
   if (role === "user") {
     const senderName = (state.user && state.user.name) ? state.user.name : "You";
     msgDiv.innerHTML = `
-      <div class="bg-indigo-600/30 border border-indigo-500/40 text-[#f0f6fc] p-3 rounded-xl max-w-lg shadow-sm">
-        <span class="font-semibold text-[10px] text-indigo-300 block mb-0.5">${escapeHtml(senderName)}</span>
-        <p>${escapeHtml(text)}</p>
+      <div class="bg-indigo-600/30 border border-indigo-500/40 text-[#f0f6fc] p-3.5 rounded-2xl max-w-lg shadow-sm">
+        <div class="flex items-center justify-between space-x-3 mb-1">
+          <span class="font-semibold text-[10px] text-indigo-300">${escapeHtml(senderName)}</span>
+          <span class="text-[9px] text-indigo-300/70 font-mono">${timeStr}</span>
+        </div>
+        <p class="whitespace-pre-wrap">${formatChatMessageText(text)}</p>
       </div>
     `;
   } else {
     msgDiv.innerHTML = `
-      <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-bold text-[10px] text-white shrink-0 mt-1">
+      <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0 mt-0.5 shadow-sm">
         🌿
       </div>
-      <div class="bg-[#161b22] border border-[#30363d] text-[#c9d1d9] p-3 rounded-xl max-w-xl shadow-sm space-y-1">
-        <span class="font-semibold text-[10px] text-purple-300 block">Personal Gemini Guardian</span>
-        <p>${escapeHtml(text)}</p>
+      <div class="bg-[#161b22] border border-[#30363d] text-[#c9d1d9] p-3.5 rounded-2xl max-w-xl shadow-sm space-y-1.5 flex-1">
+        <div class="flex items-center justify-between flex-wrap gap-1">
+          <div class="flex items-center space-x-1.5">
+            <span class="font-semibold text-[10px] text-purple-300">Personal Gemini Guardian</span>
+            <span class="model-badge inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-purple-950/60 text-purple-300 border border-purple-500/30">gemini-3.7-flash</span>
+          </div>
+          <span class="text-[9px] text-gray-500 font-mono">${timeStr}</span>
+        </div>
+        <div class="text-[#f0f6fc] leading-relaxed whitespace-pre-wrap">${formatChatMessageText(text)}</div>
       </div>
     `;
   }
@@ -1146,6 +1230,161 @@ function appendChatMessage(role, text) {
   stream.appendChild(msgDiv);
   msgDiv.scrollIntoView({ behavior: "smooth" });
   state.conversationHistory.push({ role, text });
+
+  updateTurnCounter();
+}
+
+function updateTurnCounter() {
+  const userTurns = state.conversationHistory.filter(m => m.role === "user").length;
+  const badge = document.getElementById("turn-counter-badge");
+  if (badge) {
+    badge.textContent = `${userTurns} Turn${userTurns === 1 ? "" : "s"}`;
+  }
+
+  const input = document.getElementById("reflection-input");
+  if (input) {
+    if (userTurns > 0) {
+      input.placeholder = "Ask a follow-up reflection, challenge Gemini's thought, or explore deeper...";
+    } else {
+      input.placeholder = "Rambling thoughts, brain dump, or speak your mind with the mic...";
+    }
+  }
+
+  const syncBadge = document.getElementById("firestore-sync-badge");
+  if (syncBadge) {
+    syncBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span>Firestore Synchronized</span>`;
+  }
+}
+
+function initMultiTurnActionBar() {
+  const summarizeBtn = document.getElementById("auto-summarize-btn");
+  const saveBtn = document.getElementById("save-session-btn");
+
+  if (summarizeBtn) {
+    summarizeBtn.addEventListener("click", async () => {
+      if (!state.conversationHistory || state.conversationHistory.length === 0) {
+        const input = document.getElementById("reflection-input");
+        if (input && input.value.trim()) {
+          const safeMsg = redactSecrets(input.value.trim());
+          appendChatMessage("user", safeMsg);
+          input.value = "";
+          await processLiveTurn(safeMsg);
+        } else {
+          return;
+        }
+      }
+
+      const originalHtml = summarizeBtn.innerHTML;
+      summarizeBtn.disabled = true;
+      summarizeBtn.innerHTML = `<span>⏳</span><span>Summarizing...</span>`;
+
+      try {
+        const res = await apiFetch("/api/agent/summarize", {
+          method: "POST",
+          body: JSON.stringify({ conversation: state.conversationHistory })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          renderDistilledSummaryCard(data);
+        }
+      } catch (err) {
+        console.warn("Auto-summarize error:", err);
+      } finally {
+        summarizeBtn.innerHTML = originalHtml;
+        summarizeBtn.disabled = false;
+      }
+    });
+  }
+
+  if (saveBtn) {
+    saveBtn.addEventListener("click", async () => {
+      if (!state.conversationHistory || state.conversationHistory.length === 0) {
+        const input = document.getElementById("reflection-input");
+        if (input && input.value.trim()) {
+          const safeMsg = redactSecrets(input.value.trim());
+          appendChatMessage("user", safeMsg);
+          input.value = "";
+          await processLiveTurn(safeMsg);
+        } else {
+          return;
+        }
+      }
+
+      const originalHtml = saveBtn.innerHTML;
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<span>⏳</span><span>Saving...</span>`;
+
+      try {
+        const firstUserMsg = state.conversationHistory.find(m => m.role === "user");
+        const titleText = firstUserMsg ? (firstUserMsg.text.slice(0, 45) + (firstUserMsg.text.length > 45 ? "..." : "")) : "Reflective Session";
+        const contentText = state.conversationHistory.map(m => `${m.role === 'user' ? 'User' : 'Gemini'}: ${m.text}`).join("\n\n");
+        const styleTag = state.reflectionStyle ? state.reflectionStyle.charAt(0).toUpperCase() + state.reflectionStyle.slice(1) : "Reflective";
+
+        const res = await apiFetch("/api/journal/save", {
+          method: "POST",
+          body: JSON.stringify({
+            title: titleText,
+            content: contentText,
+            conversation: state.conversationHistory,
+            tags: [styleTag, "MultiTurn"]
+          })
+        });
+
+        if (res.ok) {
+          const syncBadge = document.getElementById("firestore-sync-badge");
+          if (syncBadge) {
+            syncBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span><span>Firestore Synchronized</span>`;
+          }
+          saveBtn.innerHTML = `<span>✓</span><span>Saved!</span>`;
+          await renderHistoryList();
+          setTimeout(() => {
+            saveBtn.innerHTML = originalHtml;
+            saveBtn.disabled = false;
+          }, 2000);
+        } else {
+          saveBtn.innerHTML = originalHtml;
+          saveBtn.disabled = false;
+        }
+      } catch (err) {
+        console.warn("Save reflection error:", err);
+        saveBtn.innerHTML = originalHtml;
+        saveBtn.disabled = false;
+      }
+    });
+  }
+}
+
+function renderDistilledSummaryCard(data) {
+  const stream = document.getElementById("chat-stream");
+  if (!stream) return;
+
+  const card = document.createElement("div");
+  card.className = "summary-card p-4 rounded-xl border border-amber-500/40 bg-gradient-to-br from-amber-950/40 via-[#161b22] to-indigo-950/40 shadow-lg space-y-2 animate-fadeIn my-3";
+
+  const title = data.title || "Reflective Synthesis";
+  const summary = data.summary || "Conversation distilled into core insights.";
+  const realization = data.breakthrough || "";
+  const tags = data.tags || ["Reflection", "Synthesis"];
+
+  card.innerHTML = `
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <span class="text-base">✨</span>
+        <h4 class="text-xs font-semibold text-amber-300 uppercase tracking-wider">Distilled Reflection Summary</h4>
+      </div>
+      <span class="text-[9px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-500/30">Auto-Synthesized</span>
+    </div>
+    <div class="text-sm font-semibold text-white">${escapeHtml(title)}</div>
+    <p class="text-xs text-gray-300 leading-relaxed">${escapeHtml(summary)}</p>
+    ${realization ? `<div class="p-2 rounded bg-[#0e1117]/80 border border-amber-500/20 text-[11px] text-amber-200"><strong class="text-amber-400 font-medium">Realization:</strong> ${escapeHtml(realization)}</div>` : ""}
+    <div class="flex flex-wrap gap-1 pt-1">
+      ${tags.map(t => `<span class="text-[10px] px-2 py-0.5 rounded-full bg-[#21262d] text-gray-300 border border-[#30363d]">#${escapeHtml(t)}</span>`).join("")}
+    </div>
+  `;
+
+  stream.appendChild(card);
+  card.scrollIntoView({ behavior: "smooth" });
 }
 
 // ============================================================================
@@ -1185,52 +1424,83 @@ function initShortcuts() {
 // 9. Emotional & Cognitive Arc Visualizer (Chart.js)
 // ============================================================================
 function initEmotionalChart() {
-  const canvas = document.getElementById("emotionalArcChart");
-  if (!canvas) return;
-
-  const ctx = canvas.getContext("2d");
-  state.chartInstance = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: ["Start", "Check-in"],
-      datasets: [
-        {
-          label: "Clarity & Grounding",
-          data: [0.4, 0.6],
-          borderColor: "#388bfd",
-          backgroundColor: "rgba(56, 139, 253, 0.1)",
-          tension: 0.4,
-          fill: true
-        },
-        {
-          label: "Stress Relief",
-          data: [0.3, 0.7],
-          borderColor: "#3fb950",
-          backgroundColor: "rgba(63, 185, 80, 0.1)",
-          tension: 0.4,
-          fill: true
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { color: "#21262d" }, ticks: { color: "#8b949e", font: { size: 10 } } },
-        y: { min: 0, max: 1, grid: { color: "#21262d" }, ticks: { color: "#8b949e", font: { size: 10 } } }
-      }
-    }
-  });
+  // Pure zero-state initialization: don't render fake lines before conversation
+  state.chartInstance = null;
+  const emptyEl = document.getElementById("emotional-arc-empty");
+  const canvasWrapper = document.getElementById("emotional-arc-canvas-wrapper");
+  if (emptyEl) emptyEl.classList.remove("hidden");
+  if (canvasWrapper) canvasWrapper.classList.add("hidden");
 }
 
-function updateEmotionalChart(sentimentScore) {
-  if (!state.chartInstance) return;
-  const count = state.chartInstance.data.labels.length + 1;
-  state.chartInstance.data.labels.push(`Turn ${count}`);
-  state.chartInstance.data.datasets[0].data.push(Math.min(1, Math.max(0, sentimentScore + 0.1)));
-  state.chartInstance.data.datasets[1].data.push(Math.min(1, Math.max(0, sentimentScore + 0.2)));
-  state.chartInstance.update();
+function updateEmotionalChart(sentimentScore = 0.5) {
+  const canvas = document.getElementById("emotionalArcChart");
+  const emptyEl = document.getElementById("emotional-arc-empty");
+  const canvasWrapper = document.getElementById("emotional-arc-canvas-wrapper");
+  const badge = document.getElementById("arc-status-badge");
+  if (!canvas) return;
+
+  // Reveal canvas and hide empty state
+  if (emptyEl) emptyEl.classList.add("hidden");
+  if (canvasWrapper) canvasWrapper.classList.remove("hidden");
+
+  const normalizedSentiment = typeof sentimentScore === "number" ? sentimentScore : 0.5;
+  const clarityScore = Math.min(0.95, Math.max(0.2, Number((normalizedSentiment + 0.1).toFixed(2))));
+  const reliefScore = Math.min(0.95, Math.max(0.15, Number((normalizedSentiment + 0.15).toFixed(2))));
+
+  if (!state.chartInstance) {
+    const ctx = canvas.getContext("2d");
+    state.chartInstance = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: ["Turn 1"],
+        datasets: [
+          {
+            label: "Clarity & Grounding",
+            data: [clarityScore],
+            borderColor: "#388bfd",
+            backgroundColor: "rgba(56, 139, 253, 0.12)",
+            tension: 0.35,
+            fill: true,
+            pointRadius: 4,
+            pointBackgroundColor: "#388bfd"
+          },
+          {
+            label: "Stress Relief",
+            data: [reliefScore],
+            borderColor: "#3fb950",
+            backgroundColor: "rgba(63, 185, 80, 0.12)",
+            tension: 0.35,
+            fill: true,
+            pointRadius: 4,
+            pointBackgroundColor: "#3fb950"
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: "top",
+            labels: { color: "#8b949e", font: { size: 10 }, boxWidth: 12 }
+          }
+        },
+        scales: {
+          x: { grid: { color: "#21262d" }, ticks: { color: "#8b949e", font: { size: 10 } } },
+          y: { min: 0, max: 1, grid: { color: "#21262d" }, ticks: { color: "#8b949e", font: { size: 10 } } }
+        }
+      }
+    });
+    if (badge) badge.textContent = "Live Psychological Shift • Turn 1";
+  } else {
+    const count = state.chartInstance.data.labels.length + 1;
+    state.chartInstance.data.labels.push(`Turn ${count}`);
+    state.chartInstance.data.datasets[0].data.push(clarityScore);
+    state.chartInstance.data.datasets[1].data.push(reliefScore);
+    state.chartInstance.update();
+    if (badge) badge.textContent = `Live Psychological Shift • Turn ${count}`;
+  }
 }
 
 // ============================================================================
@@ -1710,6 +1980,33 @@ function downloadFile(content, filename, mimeType) {
 // ============================================================================
 // 15. Past Reflections List (Sidebar History & Review Drawer)
 // ============================================================================
+function initHistoryFilters() {
+  const searchInput = document.getElementById("history-search-input");
+  const chips = document.querySelectorAll("#history-filter-chips .history-chip");
+
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      state.historySearchQuery = (e.target.value || "").trim().toLowerCase();
+      applyHistoryFilterAndSearch();
+    });
+  }
+
+  if (chips && chips.length > 0) {
+    chips.forEach(chip => {
+      chip.addEventListener("click", () => {
+        chips.forEach(c => {
+          c.classList.remove("active", "bg-indigo-600", "text-white");
+          c.classList.add("bg-[#21262d]", "text-gray-400");
+        });
+        chip.classList.add("active", "bg-indigo-600", "text-white");
+        chip.classList.remove("bg-[#21262d]", "text-gray-400");
+        state.activeHistoryFilter = chip.getAttribute("data-filter") || "all";
+        applyHistoryFilterAndSearch();
+      });
+    });
+  }
+}
+
 async function renderHistoryList() {
   const list = document.getElementById("journal-history-list");
   if (!list) return;
@@ -1723,34 +2020,94 @@ async function renderHistoryList() {
     const data = await res.json();
     const entries = data.entries || [];
     state.journalEntries = entries;
-
-    if (entries.length === 0) {
-      list.innerHTML = `
-        <div class="p-2 text-[11px] text-gray-500 italic text-center leading-normal">
-          No reflections recorded yet.<br>Begin your first reflection above.
-        </div>
-      `;
-      return;
-    }
-
-    list.innerHTML = "";
-    entries.forEach(entry => {
-      const item = document.createElement("div");
-      item.className = "history-item p-1.5 rounded hover:bg-[#21262d] cursor-pointer text-[#c9d1d9] hover:text-white transition-colors truncate group";
-      const dateStr = (entry.created_at || "").slice(0, 10);
-      const title = entry.title || "Reflective Journal";
-      item.title = `${title} (${dateStr})`;
-      item.innerHTML = `
-        <span class="text-[10px] text-indigo-400 font-medium block">${escapeHtml(dateStr)}</span>
-        <span class="truncate block text-xs group-hover:text-indigo-200">${escapeHtml(title)}</span>
-      `;
-      item.onclick = () => openJournalReviewModal(entry);
-      list.appendChild(item);
-    });
+    applyHistoryFilterAndSearch();
   } catch (err) {
     console.warn("Failed to load history list:", err);
     list.innerHTML = `<div class="text-gray-500 italic text-xs p-1">No reflections yet</div>`;
   }
+}
+
+function applyHistoryFilterAndSearch() {
+  const list = document.getElementById("journal-history-list");
+  if (!list) return;
+
+  const entries = state.journalEntries || [];
+  const query = state.historySearchQuery || "";
+  const filter = state.activeHistoryFilter || "all";
+
+  if (entries.length === 0) {
+    list.innerHTML = `
+      <div class="p-2 text-[11px] text-gray-500 italic text-center leading-normal">
+        No reflections recorded yet.<br>Begin your first reflection above.
+      </div>
+    `;
+    return;
+  }
+
+  const filtered = entries.filter(entry => {
+    // 1. Text search across title, date, content, summary, tags
+    if (query) {
+      const title = (entry.title || "").toLowerCase();
+      const dateStr = (entry.created_at || "").toLowerCase();
+      const content = (entry.content || "").toLowerCase();
+      const summary = (entry.summary || "").toLowerCase();
+      const tagsStr = Array.isArray(entry.tags) ? entry.tags.join(" ").toLowerCase() : "";
+      const matches = title.includes(query) || dateStr.includes(query) || content.includes(query) || summary.includes(query) || tagsStr.includes(query);
+      if (!matches) return false;
+    }
+
+    // 2. Filter chips
+    if (filter === "all") return true;
+
+    const tags = Array.isArray(entry.tags) ? entry.tags.map(t => String(t).toLowerCase()) : [];
+    const titleStr = (entry.title || "").toLowerCase();
+    const contentStr = (entry.content || "").toLowerCase();
+
+    if (filter === "reflective") {
+      const hasTag = tags.some(t => t.includes("reflect") || t.includes("clarity") || t.includes("balanced") || t.includes("mindful"));
+      const hasTitleOrContent = titleStr.includes("reflect") || titleStr.includes("mindful") || titleStr.includes("zen");
+      return hasTag || hasTitleOrContent;
+    }
+
+    if (filter === "actionable") {
+      const hasTag = tags.some(t => t.includes("action") || t.includes("habit") || t.includes("sprint"));
+      const hasTitleOrContent = titleStr.includes("action") || titleStr.includes("habit") || titleStr.includes("sprint");
+      return hasTag || hasTitleOrContent;
+    }
+
+    if (filter === "breakthrough") {
+      const hasTag = tags.some(t => t.includes("breakthrough") || t.includes("philosophy") || t.includes("insight"));
+      const hasBreakthrough = Boolean(entry.breakthrough && entry.breakthrough.trim());
+      const hasTitleOrContent = titleStr.includes("breakthrough") || titleStr.includes("philosophy") || contentStr.includes("breakthrough");
+      return hasTag || hasBreakthrough || hasTitleOrContent;
+    }
+
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    list.innerHTML = `
+      <div class="p-2 text-[11px] text-gray-500 italic text-center leading-normal">
+        No matching reflections found.
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = "";
+  filtered.forEach(entry => {
+    const item = document.createElement("div");
+    item.className = "history-item p-1.5 rounded hover:bg-[#21262d] cursor-pointer text-[#c9d1d9] hover:text-white transition-colors truncate group";
+    const dateStr = (entry.created_at || "").slice(0, 10);
+    const title = entry.title || "Reflective Journal";
+    item.title = `${title} (${dateStr})`;
+    item.innerHTML = `
+      <span class="text-[10px] text-indigo-400 font-medium block">${escapeHtml(dateStr)}</span>
+      <span class="truncate block text-xs group-hover:text-indigo-200">${escapeHtml(title)}</span>
+    `;
+    item.onclick = () => openJournalReviewModal(entry);
+    list.appendChild(item);
+  });
 }
 
 function openJournalReviewModal(entry) {

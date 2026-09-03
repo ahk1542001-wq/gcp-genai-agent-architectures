@@ -881,3 +881,245 @@ def test_browser_executive_data_report_modal():
         assert not report_modal.is_visible()
 
         browser.close()
+
+
+def test_browser_dynamic_emotional_arc_zero_state_and_live_update():
+    """
+    Verify Cognitive & Emotional Arc zero-state and live dynamic update:
+    - Fresh session displays authentic empty state (no fake lines/points).
+    - After reflection turn, empty state hides and canvas wrapper becomes visible.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1280, "height": 800})
+        goto_authenticated(page, name="ArcUser")
+
+        # 1. Fresh state: empty placeholder is visible, canvas wrapper is hidden
+        empty_state = page.locator("#emotional-arc-empty")
+        canvas_wrapper = page.locator("#emotional-arc-canvas-wrapper")
+        assert empty_state.is_visible(), "Empty state must be visible before any reflection"
+        assert not canvas_wrapper.is_visible(), "Canvas wrapper must be hidden before any reflection"
+        assert "Awaiting Reflection Dialogue" in empty_state.inner_text()
+
+        # 2. Type reflection and send
+        input_box = page.locator("#reflection-input")
+        input_box.fill("Feeling scattered this morning, need to focus on architecture.")
+        page.locator("#send-reflection-btn").click()
+
+        # 3. Canvas wrapper is now revealed, empty placeholder hidden
+        page.wait_for_selector("#emotional-arc-canvas-wrapper", state="visible", timeout=6000)
+        assert canvas_wrapper.is_visible()
+        assert not empty_state.is_visible()
+        assert "Turn 1" in page.locator("#arc-status-badge").inner_text()
+
+        browser.close()
+
+
+def test_browser_reflection_style_selector_and_routing():
+    """
+    Verify Reflection Style Selector:
+    - 4 interactive cards present: Balanced, Actionable, Deep Philosophy, Brainstorm
+    - Clicking updates active styling and active-style-label
+    - Wired to /api/agent/live-turn with persona_mode parameter
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1280, "height": 800})
+        goto_authenticated(page, name="StyleTester")
+
+        # 1. Verify all 4 cards exist
+        card_balanced = page.locator('.reflection-style-card[data-style="balanced"]')
+        card_actionable = page.locator('.reflection-style-card[data-style="actionable"]')
+        card_philosophy = page.locator('.reflection-style-card[data-style="philosophy"]')
+        card_brainstorm = page.locator('.reflection-style-card[data-style="brainstorm"]')
+
+        assert card_balanced.is_visible()
+        assert card_actionable.is_visible()
+        assert card_philosophy.is_visible()
+        assert card_brainstorm.is_visible()
+
+        # Default is balanced
+        style_label = page.locator("#active-style-label")
+        assert "Balanced" in style_label.inner_text()
+
+        # 2. Click Actionable
+        card_actionable.click()
+        assert "Actionable" in style_label.inner_text()
+        assert "active" in (card_actionable.get_attribute("class") or "")
+
+        # 3. Click Deep Philosophy
+        card_philosophy.click()
+        assert "Deep Philosophy" in style_label.inner_text()
+        assert "active" in (card_philosophy.get_attribute("class") or "")
+
+        # 4. Click Brainstorm
+        card_brainstorm.click()
+        assert "Brainstorm" in style_label.inner_text()
+        assert "active" in (card_brainstorm.get_attribute("class") or "")
+
+        # 5. Click Balanced
+        card_balanced.click()
+        assert "Balanced" in style_label.inner_text()
+
+        browser.close()
+
+
+def test_browser_multiturn_dialogue_badges_auto_summarize_and_save():
+    """
+    Verify Multi-Turn Follow-Up Dialogue:
+    - User vs Gemini bubbles with gemini-3.7-flash model badge and timestamp
+    - Dynamic turn counter badge and dynamic follow-up input placeholder
+    - Auto-Summarize button creates distilled summary card
+    - Save Reflection button saves entry to Firestore and updates sync indicator
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1280, "height": 800})
+        goto_authenticated(page, name="MultiTurnTester")
+
+        # Initial turn counter is 0
+        turn_badge = page.locator("#turn-counter-badge")
+        assert "0 Turn" in turn_badge.inner_text()
+
+        input_box = page.locator("#reflection-input")
+        send_btn = page.locator("#send-reflection-btn")
+
+        # Step 1: Turn 1
+        input_box.fill("Initial reflection on establishing a strong daily rhythm.")
+        send_btn.click()
+        page.wait_for_selector("#chat-stream .model-badge", timeout=6000)
+
+        # Verify User and Gemini bubbles
+        chat_stream = page.locator("#chat-stream")
+        assert "Initial reflection on establishing a strong daily rhythm." in chat_stream.inner_text()
+        assert page.locator("#chat-stream .model-badge", has_text="gemini-3.7-flash").is_visible()
+        assert "1 Turn" in turn_badge.inner_text()
+
+        # Verify dynamic follow-up placeholder
+        placeholder = input_box.get_attribute("placeholder") or ""
+        assert "Ask a follow-up reflection, challenge Gemini's thought, or explore deeper..." in placeholder
+
+        # Step 2: Auto-Summarize
+        summarize_btn = page.locator("#auto-summarize-btn")
+        assert summarize_btn.is_visible()
+        summarize_btn.click()
+        page.wait_for_selector(".summary-card", timeout=6000)
+        assert "distilled reflection summary" in page.locator(".summary-card").inner_text().lower()
+        assert "Auto-Synthesized" in page.locator(".summary-card").inner_text()
+
+        # Step 3: Save Reflection
+        save_btn = page.locator("#save-session-btn")
+        assert save_btn.is_visible()
+        save_btn.click()
+        page.wait_for_timeout(1000)
+
+        # Firestore sync indicator verified
+        sync_badge = page.locator("#firestore-sync-badge")
+        assert "Firestore Synchronized" in sync_badge.inner_text()
+
+        browser.close()
+
+
+def test_browser_history_live_search_and_filter_chips():
+    """
+    Verify Past Reflections Search & Filter Chips:
+    - Live search across title, date, content
+    - Filter chips: [All], [Reflective], [Actionable], [Breakthrough]
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1280, "height": 800})
+        goto_authenticated(page, name="SearchFilterTester")
+
+        # Seed 3 distinct reflections via API
+        page.evaluate("""
+            async () => {
+                const token = localStorage.getItem('journal_token');
+                const headers = {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                };
+                await fetch('/api/journal/save', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        title: 'Zen Mindfulness Practice',
+                        content: 'Meditative stillness and breath focus in the morning.',
+                        tags: ['Reflective', 'Mindfulness'],
+                        action_items: []
+                    })
+                });
+                await fetch('/api/journal/save', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        title: 'Sprint Architecture Execution',
+                        content: 'Refining Cloud Run deploy pipeline and habits.',
+                        tags: ['Actionable', 'Work'],
+                        action_items: [{title: 'Deploy to Cloud Run'}]
+                    })
+                });
+                await fetch('/api/journal/save', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        title: 'Philosophy on Mental Models',
+                        content: 'Socratic inquiry revealed deeper assumptions.',
+                        breakthrough: 'Realized clarity comes from ruthless elimination.',
+                        tags: ['Breakthrough', 'Philosophy'],
+                        action_items: []
+                    })
+                });
+            }
+        """)
+
+        # Refresh history
+        page.locator("#refresh-history-btn").click()
+        page.wait_for_timeout(600)
+
+        item_zen = page.locator("#journal-history-list .history-item", has_text="Zen Mindfulness Practice")
+        item_sprint = page.locator("#journal-history-list .history-item", has_text="Sprint Architecture Execution")
+        item_philo = page.locator("#journal-history-list .history-item", has_text="Philosophy on Mental Models")
+
+        assert item_zen.is_visible()
+        assert item_sprint.is_visible()
+        assert item_philo.is_visible()
+
+        # Test Search: "Zen"
+        search_input = page.locator("#history-search-input")
+        search_input.fill("Zen")
+        page.wait_for_timeout(200)
+        assert item_zen.is_visible()
+        assert not item_sprint.is_visible()
+        assert not item_philo.is_visible()
+
+        # Clear search
+        search_input.fill("")
+        page.wait_for_timeout(200)
+        assert item_zen.is_visible()
+        assert item_sprint.is_visible()
+        assert item_philo.is_visible()
+
+        # Test Filter Chip: Actionable
+        chip_actionable = page.locator('#history-filter-chips .history-chip[data-filter="actionable"]')
+        chip_actionable.click()
+        page.wait_for_timeout(200)
+        assert item_sprint.is_visible()
+        assert not item_philo.is_visible()
+
+        # Test Filter Chip: Breakthrough
+        chip_breakthrough = page.locator('#history-filter-chips .history-chip[data-filter="breakthrough"]')
+        chip_breakthrough.click()
+        page.wait_for_timeout(200)
+        assert item_philo.is_visible()
+        assert not item_sprint.is_visible()
+
+        # Test Filter Chip: All
+        chip_all = page.locator('#history-filter-chips .history-chip[data-filter="all"]')
+        chip_all.click()
+        page.wait_for_timeout(200)
+        assert item_zen.is_visible()
+        assert item_sprint.is_visible()
+        assert item_philo.is_visible()
+
+        browser.close()

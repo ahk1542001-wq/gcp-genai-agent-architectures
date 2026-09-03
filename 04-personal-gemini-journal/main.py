@@ -46,7 +46,11 @@ class ChatRequest(BaseModel):
 class LiveTurnRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=5000)
     history: List[Dict[str, str]] = Field(default_factory=list)
-    persona_mode: str = Field(default="coach", pattern="^(coach|guardian)$")
+    persona_mode: str = Field(default="balanced", pattern="^(balanced|actionable|philosophy|brainstorm|coach|guardian)$")
+
+class SummarizeRequest(BaseModel):
+    conversation: List[Dict[str, str]] = Field(default_factory=list)
+    text: Optional[str] = None
 
 class ActionProposal(BaseModel):
     tool: Literal[
@@ -368,6 +372,20 @@ def live_agent_conversational_turn(
         "detected_mode": result.get("detected_mode", req.persona_mode),
         "tickets": latest_tickets
     }
+
+@app.post("/api/agent/summarize")
+def agent_summarize_reflection(
+    req: SummarizeRequest,
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """
+    Distills structured takeaways, title, tags, and cognitive realization from multi-turn dialogue.
+    """
+    history = req.conversation
+    if not history and req.text:
+        history = [{"role": "user", "text": req.text}]
+    summary_data = gemini_service.summarize_session(history)
+    return summary_data
 
 @app.post("/api/agent/actions/confirm")
 def confirm_agent_action(

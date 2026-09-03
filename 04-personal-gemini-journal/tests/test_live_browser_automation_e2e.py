@@ -79,7 +79,17 @@ def test_full_browser_automation_lifecycle():
         assert page.locator("#user-display-name").inner_text() == "Aung Hein Kyaw"
         page.screenshot(path=os.path.join(screenshot_dir, "01_sanctuary_dashboard.png"))
 
-        # Step 2: Live Typing in Reflection Studio
+        # Step 2: Reflection Style Selector & Live Dialogue with Badges
+        # 2A. Test Reflection Style Selector
+        card_actionable = page.locator('.reflection-style-card[data-style="actionable"]')
+        card_philosophy = page.locator('.reflection-style-card[data-style="philosophy"]')
+        card_actionable.click()
+        assert "Actionable" in page.locator("#active-style-label").inner_text()
+        card_philosophy.click()
+        assert "Deep Philosophy" in page.locator("#active-style-label").inner_text()
+        page.screenshot(path=os.path.join(screenshot_dir, "02a_reflection_style_selector.png"))
+
+        # 2B. Live Typing in Reflection Studio
         input_box = page.locator("#reflection-input")
         assert input_box.is_visible()
         input_box.click()
@@ -91,12 +101,30 @@ def test_full_browser_automation_lifecycle():
         assert input_box.input_value() == ""
         
         input_box.type(test_thought, delay=10)
-        page.screenshot(path=os.path.join(screenshot_dir, "02_reflection_input_typed.png"))
+        page.screenshot(path=os.path.join(screenshot_dir, "02b_reflection_input_typed.png"))
 
         # Submit reflection
         page.locator("#send-reflection-btn").click()
-        page.wait_for_selector("#chat-stream .animate-fadeIn", timeout=5000)
+        page.wait_for_selector("#chat-stream .model-badge", timeout=6000)
         assert test_thought in page.locator("#chat-stream").inner_text()
+
+        # 2C. Verify model badge, turn counter, and follow-up placeholder
+        assert page.locator("#chat-stream .model-badge", has_text="gemini-3.7-flash").is_visible()
+        assert "1 Turn" in page.locator("#turn-counter-badge").inner_text()
+        assert "Ask a follow-up reflection, challenge Gemini's thought, or explore deeper..." in (input_box.get_attribute("placeholder") or "")
+        page.screenshot(path=os.path.join(screenshot_dir, "02c_multiturn_dialogue_and_badges.png"))
+
+        # 2D. Auto-Summarize Action
+        page.locator("#auto-summarize-btn").click()
+        page.wait_for_selector(".summary-card", timeout=6000)
+        assert page.locator(".summary-card").is_visible()
+        page.screenshot(path=os.path.join(screenshot_dir, "02d_auto_summarize_distilled.png"))
+
+        # 2E. Save Reflection Action
+        page.locator("#save-session-btn").click()
+        page.wait_for_timeout(800)
+        assert "Firestore Synchronized" in page.locator("#firestore-sync-badge").inner_text()
+        page.screenshot(path=os.path.join(screenshot_dir, "02e_firestore_saved.png"))
 
         # Step 3: Navigation Switching & Ambient Glow Verification
         # 3A. Switch to Act / Kanban Board
@@ -168,6 +196,7 @@ def test_full_browser_automation_lifecycle():
                     body: JSON.stringify({
                         title: 'Live E2E Verified Reflection',
                         content: 'All components verified under Playwright browser automation.',
+                        tags: ['Actionable', 'Breakthrough'],
                         conversation: [{role: 'user', text: 'Status update on Sanctuary OS'}, {role: 'model', text: 'All systems verified.'}],
                         action_items: [{title: 'Submit to Hack2Skill APAC GenAI Academy'}]
                     })
@@ -178,15 +207,30 @@ def test_full_browser_automation_lifecycle():
         page.locator("#refresh-history-btn").click()
         page.wait_for_timeout(500)
 
-        # Click entry to open Review Drawer
+        # Test live search
+        search_box = page.locator("#history-search-input")
+        search_box.fill("Verified")
+        page.wait_for_timeout(200)
         saved_entry = page.locator("#journal-history-list .history-item", has_text="Live E2E Verified Reflection")
         assert saved_entry.is_visible()
+        search_box.fill("")
+        page.wait_for_timeout(200)
+
+        # Test filter chips
+        page.locator('#history-filter-chips .history-chip[data-filter="actionable"]').click()
+        page.wait_for_timeout(200)
+        assert saved_entry.is_visible()
+        page.locator('#history-filter-chips .history-chip[data-filter="all"]').click()
+        page.wait_for_timeout(200)
+        page.screenshot(path=os.path.join(screenshot_dir, "09a_history_search_and_filter_chips.png"))
+
+        # Click entry to open Review Drawer
         saved_entry.click()
 
         review_modal = page.locator("#journal-review-modal")
         page.wait_for_selector("#journal-review-modal", state="visible", timeout=5000)
         assert "Live E2E Verified Reflection" in page.locator("#review-modal-title").inner_text()
-        page.screenshot(path=os.path.join(screenshot_dir, "09_history_review_drawer.png"))
+        page.screenshot(path=os.path.join(screenshot_dir, "09b_history_review_drawer.png"))
 
         page.locator("#close-review-modal-btn").click()
         page.wait_for_selector("#journal-review-modal", state="hidden", timeout=5000)
