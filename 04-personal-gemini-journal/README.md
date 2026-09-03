@@ -114,11 +114,15 @@ See the full directives in [AI_STUDIO_SECURITY_CONSTITUTION.md](./AI_STUDIO_SECU
 
 ## 🧪 Security & Multi-Tenant Automated Test Suite
 
-Run the automated pytest suite verifying cross-tenant isolation and security:
+Create a fresh environment, install the declared Python dependencies and Chromium, then run the complete 25-test gate (14 security/isolation tests + 11 browser UI tests):
 
 ```bash
 cd 04-personal-gemini-journal
-python3 -m pytest tests/test_security_isolation.py -v
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m playwright install chromium
+python -m pytest tests/test_security_isolation.py tests/test_ui_playwright.py -v
 ```
 
 ### Verified Test Cases:
