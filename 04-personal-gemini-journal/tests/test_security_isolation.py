@@ -330,3 +330,71 @@ def test_user_data_reset_and_tenant_safety():
     list_b = client.get("/api/tickets", headers={"Authorization": f"Bearer {USER_B_TOKEN}"})
     assert any(t["title"] == "User B Important Safe Task" for t in list_b.json()["tickets"])
 
+
+# ==============================================================================
+# Phase 1 RED Tests: Fail-Closed Production Authentication & Public Config
+# ==============================================================================
+
+@pytest.mark.parametrize("deterministic_token", [
+    "test-token:alpha:alpha@test.com",
+    "mock-token:beta:beta@test.com",
+    "demo-guest-token",
+])
+def test_production_rejects_deterministic_tokens_even_if_allow_test_auth(monkeypatch, deterministic_token):
+    """
+    RED TEST: In production, test-token:*, mock-token:*, and demo-guest-token
+    MUST receive HTTP 401, even if ALLOW_TEST_AUTH=true.
+    """
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("ALLOW_TEST_AUTH", "true")
+    res = client.get("/api/journal/entries", headers={"Authorization": f"Bearer {deterministic_token}"})
+    assert res.status_code == 401
+    detail = res.json().get("detail", "")
+    assert "Invalid or expired" in detail or "disabled" in detail
+
+
+@pytest.mark.parametrize("env,allow_test,expected_status", [
+    ("test", "true", 200),
+    ("test", "false", 401),
+    ("production", "true", 401),
+    ("production", "false", 401),
+    ("staging", "true", 401),
+    ("development", "false", 401),
+])
+def test_deterministic_tokens_require_both_test_env_and_allow_flag(monkeypatch, env, allow_test, expected_status):
+    """
+    RED TEST: Deterministic tokens work ONLY when ENVIRONMENT is 'test' (or 'development')
+    AND ALLOW_TEST_AUTH='true'. If either is absent/false, must receive HTTP 401.
+    """
+    monkeypatch.setenv("ENVIRONMENT", env)
+    monkeypatch.setenv("ALLOW_TEST_AUTH", allow_test)
+    res = client.get("/api/journal/entries", headers={"Authorization": f"Bearer {USER_A_TOKEN}"})
+    assert res.status_code == expected_status
+
+
+def test_public_config_endpoint_contract_and_security(monkeypatch):
+    """
+    RED TEST: GET /api/public-config returns auth_mode='firebase' in production,
+    and NEVER returns secrets (private_key, bearer token, email, or sensitive keys).
+    """
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("ALLOW_TEST_AUTH", "false")
+    monkeypatch.setenv("FIREBASE_API_KEY", "AIzaSyFakePublicKeyForClient123")
+    monkeypatch.setenv("FIREBASE_AUTH_DOMAIN", "intelligent-arc-488111-s0.firebaseapp.com")
+    monkeypatch.setenv("GCP_PROJECT_ID", "intelligent-arc-488111-s0")
+    monkeypatch.setenv("FIREBASE_APP_ID", "1:1234567890:web:abcdef")
+
+    res = client.get("/api/public-config")
+    assert res.status_code == 200
+    data = res.json()
+    assert data.get("auth_mode") == "firebase"
+    assert "firebase" in data
+    fb_config = data["firebase"]
+    assert fb_config.get("projectId") == "intelligent-arc-488111-s0"
+    assert fb_config.get("apiKey") == "AIzaSyFakePublicKeyForClient123"
+
+    # Leakage check: ensure no private keys, client secrets, or emails are exposed
+    raw_text = res.text.lower()
+    for forbidden in ["private_key", "client_secret", "bearer", "gemini_api_key", "service_account", "@"]:
+        assert forbidden not in raw_text, f"Potential secret or sensitive leak found in /api/public-config: {forbidden}"
+

@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from auth import get_current_user, AuthenticatedUser, enforce_user_isolation
+from auth import get_current_user, AuthenticatedUser, enforce_user_isolation, test_auth_enabled
 from database import db_service
 from gemini_service import gemini_service, GCP_PROJECT_ID, MODEL_NAME
 
@@ -111,6 +111,38 @@ def health_check():
         "gemini_model": MODEL_NAME,
         "firestore_live": db_service.is_live,
         "secret_manager_integrated": gemini_service.api_key is not None
+    }
+
+@app.get("/api/public-config")
+def get_public_config():
+    """
+    Public configuration endpoint supplying non-secret Firebase client settings.
+    Never exposes private keys, secrets, service account tokens, or emails.
+    """
+    env = os.environ.get("ENVIRONMENT", "production").strip().lower()
+    auth_mode = "test" if test_auth_enabled() else "firebase"
+    gcp_project = os.environ.get("GCP_PROJECT_ID", "intelligent-arc-488111-s0")
+
+    firebase_config = {
+        "apiKey": os.environ.get("FIREBASE_API_KEY", ""),
+        "authDomain": os.environ.get("FIREBASE_AUTH_DOMAIN", f"{gcp_project}.firebaseapp.com"),
+        "projectId": gcp_project,
+        "storageBucket": os.environ.get("FIREBASE_STORAGE_BUCKET", f"{gcp_project}.appspot.com"),
+        "messagingSenderId": os.environ.get("FIREBASE_MESSAGING_SENDER_ID", ""),
+        "appId": os.environ.get("FIREBASE_APP_ID", ""),
+    }
+
+    config_error = None
+    if auth_mode == "firebase" and env == "production":
+        missing = [k for k, v in [("apiKey", firebase_config["apiKey"]), ("appId", firebase_config["appId"])] if not v]
+        if missing:
+            config_error = f"Missing required production Firebase Web config: {', '.join(missing)}"
+
+    return {
+        "auth_mode": auth_mode,
+        "environment": env,
+        "firebase": firebase_config,
+        "config_error": config_error,
     }
 
 @app.get("/api/auth/me")
