@@ -261,6 +261,75 @@ def test_calendar_events_tenant_isolation():
     assert events_b.status_code == 200
     assert all(e["id"] != evt_a["id"] for e in events_b.json()["events"])
 
+def test_calendar_event_delete_and_tenant_isolation():
+    """Verify Calendar Event deletion and tenant isolation."""
+    # 1. User A creates event
+    evt_res = client.post(
+        "/api/calendar/events",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "title": "Phase 4 Focus Block",
+            "date": "2026-09-04",
+            "time_block": "Afternoon Sprint"
+        }
+    )
+    assert evt_res.status_code == 200
+    evt_id = evt_res.json()["event"]["id"]
+
+    # 2. User B cannot delete User A's event
+    b_del = client.delete(
+        f"/api/calendar/events/{evt_id}",
+        headers={"Authorization": f"Bearer {USER_B_TOKEN}"}
+    )
+    assert b_del.status_code == 404
+
+    # 3. User A can delete their own event
+    a_del = client.delete(
+        f"/api/calendar/events/{evt_id}",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"}
+    )
+    assert a_del.status_code == 200
+    assert a_del.json()["status"] == "deleted"
+
+    # 4. Repeated delete yields 404
+    a_del_repeat = client.delete(
+        f"/api/calendar/events/{evt_id}",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"}
+    )
+    assert a_del_repeat.status_code == 404
+
+def test_rewind_metrics_endpoint_tenant_isolation():
+    """Verify /api/rewind computes genuine metrics scoped strictly to authenticated tenant."""
+    # Create distinct data for User A
+    client.post(
+        "/api/tickets",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={"title": "Done Task A", "priority": "High", "category": "Core", "column": "done"}
+    )
+    client.post(
+        "/api/tickets",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={"title": "Todo Task A", "priority": "Low", "category": "Core", "column": "todo"}
+    )
+    client.post(
+        "/api/journal/save",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={"content": "Writing ten words reflection for tenant isolation verification in this test suite.", "tags": ["grounded", "sanctuary"]}
+    )
+
+    res_a = client.get("/api/rewind", headers={"Authorization": f"Bearer {USER_A_TOKEN}"})
+    assert res_a.status_code == 200
+    data_a = res_a.json()
+    assert data_a["total_entries"] >= 1
+    assert data_a["total_words"] >= 10
+    assert data_a["completed_tickets"] >= 1
+    assert data_a["open_tickets"] >= 1
+    assert "grounded" in data_a["recent_tags"]
+
+    # Unauthenticated request rejected
+    unauth = client.get("/api/rewind")
+    assert unauth.status_code == 401
+
 def test_synthesize_learned_rule_success_with_timezone_aware_datetime():
     """Verify synthesize_learned_rule executes with timezone-aware ISO string without NameError."""
     res = client.post(

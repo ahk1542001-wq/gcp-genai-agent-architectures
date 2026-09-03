@@ -247,6 +247,19 @@ class FirestoreService:
             bucket = _get_memory_bucket(uid, "calendar")
             return list(bucket.values())
 
+    def delete_calendar_event(self, uid: str, event_id: str) -> bool:
+        if not uid or not event_id:
+            return False
+        if self.is_live and self.client:
+            self.client.collection("users").document(uid).collection("calendar").document(event_id).delete()
+            return True
+        else:
+            bucket = _get_memory_bucket(uid, "calendar")
+            if event_id in bucket:
+                del bucket[event_id]
+                return True
+            return False
+
     # -------------------------------------------------------------------------
     # User Profile & Living Context (/users/{uid}/profile/main)
     # -------------------------------------------------------------------------

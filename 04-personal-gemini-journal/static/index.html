@@ -150,8 +150,8 @@
         </div>
       </div>
       <div class="bg-[#0e1117] p-2 rounded border border-[#30363d] flex items-center justify-between">
-        <span class="text-[10px] text-[#8b949e]">Burnout Radar</span>
-        <span id="burnout-status-pill" class="text-[10px] font-medium text-[#3fb950] bg-[#238636]/20 px-1.5 py-0.5 rounded border border-[#238636]/30">Optimal Balance</span>
+        <span class="text-[10px] text-[#8b949e]">Sanctuary Mode</span>
+        <span id="sanctuary-status-pill" class="text-[10px] font-medium text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/30">Private Tenant</span>
       </div>
     </div>
   </aside>
@@ -374,49 +374,109 @@
       <!-- ================================================================= -->
       <!-- VIEW 3: INTERACTIVE MOOD & HABIT CALENDAR -->
       <!-- ================================================================= -->
-      <section id="view-calendar-content" class="hidden max-w-4xl mx-auto space-y-4">
+      <section id="view-calendar-content" class="hidden max-w-4xl mx-auto space-y-5">
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-base font-semibold text-[#f0f6fc]">Mindful Calendar</h3>
-            <p class="text-xs text-[#8b949e]">Daily reflection mood badges and scheduled time blocks</p>
+            <p class="text-xs text-[#8b949e]">Ground scheduled focus blocks and reflection days</p>
           </div>
           <div class="flex items-center space-x-2">
-            <span class="text-xs font-medium text-[#f0f6fc]" id="cal-month-year">September 2026</span>
+            <span class="text-xs font-medium text-[#f0f6fc]" id="cal-month-year">Current Month</span>
           </div>
         </div>
 
+        <!-- Month Grid -->
         <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
           <div class="grid grid-cols-7 text-center text-xs font-semibold text-[#8b949e] pb-2 border-b border-[#30363d]">
             <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
           </div>
           <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 pt-2">
-            <!-- Calendar day cells dynamically injected -->
+            <!-- Calendar day cells dynamically injected from genuine dates -->
           </div>
+        </div>
+
+        <!-- Calendar Events Management Section -->
+        <div id="calendar-events-section" class="bg-[#161b22] border border-[#30363d] rounded-xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-semibold text-[#f0f6fc]">Scheduled Focus Blocks</h4>
+            <span id="calendar-events-count" class="text-xs text-gray-400">0 events</span>
+          </div>
+
+          <!-- Add Event Form -->
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
+            <input type="text" id="new-event-title" placeholder="Event / Focus block title..." class="sm:col-span-2 bg-[#0e1117] border border-[#30363d] rounded-lg px-3 py-2 text-[#f0f6fc] focus:outline-none focus:border-indigo-500">
+            <input type="date" id="new-event-date" class="bg-[#0e1117] border border-[#30363d] rounded-lg px-2.5 py-2 text-[#f0f6fc] focus:outline-none focus:border-indigo-500">
+            <select id="new-event-timeblock" class="bg-[#0e1117] border border-[#30363d] rounded-lg px-2.5 py-2 text-[#f0f6fc] focus:outline-none focus:border-indigo-500">
+              <option value="Morning Focus">Morning Focus</option>
+              <option value="Afternoon Sprint">Afternoon Sprint</option>
+              <option value="Evening Wind-down">Evening Wind-down</option>
+            </select>
+          </div>
+          <div class="flex justify-end">
+            <button id="add-event-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium px-4 py-1.5 rounded-lg transition-colors shadow-sm">
+              + Add Event
+            </button>
+          </div>
+
+          <!-- Event List -->
+          <div id="calendar-events-list" class="space-y-2 pt-2 border-t border-[#30363d]">
+            <!-- Injected dynamically -->
+          </div>
+          <p id="calendar-events-empty" class="text-xs text-gray-500 italic text-center py-3">No focus events scheduled yet. Add your first time block above.</p>
         </div>
       </section>
 
       <!-- ================================================================= -->
-      <!-- VIEW 4: LIFE REWIND (WRAPPED) -->
+      <!-- VIEW 4: LIFE REWIND (GENUINE USER METRICS) -->
       <!-- ================================================================= -->
       <section id="view-rewind-content" class="hidden max-w-3xl mx-auto space-y-6">
         <div class="text-center space-y-1">
-          <span class="text-4xl">✨</span>
-          <h3 class="text-xl font-bold text-[#f0f6fc]">Your Life Rewind & Growth</h3>
-          <p class="text-xs text-[#8b949e]">Celebrating breakthroughs, consistency, and resilience</p>
+          <span class="text-3xl">✨</span>
+          <h3 class="text-xl font-bold text-[#f0f6fc]">Your Sanctuary Rewind</h3>
+          <p class="text-xs text-[#8b949e]">Grounding your growth in authentic reflections and actions</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-gradient-to-br from-purple-900/40 to-indigo-900/40 border border-purple-500/30 rounded-xl p-5 space-y-2">
-            <span class="text-2xl">🏆</span>
-            <h4 class="text-sm font-semibold text-white">Top Breakthrough of the Month</h4>
-            <p class="text-xs text-purple-200 leading-relaxed italic" id="rewind-breakthrough-text">"Mastered enterprise multi-tenant Firestore security and passed all Google Cloud challenges with 100% scores."</p>
+        <!-- Clean Empty State (When no entries exist) -->
+        <div id="rewind-empty-state" class="hidden bg-[#161b22] border border-[#30363d] rounded-xl p-8 text-center space-y-3">
+          <span class="text-3xl">🌱</span>
+          <h4 class="text-sm font-semibold text-white">Your Sanctuary journey begins with your first reflection.</h4>
+          <p class="text-xs text-gray-400 max-w-md mx-auto">Take a breath, dump your unfiltered thoughts, or check in with your Guardian coach to start recording your authentic journey.</p>
+        </div>
+
+        <!-- Genuine Metrics Container -->
+        <div id="rewind-metrics-container" class="space-y-4">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-3.5 text-center">
+              <span class="text-xs text-gray-400 block mb-1">Reflections</span>
+              <span id="rewind-total-entries" class="text-2xl font-bold text-indigo-400">0</span>
+            </div>
+            <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-3.5 text-center">
+              <span class="text-xs text-gray-400 block mb-1">Words Written</span>
+              <span id="rewind-total-words" class="text-2xl font-bold text-purple-400">0</span>
+            </div>
+            <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-3.5 text-center">
+              <span class="text-xs text-gray-400 block mb-1">Habit Streak</span>
+              <div class="flex items-center justify-center space-x-1">
+                <span id="rewind-streak-days" class="text-2xl font-bold text-amber-400">0</span>
+                <span class="text-xs text-gray-400">days</span>
+              </div>
+            </div>
+            <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-3.5 text-center">
+              <span class="text-xs text-gray-400 block mb-1">Tasks Done</span>
+              <span id="rewind-completed-tickets" class="text-2xl font-bold text-emerald-400">0</span>
+            </div>
           </div>
 
-          <div class="bg-gradient-to-br from-emerald-900/40 to-teal-900/40 border border-emerald-500/30 rounded-xl p-5 space-y-2">
-            <span class="text-2xl">🔥</span>
-            <h4 class="text-sm font-semibold text-white">Consistency & Habit Streak</h4>
-            <p class="text-2xl font-bold text-emerald-400" id="rewind-streak-text">100%</p>
-            <p class="text-xs text-emerald-200">Daily check-ins completed with zero cross-tenant leakage.</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4 space-y-2">
+              <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400">Living Memory Insights</h4>
+              <p class="text-xs text-gray-300">Total insights accumulated: <span id="rewind-memories-count" class="font-bold text-white">0</span></p>
+              <div id="rewind-tags-container" class="flex flex-wrap gap-1.5 pt-1"></div>
+            </div>
+            <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4 space-y-2">
+              <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400">Recent Reflections</h4>
+              <div id="rewind-recent-list" class="space-y-1.5 text-xs text-gray-300"></div>
+            </div>
           </div>
         </div>
       </section>

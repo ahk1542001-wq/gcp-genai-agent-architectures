@@ -439,6 +439,77 @@ def create_calendar_event(
     evt = db_service.save_calendar_event(uid=user.uid, event=req.model_dump())
     return {"status": "created", "event": evt}
 
+@app.delete("/api/calendar/events/{event_id}")
+def delete_calendar_event_endpoint(
+    event_id: str,
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    success = db_service.delete_calendar_event(uid=user.uid, event_id=event_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return {"status": "deleted", "id": event_id}
+
+# --------------------------------------------------------------------------
+# Life Rewind & Real Statistics (/api/rewind)
+# --------------------------------------------------------------------------
+@app.get("/api/rewind")
+def get_rewind_metrics(user: AuthenticatedUser = Depends(get_current_user)):
+    """
+    Calculates genuine user metrics grounded strictly in authenticated tenant data:
+    - total journal entries
+    - total words written
+    - real consecutive habit streak days
+    - completed vs open tickets
+    - living memory insights
+    - real recent tags and reflections
+    """
+    journals = db_service.get_journals(uid=user.uid)
+    tickets = db_service.get_tickets(uid=user.uid)
+    profile = db_service.get_user_profile(uid=user.uid)
+
+    total_entries = len(journals)
+    total_words = sum(len((j.get("content") or "").split()) for j in journals)
+    completed_tickets = sum(1 for t in tickets if t.get("column") == "done")
+    open_tickets = sum(1 for t in tickets if t.get("column") in ("todo", "in_progress"))
+
+    # Real streak calculation: consecutive days ending today or yesterday
+    entry_dates = set()
+    for j in journals:
+        d = j.get("date") or (j.get("created_at") or "")[:10]
+        if d:
+            entry_dates.add(d)
+
+    streak_days = 0
+    today = datetime.date.today()
+    check_date = today
+    if check_date.isoformat() not in entry_dates:
+        check_date = today - datetime.timedelta(days=1)
+    while check_date.isoformat() in entry_dates:
+        streak_days += 1
+        check_date -= datetime.timedelta(days=1)
+
+    recent_tags = list({tag for j in journals for tag in j.get("tags", [])})[:10]
+    recent_reflections = [
+        {
+            "id": j.get("id"),
+            "title": j.get("title") or "Reflection",
+            "date": j.get("date") or (j.get("created_at") or "")[:10],
+            "excerpt": (j.get("content") or "")[:150]
+        }
+        for j in journals[:5]
+    ]
+
+    return {
+        "total_entries": total_entries,
+        "total_words": total_words,
+        "streak_days": streak_days,
+        "completed_tickets": completed_tickets,
+        "open_tickets": open_tickets,
+        "living_memories_count": len(profile.get("living_memory", [])),
+        "recent_tags": recent_tags,
+        "recent_reflections": recent_reflections
+    }
+
 # --------------------------------------------------------------------------
 # User Profile & Living Context Endpoints (/api/profile)
 # --------------------------------------------------------------------------

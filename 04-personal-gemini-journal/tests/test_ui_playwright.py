@@ -543,3 +543,164 @@ def test_browser_action_proposal_approval_and_dismissal_flow():
         assert len(confirm_called) == 0, "Dismiss must NOT trigger any confirmation API write!"
 
         browser.close()
+
+
+def test_browser_rewind_empty_state_and_no_fake_metrics():
+    """
+    RED TEST: Rewind view renders genuine user metrics or clean empty state.
+    Must never render '100% Streak' or 'Found emotional stability during hackathon crunch'
+    or random mood badges.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Mock empty rewind response
+        page.route("**/api/rewind", lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps({
+                "total_entries": 0,
+                "total_words": 0,
+                "streak_days": 0,
+                "completed_tickets": 0,
+                "open_tickets": 0,
+                "living_memories_count": 0,
+                "recent_tags": [],
+                "recent_reflections": []
+            })
+        ))
+
+        goto_authenticated(page)
+
+        # Navigate to Rewind
+        page.locator("#nav-rewind").click()
+        page.wait_for_timeout(400)
+
+        content = page.content()
+        # Verify no hardcoded mock text exists
+        assert "100% Streak" not in content
+        assert "Found emotional stability during hackathon crunch" not in content
+        assert "Mastered enterprise multi-tenant Firestore security" not in content
+
+        # Verify clean empty state is visible
+        empty_el = page.locator("#rewind-empty-state")
+        assert empty_el.is_visible()
+        assert "begins with your first reflection" in empty_el.text_content()
+
+        browser.close()
+
+
+def test_browser_rewind_genuine_metrics():
+    """
+    RED TEST: Rewind view accurately presents calculated real metrics from /api/rewind.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        page.route("**/api/rewind", lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps({
+                "total_entries": 7,
+                "total_words": 1420,
+                "streak_days": 5,
+                "completed_tickets": 12,
+                "open_tickets": 3,
+                "living_memories_count": 4,
+                "recent_tags": ["wellness", "focus"],
+                "recent_reflections": [
+                    {"id": "r1", "title": "First Step", "date": "2026-09-01", "excerpt": "Clear mind"}
+                ]
+            })
+        ))
+
+        goto_authenticated(page)
+
+        page.locator("#nav-rewind").click()
+        page.wait_for_timeout(400)
+
+        # Check genuine metric elements
+        assert page.locator("#rewind-total-entries").text_content() == "7"
+        assert page.locator("#rewind-total-words").text_content() == "1420"
+        assert page.locator("#rewind-streak-days").text_content() == "5"
+        assert page.locator("#rewind-completed-tickets").text_content() == "12"
+
+        browser.close()
+
+
+def test_browser_calendar_crud_and_empty_state():
+    """
+    RED TEST: Calendar supports adding focus events for a date/time block,
+    viewing events, and deleting events with immediate DOM updates.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        goto_authenticated(page)
+
+        page.locator("#nav-calendar").click()
+        page.wait_for_timeout(400)
+
+        # Calendar view must have an event list / management container
+        assert page.locator("#calendar-events-section").is_visible()
+
+        # Add event
+        page.locator("#new-event-title").fill("Deep Architecture Focus")
+        page.locator("#new-event-date").fill("2026-09-04")
+        page.locator("#new-event-timeblock").select_option("Morning Focus")
+        page.locator("#add-event-btn").click()
+        page.wait_for_timeout(500)
+
+        # Verify event appears in list
+        event_item = page.locator(".calendar-event-item", has_text="Deep Architecture Focus").first
+        assert event_item.is_visible()
+
+        # Delete event
+        event_item.locator(".delete-event-btn").click()
+        page.wait_for_timeout(500)
+
+        # Verify deleted
+        assert not page.locator(".calendar-event-item", has_text="Deep Architecture Focus").is_visible()
+
+        browser.close()
+
+
+def test_browser_api_fetch_401_session_expiry_preserves_draft():
+    """
+    RED TEST: When any authenticated API call fails with 401 Unauthorized,
+    the app transitions safely to the signed-out state without losing unsaved draft text.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        goto_authenticated(page)
+
+        # User writes a valuable draft
+        draft_content = "Crucial uncommitted ideas: building the APAC GenAI Sanctuary."
+        textarea = page.locator("#reflection-input")
+        textarea.fill(draft_content)
+        page.wait_for_timeout(200)
+
+        # Trigger an API call that returns 401 (e.g. simulated session expired on saving journal)
+        page.route("**/api/agent/live-turn", lambda route: route.fulfill(
+            status=401,
+            content_type="application/json",
+            body='{"detail": "Session expired or invalid credentials."}'
+        ))
+
+        page.locator("#send-reflection-btn").click()
+        page.wait_for_timeout(500)
+
+        # Must transition to auth landing screen with explanatory banner
+        assert page.locator("#auth-landing").is_visible(), "Expected app to show auth landing on 401"
+        assert not page.locator("#app-shell").is_visible(), "Expected app shell to hide on 401"
+
+        # Draft must be preserved in LocalStorage
+        saved_draft = page.evaluate("localStorage.getItem('journal_draft')")
+        assert saved_draft == draft_content, "Draft was lost upon 401 session expiry!"
+
+        browser.close()
