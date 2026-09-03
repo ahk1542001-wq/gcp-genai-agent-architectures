@@ -310,26 +310,23 @@ def test_browser_ui_clear_and_reflect_buttons():
 
         browser.close()
 
-def test_browser_ui_destress_breathing_modal_cycle():
-    """Verify De-Stress Breathe button opens breathing circle and close button dismisses it."""
+def test_browser_sidebar_clean_executive_navigation_no_kid_gimmicks():
+    """Verify mature executive sidebar: clean pillars present, kid breathing gimmick removed."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         goto_authenticated(page)
 
-        # Click De-Stress Breathe in sidebar
-        page.locator("#nav-destress").click()
-        page.wait_for_timeout(200)
+        # 1. Executive pillars must be visible
+        assert page.locator("#nav-journal").is_visible()
+        assert page.locator("#nav-kanban").is_visible()
+        assert page.locator("#nav-calendar").is_visible()
+        assert page.locator("#nav-rewind").is_visible()
+        assert page.locator("#nav-shutdown").is_visible()
 
-        modal = page.locator("#breathing-modal")
-        assert modal.is_visible()
-        assert page.locator("#breathing-circle").is_visible()
-        assert "Inhale" in page.locator("#breathing-phase-text").text_content()
-
-        # Close Modal
-        page.locator("#close-breathing-btn").click()
-        page.wait_for_timeout(200)
-        assert not modal.is_visible()
+        # 2. Kid breathing gimmick and modal must NOT exist in the DOM
+        assert page.locator("#nav-destress").count() == 0, "Kid breathing button must not exist in executive sidebar"
+        assert page.locator("#breathing-modal").count() == 0, "Breathing circle modal must be removed"
 
         browser.close()
 

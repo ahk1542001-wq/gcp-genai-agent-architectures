@@ -1507,6 +1507,7 @@ function triggerShutdownModal() {
 function initDeStressModal() {
   const navBtn = document.getElementById("nav-destress");
   const modal = document.getElementById("breathing-modal");
+  if (!navBtn || !modal) return;
   const closeBtn = document.getElementById("close-breathing-btn");
   const circle = document.getElementById("breathing-circle");
   const phaseText = document.getElementById("breathing-phase-text");

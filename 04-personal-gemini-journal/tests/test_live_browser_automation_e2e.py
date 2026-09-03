@@ -141,19 +141,7 @@ def test_full_browser_automation_lifecycle():
         page.locator("#close-executive-report-btn").click()
         page.wait_for_selector("#executive-report-modal", state="hidden", timeout=5000)
 
-        # Step 5: De-Stress Box Breathing Modal
-        destress_btn = page.locator("#nav-destress")
-        destress_btn.click()
-        breathing_modal = page.locator("#breathing-modal")
-        page.wait_for_selector("#breathing-modal", state="visible", timeout=5000)
-        assert page.locator("#breathing-circle").is_visible()
-        page.screenshot(path=os.path.join(screenshot_dir, "07_breathing_modal.png"))
-        
-        # Close breathing modal
-        page.locator("#close-breathing-btn").click()
-        page.wait_for_selector("#breathing-modal", state="hidden", timeout=5000)
-
-        # Step 6: Evening Shutdown Ritual Modal
+        # Step 5: Evening Shutdown Ritual Modal
         shutdown_btn = page.locator("#nav-shutdown")
         shutdown_btn.click()
         shutdown_modal = page.locator("#shutdown-modal")
