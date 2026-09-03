@@ -61,6 +61,7 @@ class FirestoreService:
             "content": entry.get("content", ""),
             "conversation": entry.get("conversation", []),
             "summary": entry.get("summary", ""),
+            "breakthrough": entry.get("breakthrough", ""),
             "emotional_arc": entry.get("emotional_arc", {}),
             "action_items": entry.get("action_items", []),
             "tags": entry.get("tags", []),

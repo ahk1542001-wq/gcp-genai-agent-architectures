@@ -164,6 +164,13 @@ function showAppShell() {
       avatarEl.textContent = initial;
     }
   }
+  const input = document.getElementById("reflection-input");
+  if (input && !input.value) {
+    const savedDraft = localStorage.getItem("journal_draft") || localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (savedDraft) {
+      input.value = savedDraft;
+    }
+  }
 }
 
 async function getAuthorizationHeaders() {
@@ -960,7 +967,8 @@ async function processLiveTurn(message) {
       // Handle non-persistent UI actions immediately
       (data.ui_actions || []).forEach(act => {
         if (act.tool === "trigger_box_breathing") {
-          document.getElementById("breathing-modal").classList.remove("hidden");
+          const breathingModal = document.getElementById("breathing-modal");
+          if (breathingModal) breathingModal.classList.remove("hidden");
         } else if (act.tool === "trigger_shutdown_ritual") {
           triggerShutdownModal();
         }
@@ -1317,7 +1325,8 @@ function initMultiTurnActionBar() {
 
       try {
         const firstUserMsg = state.conversationHistory.find(m => m.role === "user");
-        const titleText = firstUserMsg ? (firstUserMsg.text.slice(0, 45) + (firstUserMsg.text.length > 45 ? "..." : "")) : "Reflective Session";
+        const distillation = state.lastDistillation || {};
+        const titleText = distillation.title || (firstUserMsg ? (firstUserMsg.text.slice(0, 45) + (firstUserMsg.text.length > 45 ? "..." : "")) : "Reflective Session");
         const contentText = state.conversationHistory.map(m => `${m.role === 'user' ? 'User' : 'Gemini'}: ${m.text}`).join("\n\n");
         const styleTag = state.reflectionStyle ? state.reflectionStyle.charAt(0).toUpperCase() + state.reflectionStyle.slice(1) : "Reflective";
 
@@ -1326,8 +1335,10 @@ function initMultiTurnActionBar() {
           body: JSON.stringify({
             title: titleText,
             content: contentText,
+            summary: distillation.summary || "",
+            breakthrough: distillation.breakthrough || "",
             conversation: state.conversationHistory,
-            tags: [styleTag, "MultiTurn"]
+            tags: Array.from(new Set([...(distillation.tags || []), styleTag, "MultiTurn"]))
           })
         });
 
@@ -1356,6 +1367,7 @@ function initMultiTurnActionBar() {
 }
 
 function renderDistilledSummaryCard(data) {
+  state.lastDistillation = data;
   const stream = document.getElementById("chat-stream");
   if (!stream) return;
 
@@ -1412,10 +1424,18 @@ function initShortcuts() {
 
     // Escape: Close all open modals
     if (e.key === "Escape") {
-      document.getElementById("settings-modal").classList.add("hidden");
-      document.getElementById("shutdown-modal").classList.add("hidden");
-      document.getElementById("breathing-modal").classList.add("hidden");
-      document.getElementById("export-dropdown").classList.add("hidden");
+      const modalIds = [
+        "settings-modal",
+        "shutdown-modal",
+        "journal-review-modal",
+        "executive-report-modal",
+        "export-dropdown",
+        "breathing-modal"
+      ];
+      modalIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add("hidden");
+      });
     }
   });
 }
@@ -2051,8 +2071,9 @@ function applyHistoryFilterAndSearch() {
       const dateStr = (entry.created_at || "").toLowerCase();
       const content = (entry.content || "").toLowerCase();
       const summary = (entry.summary || "").toLowerCase();
+      const breakthrough = (entry.breakthrough || "").toLowerCase();
       const tagsStr = Array.isArray(entry.tags) ? entry.tags.join(" ").toLowerCase() : "";
-      const matches = title.includes(query) || dateStr.includes(query) || content.includes(query) || summary.includes(query) || tagsStr.includes(query);
+      const matches = title.includes(query) || dateStr.includes(query) || content.includes(query) || summary.includes(query) || breakthrough.includes(query) || tagsStr.includes(query);
       if (!matches) return false;
     }
 
@@ -2148,7 +2169,11 @@ function openJournalReviewModal(entry) {
         actionsEl.innerHTML = `<span class="text-gray-500 italic text-[11px]">No tasks created during this session.</span>`;
       } else {
         items.forEach(act => {
-          const actTitle = typeof act === "object" ? (act.title || JSON.stringify(act)) : String(act);
+          let parsedAct = act;
+          if (typeof act === "string" && act.trim().startsWith("{")) {
+            try { parsedAct = JSON.parse(act); } catch (_) {}
+          }
+          const actTitle = typeof parsedAct === "object" ? (parsedAct.title || parsedAct.task || JSON.stringify(parsedAct)) : String(parsedAct);
           const badge = document.createElement("div");
           badge.className = "p-2 bg-[#0e1117] rounded-lg border border-[#30363d] flex items-center justify-between text-[11px]";
           badge.innerHTML = `<span>📋 ${escapeHtml(actTitle)}</span><span class="text-[9px] text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/30">Action</span>`;

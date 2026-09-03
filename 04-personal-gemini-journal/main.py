@@ -72,6 +72,8 @@ class SaveJournalRequest(BaseModel):
     id: Optional[str] = None
     title: Optional[str] = None
     content: str = Field(default="")
+    summary: Optional[str] = ""
+    breakthrough: Optional[str] = ""
     conversation: List[Dict[str, str]] = Field(default_factory=list)
     tags: List[str] = Field(default_factory=list)
 
@@ -205,7 +207,7 @@ def execute_persistent_action(uid: str, action: ActionProposal) -> Dict[str, Any
 
     if tool in SUPPORTED_UI_TOOLS:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"UI action '{tool}' does not execute persistent writes."
         )
 
@@ -222,7 +224,7 @@ def execute_persistent_action(uid: str, action: ActionProposal) -> Dict[str, Any
         column = params.get("column", "todo")
         if column not in ("todo", "in_progress", "done"):
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Invalid ticket column: '{column}'. Must be 'todo', 'in_progress', or 'done'."
             )
         tkt = db_service.save_ticket(uid=uid, ticket={
@@ -243,7 +245,7 @@ def execute_persistent_action(uid: str, action: ActionProposal) -> Dict[str, Any
         new_col = params.get("new_column", "done")
         if new_col not in ("todo", "in_progress", "done"):
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Invalid column: '{new_col}'"
             )
         all_tkts = db_service.get_tickets(uid=uid)
@@ -281,7 +283,7 @@ def execute_persistent_action(uid: str, action: ActionProposal) -> Dict[str, Any
                 datetime.date.fromisoformat(date_str)
             except ValueError:
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail=f"Invalid date format '{date_str}', expected YYYY-MM-DD."
                 )
         time_block = params.get("time_block", "Morning Focus")
@@ -325,7 +327,7 @@ def execute_persistent_action(uid: str, action: ActionProposal) -> Dict[str, Any
         }
 
     raise HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         detail=f"Unsupported tool action: '{tool}'"
     )
 
@@ -630,7 +632,7 @@ def save_journal_entry(
         summary_data = gemini_service.summarize_session(req.conversation)
     
     title = req.title or summary_data.get("title") or "Evening Reflection"
-    summary = summary_data.get("summary") or (req.content[:200] + "..." if len(req.content) > 200 else req.content)
+    summary = req.summary or summary_data.get("summary") or (req.content[:200] + "..." if len(req.content) > 200 else req.content)
 
     arc_data = {}
     if req.conversation and len(req.conversation) > 0:
@@ -647,7 +649,7 @@ def save_journal_entry(
         "content": req.content,
         "conversation": req.conversation,
         "summary": summary,
-        "breakthrough": summary_data.get("breakthrough", ""),
+        "breakthrough": req.breakthrough or summary_data.get("breakthrough", ""),
         "emotional_arc": arc_data,
         "action_items": action_items,
         "tags": req.tags or summary_data.get("tags", ["Reflection"])

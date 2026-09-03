@@ -75,7 +75,7 @@ gcloud builds submit --tag "${IMAGE_TAG}" 04-personal-gemini-journal/
 
 ## 4. Production Cloud Run Deployment
 
-Deploy with automatic scale-to-zero, minimum 1 replica during peak, and 1 GiB memory:
+Deploy with automatic scale-to-zero, minimum 1 replica during peak, 1 GiB memory, and the **mandatory Hack2Skill evaluation label**:
 
 ```bash
 gcloud run deploy sanctuary-os \
@@ -83,6 +83,7 @@ gcloud run deploy sanctuary-os \
   --platform=managed \
   --region=asia-southeast1 \
   --allow-unauthenticated \
+  --labels="dev-tutorial=cloud-run-ai-challenge" \
   --set-env-vars="ENVIRONMENT=production,ALLOW_TEST_AUTH=false,USE_MOCK_DB=false,SECRET_MANAGER_PROJECT_ID=${PROJECT_ID},FIREBASE_PROJECT_ID=${PROJECT_ID}" \
   --cpu=1 \
   --memory=1Gi \
@@ -113,6 +114,15 @@ if [ "${HTTP_CODE}" -eq 401 ]; then
   echo "✓ PASS: Production rejected test token (HTTP 401)"
 else
   echo "✗ FAIL: Expected 401, got ${HTTP_CODE}"
+  exit 1
+fi
+
+# 4. Mandatory Hackathon Evaluation Label Check (Automated Scanner Compliance)
+DEPLOYED_LABEL=$(gcloud run services describe sanctuary-os --region=asia-southeast1 --format='value(metadata.labels.dev-tutorial)')
+if [ "${DEPLOYED_LABEL}" = "cloud-run-ai-challenge" ]; then
+  echo "✓ PASS: Mandatory Hackathon Label verified: dev-tutorial=${DEPLOYED_LABEL}"
+else
+  echo "✗ FAIL: Expected dev-tutorial=cloud-run-ai-challenge, got ${DEPLOYED_LABEL}"
   exit 1
 fi
 ```

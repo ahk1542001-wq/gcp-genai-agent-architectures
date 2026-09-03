@@ -4,7 +4,21 @@ Tests multi-tenant isolation (User A vs User B), zero cross-user leakage,
 unauthenticated rejection, prompt injection defense, and original feature endpoints.
 """
 
+import os
+import sys
 import pytest
+
+# Ensure repository root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+# Set up hermetic test environment before importing app
+os.environ["ENVIRONMENT"] = "test"
+os.environ["ALLOW_TEST_AUTH"] = "true"
+os.environ["USE_MOCK_DB"] = "true"
+os.environ["SECRET_MANAGER_PROJECT_ID"] = "test-project"
+os.environ["GEMINI_API_KEY"] = "placeholder_key"
+os.environ["IS_TEST_MODE"] = "true"
+
 from fastapi.testclient import TestClient
 from main import app
 from database import db_service

@@ -6,6 +6,11 @@ executive report synthesis, and captures visual proof screenshots.
 """
 
 import os
+import sys
+
+# Ensure repository root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import time
 import socket
 import threading
@@ -79,17 +84,24 @@ def test_full_browser_automation_lifecycle():
         assert page.locator("#user-display-name").inner_text() == "Aung Hein Kyaw"
         page.screenshot(path=os.path.join(screenshot_dir, "01_sanctuary_dashboard.png"))
 
-        # Step 2: Reflection Style Selector & Live Dialogue with Badges
-        # 2A. Test Reflection Style Selector
+        # Step 2: Reflection Style Selector & Multi-Turn Dialogue with Badges
+        # 2A. Test Reflection Style Selector across all 4 modes
         card_actionable = page.locator('.reflection-style-card[data-style="actionable"]')
         card_philosophy = page.locator('.reflection-style-card[data-style="philosophy"]')
+        card_brainstorm = page.locator('.reflection-style-card[data-style="brainstorm"]')
+        card_balanced = page.locator('.reflection-style-card[data-style="balanced"]')
+
         card_actionable.click()
         assert "Actionable" in page.locator("#active-style-label").inner_text()
         card_philosophy.click()
         assert "Deep Philosophy" in page.locator("#active-style-label").inner_text()
+        card_brainstorm.click()
+        assert "Brainstorm" in page.locator("#active-style-label").inner_text()
+        card_balanced.click()
+        assert "Balanced" in page.locator("#active-style-label").inner_text()
         page.screenshot(path=os.path.join(screenshot_dir, "02a_reflection_style_selector.png"))
 
-        # 2B. Live Typing in Reflection Studio
+        # 2B. Live Typing in Reflection Studio (Turn 1)
         input_box = page.locator("#reflection-input")
         assert input_box.is_visible()
         input_box.click()
@@ -103,24 +115,36 @@ def test_full_browser_automation_lifecycle():
         input_box.type(test_thought, delay=10)
         page.screenshot(path=os.path.join(screenshot_dir, "02b_reflection_input_typed.png"))
 
-        # Submit reflection
+        # Submit Turn 1 reflection
         page.locator("#send-reflection-btn").click()
         page.wait_for_selector("#chat-stream .model-badge", timeout=6000)
         assert test_thought in page.locator("#chat-stream").inner_text()
 
-        # 2C. Verify model badge, turn counter, and follow-up placeholder
-        assert page.locator("#chat-stream .model-badge", has_text="gemini-3.7-flash").is_visible()
+        # 2C. Verify Turn 1 model badge, turn counter, emotional arc, and follow-up placeholder
+        assert page.locator("#chat-stream .model-badge", has_text="gemini-3.7-flash").first.is_visible()
         assert "1 Turn" in page.locator("#turn-counter-badge").inner_text()
+        assert "Turn 1" in page.locator("#arc-status-badge").inner_text()
         assert "Ask a follow-up reflection, challenge Gemini's thought, or explore deeper..." in (input_box.get_attribute("placeholder") or "")
+
+        # 2D. Multi-Turn Follow-Up Dialogue (Turn 2)
+        followup_thought = "What architectural boundaries ensure zero-leakage cross-tenant isolation in Firestore?"
+        input_box.fill(followup_thought)
+        page.locator("#send-reflection-btn").click()
+        page.wait_for_timeout(1000)
+
+        assert followup_thought in page.locator("#chat-stream").inner_text()
+        assert page.locator("#chat-stream .model-badge").count() >= 2
+        assert "2 Turns" in page.locator("#turn-counter-badge").inner_text()
+        assert "Turn 2" in page.locator("#arc-status-badge").inner_text()
         page.screenshot(path=os.path.join(screenshot_dir, "02c_multiturn_dialogue_and_badges.png"))
 
-        # 2D. Auto-Summarize Action
+        # 2E. Auto-Summarize Action
         page.locator("#auto-summarize-btn").click()
         page.wait_for_selector(".summary-card", timeout=6000)
         assert page.locator(".summary-card").is_visible()
         page.screenshot(path=os.path.join(screenshot_dir, "02d_auto_summarize_distilled.png"))
 
-        # 2E. Save Reflection Action
+        # 2F. Save Reflection Action
         page.locator("#save-session-btn").click()
         page.wait_for_timeout(800)
         assert "Firestore Synchronized" in page.locator("#firestore-sync-badge").inner_text()
@@ -218,6 +242,9 @@ def test_full_browser_automation_lifecycle():
 
         # Test filter chips
         page.locator('#history-filter-chips .history-chip[data-filter="actionable"]').click()
+        page.wait_for_timeout(200)
+        assert saved_entry.is_visible()
+        page.locator('#history-filter-chips .history-chip[data-filter="breakthrough"]').click()
         page.wait_for_timeout(200)
         assert saved_entry.is_visible()
         page.locator('#history-filter-chips .history-chip[data-filter="all"]').click()

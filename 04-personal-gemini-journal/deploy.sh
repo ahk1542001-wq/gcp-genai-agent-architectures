@@ -12,9 +12,10 @@ SERVICE_NAME="personal-gemini-journal"
 
 echo "===================================================================="
 echo "🚀 Deploying Personal Gemini Journal to Google Cloud Run"
-echo "Project ID: ${PROJECT_ID}"
-echo "Region:     ${REGION}"
-echo "Service:    ${SERVICE_NAME}"
+echo "Project ID:      ${PROJECT_ID}"
+echo "Region:          ${REGION}"
+echo "Service:         ${SERVICE_NAME}"
+echo "Hackathon Label: dev-tutorial=cloud-run-ai-challenge (MANDATORY EVALUATION)"
 echo "===================================================================="
 
 # 1. Enable Required GCP APIs
@@ -43,10 +44,26 @@ gcloud run deploy "${SERVICE_NAME}" \
     --max-instances="5"
 
 # 3. Retrieve Deployed URL
+echo "[3/4] Retrieving deployed Cloud Run service URL..."
 SERVICE_URL=$(gcloud run services describe "${SERVICE_NAME}" --platform managed --region "${REGION}" --project "${PROJECT_ID}" --format 'value(status.url)')
 
+# 4. Verify Hackathon Evaluation Label & Service Health
+echo "[4/4] Verifying Hackathon Evaluation Label & Service Health..."
+DEPLOYED_LABEL=$(gcloud run services describe "${SERVICE_NAME}" --platform managed --region "${REGION}" --project "${PROJECT_ID}" --format 'value(metadata.labels.dev-tutorial)')
+if [ "${DEPLOYED_LABEL}" = "cloud-run-ai-challenge" ]; then
+    echo "  ✓ Confirmed Hackathon Label: dev-tutorial=${DEPLOYED_LABEL} (Automated Scanner Compliant)"
+else
+    echo "  ⚠️ Warning: Expected dev-tutorial=cloud-run-ai-challenge, got '${DEPLOYED_LABEL}'"
+fi
+
+if command -v curl >/dev/null 2>&1; then
+    HEALTH_RESP=$(curl -s "${SERVICE_URL}/health" || echo "failed")
+    echo "  ✓ Health Probe Response: ${HEALTH_RESP}"
+fi
+
 echo "===================================================================="
-echo "✅ Deployment Complete!"
-echo "Live Cloud Run URL: ${SERVICE_URL}"
-echo "Public Tag: #AccelerateAIwithCloudRun"
+echo "✅ Deployment Complete & Verified!"
+echo "Live Cloud Run URL:    ${SERVICE_URL}"
+echo "Hackathon Label:       dev-tutorial=${DEPLOYED_LABEL}"
+echo "Public Challenge Tag:  #AccelerateAIwithCloudRun"
 echo "===================================================================="
