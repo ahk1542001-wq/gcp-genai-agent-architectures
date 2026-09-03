@@ -154,3 +154,26 @@ body {
     overflow: visible !important;
   }
 }
+
+/* Responsive & Touch Accessibility (WCAG 2.1 AA) */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+@media (max-width: 768px) {
+  button, input, select, textarea, .nav-item, .mobile-nav-btn {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+}
+
+.mobile-nav-btn {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}

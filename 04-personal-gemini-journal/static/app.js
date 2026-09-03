@@ -479,28 +479,64 @@ function initNavigation() {
     rewind: { btn: "nav-rewind", content: "view-rewind-content", icon: "✨", title: "Life Rewind & Monthly Breakthroughs" }
   };
 
+  const mobileNavBtns = {
+    journal: document.getElementById("mobile-nav-journal"),
+    kanban: document.getElementById("mobile-nav-kanban"),
+    calendar: document.getElementById("mobile-nav-calendar"),
+    rewind: document.getElementById("mobile-nav-rewind")
+  };
+
+  function switchView(viewKey) {
+    state.activeView = viewKey;
+    const cfg = views[viewKey];
+    if (!cfg) return;
+
+    Object.entries(views).forEach(([k, c]) => {
+      const contentEl = document.getElementById(c.content);
+      const navBtn = document.getElementById(c.btn);
+      if (contentEl) contentEl.classList.toggle("hidden", k !== viewKey);
+      if (navBtn) {
+        navBtn.classList.toggle("bg-[#21262d]", k === viewKey);
+        navBtn.classList.toggle("text-[#f0f6fc]", k === viewKey);
+        navBtn.classList.toggle("text-[#8b949e]", k !== viewKey);
+      }
+    });
+
+    Object.entries(mobileNavBtns).forEach(([k, mobBtn]) => {
+      if (mobBtn) {
+        mobBtn.classList.toggle("text-indigo-400", k === viewKey);
+        mobBtn.classList.toggle("text-gray-400", k !== viewKey);
+      }
+    });
+
+    document.getElementById("view-icon").textContent = cfg.icon;
+    document.getElementById("view-title").textContent = cfg.title;
+
+    if (viewKey === "calendar") loadCalendarEvents();
+    if (viewKey === "rewind") loadRewindMetrics();
+  }
+
   Object.entries(views).forEach(([viewKey, cfg]) => {
     const btn = document.getElementById(cfg.btn);
-    if (!btn) return;
-    btn.addEventListener("click", () => {
-      state.activeView = viewKey;
-      Object.entries(views).forEach(([k, c]) => {
-        const contentEl = document.getElementById(c.content);
-        const navBtn = document.getElementById(c.btn);
-        if (contentEl) contentEl.classList.toggle("hidden", k !== viewKey);
-        if (navBtn) {
-          navBtn.classList.toggle("bg-[#21262d]", k === viewKey);
-          navBtn.classList.toggle("text-[#f0f6fc]", k === viewKey);
-          navBtn.classList.toggle("text-[#8b949e]", k !== viewKey);
-        }
-      });
-      document.getElementById("view-icon").textContent = cfg.icon;
-      document.getElementById("view-title").textContent = cfg.title;
-
-      if (viewKey === "calendar") loadCalendarEvents();
-      if (viewKey === "rewind") loadRewindMetrics();
-    });
+    if (btn) btn.addEventListener("click", () => switchView(viewKey));
   });
+
+  Object.entries(mobileNavBtns).forEach(([viewKey, mobBtn]) => {
+    if (mobBtn) mobBtn.addEventListener("click", () => switchView(viewKey));
+  });
+
+  // Desktop Sidebar Toggle
+  const sidebarToggleBtn = document.getElementById("sidebar-toggle-btn");
+  const mainSidebar = document.getElementById("main-sidebar");
+  if (sidebarToggleBtn && mainSidebar) {
+    sidebarToggleBtn.addEventListener("click", () => {
+      if (mainSidebar.style.display === "none") {
+        mainSidebar.style.display = "";
+      } else {
+        mainSidebar.style.display = "none";
+      }
+    });
+  }
 
   // Persona Toggles (Safely handled if present)
   const coachBtn = document.getElementById("persona-coach-btn");

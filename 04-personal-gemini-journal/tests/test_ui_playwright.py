@@ -704,3 +704,84 @@ def test_browser_api_fetch_401_session_expiry_preserves_draft():
         assert saved_draft == draft_content, "Draft was lost upon 401 session expiry!"
 
         browser.close()
+
+
+def test_browser_responsive_mobile_390x844_layout_and_touch_targets():
+    """
+    RED TEST: Mobile 390x844 viewport:
+    - Mobile bottom navigation bar is visible with 4 Sanctuary Loop tabs.
+    - Sidebar is hidden.
+    - Touch targets are at least 44x44px.
+    - No horizontal scroll overflow exists.
+    - Mobile nav buttons switch views seamlessly.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 390, "height": 844})
+
+        goto_authenticated(page)
+
+        # 1. Mobile bottom nav must be visible
+        bottom_nav = page.locator("#mobile-bottom-nav")
+        assert bottom_nav.is_visible(), "Mobile bottom nav must be visible on 390px viewport"
+
+        # 2. Main desktop sidebar must be hidden
+        sidebar = page.locator("#main-sidebar")
+        assert not sidebar.is_visible(), "Desktop sidebar must be hidden on mobile viewport"
+
+        # 3. Touch target sizes for mobile navigation buttons must be >= 44x44px
+        for btn_id in ["#mobile-nav-journal", "#mobile-nav-kanban", "#mobile-nav-calendar", "#mobile-nav-rewind"]:
+            btn = page.locator(btn_id)
+            assert btn.is_visible()
+            box = btn.bounding_box()
+            assert box is not None
+            assert box["height"] >= 44, f"{btn_id} touch height must be >= 44px, got {box['height']}"
+            assert box["width"] >= 44, f"{btn_id} touch width must be >= 44px, got {box['width']}"
+
+        # 4. Zero horizontal overflow
+        no_overflow = page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+        assert no_overflow, "Horizontal overflow detected on mobile viewport!"
+
+        # 5. Mobile nav switching works
+        page.locator("#mobile-nav-kanban").click()
+        page.wait_for_timeout(300)
+        assert page.locator("#view-kanban-content").is_visible()
+        assert not page.locator("#view-journal-content").is_visible()
+
+        browser.close()
+
+
+def test_browser_responsive_desktop_1440x900_sidebar_and_collapse():
+    """
+    RED TEST: Desktop 1440x900 viewport:
+    - Mobile bottom nav is hidden.
+    - Main sidebar is visible and collapsible via #sidebar-toggle-btn.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1440, "height": 900})
+
+        goto_authenticated(page)
+
+        # 1. Mobile bottom nav must be hidden
+        assert not page.locator("#mobile-bottom-nav").is_visible(), "Mobile bottom nav must be hidden on desktop"
+
+        # 2. Desktop sidebar must be visible
+        sidebar = page.locator("#main-sidebar")
+        assert sidebar.is_visible(), "Desktop sidebar must be visible on 1440px desktop"
+
+        # 3. Sidebar toggle button collapses and expands sidebar
+        toggle_btn = page.locator("#sidebar-toggle-btn")
+        assert toggle_btn.is_visible()
+
+        # Click to collapse
+        toggle_btn.click()
+        page.wait_for_timeout(300)
+        assert not sidebar.is_visible()
+
+        # Click to expand
+        toggle_btn.click()
+        page.wait_for_timeout(300)
+        assert sidebar.is_visible()
+
+        browser.close()
