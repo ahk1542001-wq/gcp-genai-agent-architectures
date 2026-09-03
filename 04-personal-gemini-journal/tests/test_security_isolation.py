@@ -261,23 +261,166 @@ def test_calendar_events_tenant_isolation():
     assert events_b.status_code == 200
     assert all(e["id"] != evt_a["id"] for e in events_b.json()["events"])
 
-def test_live_agent_turn_autonomous_tool_calling():
-    """Verify Live Agent conversational voice turn triggers autonomous tools."""
-    # User A speaks: "Create a task for me: Complete the Cloud Run audit"
+def test_synthesize_learned_rule_success_with_timezone_aware_datetime():
+    """Verify synthesize_learned_rule executes with timezone-aware ISO string without NameError."""
+    res = client.post(
+        "/api/agent/actions/confirm",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "action": {
+                "tool": "synthesize_learned_rule",
+                "params": {
+                    "trigger_context": "Morning sprints",
+                    "learned_preference": "No meetings before 11 AM",
+                    "rationale": "High focus window"
+                }
+            },
+            "confirmed": True
+        }
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "executed"
+    assert data["result"]["preference"] == "No meetings before 11 AM"
+    assert "learned_at" in data["result"]
+    assert "+00:00" in data["result"]["learned_at"] or "Z" in data["result"]["learned_at"]
+
+def test_live_turn_proposes_actions_without_persistent_mutation(monkeypatch):
+    """
+    RED TEST: /api/agent/live-turn returns proposed_actions and ui_actions,
+    WITHOUT executing any persistent database writes until explicit user confirmation.
+    """
+    from main import gemini_service, db_service
+    monkeypatch.setattr(
+        gemini_service,
+        "live_agent_turn",
+        lambda **kwargs: {
+            "spoken_ack": "I can create that task for you.",
+            "final_reply": "Should I add this task to your To Do list?",
+            "actions": [
+                {
+                    "tool": "create_ticket",
+                    "params": {
+                        "title": "Unconfirmed Auto-Write Probe",
+                        "priority": "High",
+                        "category": "Work",
+                        "column": "todo"
+                    }
+                },
+                {
+                    "tool": "trigger_box_breathing",
+                    "params": {"reason": "Stress relief requested"}
+                }
+            ],
+            "sentiment": 0.8,
+            "detected_mode": "coach"
+        }
+    )
+
+    initial_tickets = len(db_service.get_tickets(uid="user_alpha"))
+
     res = client.post(
         "/api/agent/live-turn",
         headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
         json={
-            "message": "Please create a task for me: Complete the Cloud Run audit today",
+            "message": "Create task: Unconfirmed Auto-Write Probe",
             "persona_mode": "coach"
         }
     )
     assert res.status_code == 200
     data = res.json()
-    assert "spoken_ack" in data
-    assert "final_reply" in data
-    assert len(data["actions_executed"]) >= 1
-    assert data["actions_executed"][0]["action"] == "ticket_created"
+    assert "proposed_actions" in data, "Expected proposed_actions in live-turn response"
+    assert "ui_actions" in data, "Expected ui_actions in live-turn response"
+    assert len(data["proposed_actions"]) == 1
+    assert data["proposed_actions"][0]["tool"] == "create_ticket"
+    assert len(data["ui_actions"]) == 1
+    assert data["ui_actions"][0]["tool"] == "trigger_box_breathing"
+
+    # ZERO persistent mutation occurred!
+    after_tickets = len(db_service.get_tickets(uid="user_alpha"))
+    assert after_tickets == initial_tickets, "Persistent write occurred without user confirmation!"
+
+
+def test_actions_confirm_executes_single_persistent_action_for_tenant():
+    """
+    RED TEST: POST /api/agent/actions/confirm executes exactly one validated persistent action
+    for the authenticated tenant.
+    """
+    res = client.post(
+        "/api/agent/actions/confirm",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "action": {
+                "tool": "create_ticket",
+                "params": {
+                    "title": "Confirmed Focus Sprint Task",
+                    "priority": "Urgent",
+                    "category": "Work",
+                    "column": "todo"
+                }
+            },
+            "confirmed": True
+        }
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "executed"
+    assert data["action"]["tool"] == "create_ticket"
+    assert data["result"]["title"] == "Confirmed Focus Sprint Task"
+    assert data["result"]["uid"] == "user_alpha"
+
+
+def test_actions_confirm_validations_and_rejections():
+    """
+    RED TEST: Bounded validations:
+    - confirmed=False rejected
+    - invalid tool rejected
+    - invalid column rejected
+    - empty learned preference rejected
+    """
+    # 1. confirmed=False -> 400
+    res1 = client.post(
+        "/api/agent/actions/confirm",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "action": {"tool": "create_ticket", "params": {"title": "Task 1"}},
+            "confirmed": False
+        }
+    )
+    assert res1.status_code == 400
+
+    # 2. invalid tool -> 422
+    res2 = client.post(
+        "/api/agent/actions/confirm",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "action": {"tool": "drop_database", "params": {}},
+            "confirmed": True
+        }
+    )
+    assert res2.status_code == 422
+
+    # 3. invalid column -> 422
+    res3 = client.post(
+        "/api/agent/actions/confirm",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "action": {"tool": "create_ticket", "params": {"title": "Task 2", "column": "non_existent_column"}},
+            "confirmed": True
+        }
+    )
+    assert res3.status_code == 422
+
+    # 4. empty learned preference -> 400
+    res4 = client.post(
+        "/api/agent/actions/confirm",
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+        json={
+            "action": {"tool": "synthesize_learned_rule", "params": {"learned_preference": "   "}},
+            "confirmed": True
+        }
+    )
+    assert res4.status_code == 400
 
 def test_three_tier_living_memory_isolation():
     """Verify 3-tier living memory storage and strict tenant isolation."""

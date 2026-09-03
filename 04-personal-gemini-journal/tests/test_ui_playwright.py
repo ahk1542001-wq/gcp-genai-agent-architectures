@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import time
 import socket
 import threading
@@ -457,5 +458,88 @@ def test_hermetic_test_auth_adapter_security_gate():
         # Test auth helper section must not be visible
         test_section = page.locator("#test-auth-section")
         assert not test_section.is_visible()
+
+        browser.close()
+
+
+def test_browser_action_proposal_approval_and_dismissal_flow():
+    """
+    Verify Human-in-the-Loop approval:
+    1. Agent returns proposed action (not auto-executed)
+    2. Proposal card appears with Approve and Dismiss buttons
+    3. User clicks Approve -> action executes -> feedback displayed -> card clears
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Intercept /api/agent/live-turn to propose a ticket creation
+        page.route("**/api/agent/live-turn", lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps({
+                "spoken_ack": "I propose creating a task for you.",
+                "final_reply": "Should I schedule this in your To Do board?",
+                "proposed_actions": [{
+                    "tool": "create_ticket",
+                    "params": {
+                        "title": "Verified Action Approval Task",
+                        "priority": "High",
+                        "category": "Work",
+                        "column": "todo"
+                    }
+                }],
+                "ui_actions": [],
+                "sentiment": 0.8,
+                "detected_mode": "coach",
+                "tickets": []
+            })
+        ))
+
+        goto_authenticated(page)
+
+        # Trigger reflection turn
+        page.locator("#reflection-input").fill("Propose a new task for me")
+        page.locator("#send-reflection-btn").click()
+        page.wait_for_timeout(500)
+
+        # Action proposal card must become visible
+        proposal_container = page.locator("#action-proposal-container")
+        assert proposal_container.is_visible()
+        desc = page.locator("#proposal-description").text_content()
+        assert "Verified Action Approval Task" in desc
+
+        # Click Approve
+        approve_btn = page.locator("#proposal-approve-btn")
+        assert approve_btn.is_visible()
+        approve_btn.click()
+
+        # Feedback should appear
+        page.wait_for_timeout(400)
+        feedback = page.locator("#proposal-feedback")
+        assert feedback.is_visible()
+        assert "approved" in feedback.text_content().lower()
+
+        # After brief moment, container should disappear (queue drained)
+        page.wait_for_timeout(1200)
+        assert not proposal_container.is_visible()
+
+        # 2. Test Dismiss flow: trigger another proposal and click Dismiss
+        confirm_called = []
+        page.route("**/api/agent/actions/confirm", lambda route: (confirm_called.append(True), route.continue_()))
+
+        page.locator("#reflection-input").fill("Propose second task")
+        page.locator("#send-reflection-btn").click()
+        page.wait_for_timeout(500)
+
+        assert proposal_container.is_visible()
+        dismiss_btn = page.locator("#proposal-dismiss-btn")
+        assert dismiss_btn.is_visible()
+        dismiss_btn.click()
+        page.wait_for_timeout(300)
+
+        # Card must be dismissed immediately without calling /api/agent/actions/confirm
+        assert not proposal_container.is_visible()
+        assert len(confirm_called) == 0, "Dismiss must NOT trigger any confirmation API write!"
 
         browser.close()

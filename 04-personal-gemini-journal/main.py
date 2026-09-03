@@ -7,8 +7,9 @@ and Autonomous Live Voice Tool Calling.
 """
 
 import os
+import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Literal
 from fastapi import FastAPI, Depends, HTTPException, status, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
@@ -45,7 +46,23 @@ class ChatRequest(BaseModel):
 class LiveTurnRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=5000)
     history: List[Dict[str, str]] = Field(default_factory=list)
-    persona_mode: str = "coach"  # "coach" or "guardian"
+    persona_mode: str = Field(default="coach", pattern="^(coach|guardian)$")
+
+class ActionProposal(BaseModel):
+    tool: Literal[
+        "create_ticket",
+        "move_ticket",
+        "schedule_calendar",
+        "save_memory",
+        "synthesize_learned_rule",
+        "trigger_box_breathing",
+        "trigger_shutdown_ritual"
+    ]
+    params: Dict[str, Any] = Field(default_factory=dict)
+
+class ConfirmedActionRequest(BaseModel):
+    action: ActionProposal
+    confirmed: bool
 
 class SaveJournalRequest(BaseModel):
     id: Optional[str] = None
@@ -156,8 +173,155 @@ def get_user_profile(user: AuthenticatedUser = Depends(get_current_user)):
     }
 
 # --------------------------------------------------------------------------
-# Live Conversational Voice Assistant with Autonomous Tool Execution
+# Live Conversational Voice Assistant with Human-in-the-Loop Tool Confirmation
 # --------------------------------------------------------------------------
+SUPPORTED_PERSISTENT_TOOLS = {
+    "create_ticket",
+    "move_ticket",
+    "schedule_calendar",
+    "save_memory",
+    "synthesize_learned_rule"
+}
+
+SUPPORTED_UI_TOOLS = {
+    "trigger_box_breathing",
+    "trigger_shutdown_ritual"
+}
+
+def execute_persistent_action(uid: str, action: ActionProposal) -> Dict[str, Any]:
+    """
+    Typed helper that validates and executes exactly one persistent action
+    for the authenticated user tenant.
+    """
+    tool = action.tool
+    params = action.params or {}
+
+    if tool in SUPPORTED_UI_TOOLS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"UI action '{tool}' does not execute persistent writes."
+        )
+
+    if tool == "create_ticket":
+        title = str(params.get("title", "New Task")).strip()
+        if not title:
+            title = "New Task"
+        priority = params.get("priority", "Medium")
+        if priority not in ("Urgent", "High", "Medium", "Low"):
+            priority = "Medium"
+        category = params.get("category", "Work")
+        if category not in ("Work", "Wellness", "Mindset", "Study", "Personal", "General"):
+            category = "Work"
+        column = params.get("column", "todo")
+        if column not in ("todo", "in_progress", "done"):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Invalid ticket column: '{column}'. Must be 'todo', 'in_progress', or 'done'."
+            )
+        tkt = db_service.save_ticket(uid=uid, ticket={
+            "title": title[:200],
+            "priority": priority,
+            "category": category,
+            "column": column
+        })
+        latest_tickets = db_service.get_tickets(uid=uid)
+        return {
+            "status": "executed",
+            "action": {"tool": tool, "params": params},
+            "result": tkt,
+            "tickets": latest_tickets
+        }
+
+    elif tool == "move_ticket":
+        new_col = params.get("new_column", "done")
+        if new_col not in ("todo", "in_progress", "done"):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Invalid column: '{new_col}'"
+            )
+        all_tkts = db_service.get_tickets(uid=uid)
+        target = None
+        term = str(params.get("ticket_title_or_id", "")).strip().lower()
+        for t in all_tkts:
+            if term and (term in t.get("title", "").lower() or term in t.get("id", "").lower()):
+                target = t
+                break
+        if not target and all_tkts:
+            target = all_tkts[0]
+
+        if target:
+            updated = db_service.update_ticket_column(uid=uid, ticket_id=target["id"], new_column=new_col)
+            latest_tickets = db_service.get_tickets(uid=uid)
+            return {
+                "status": "executed",
+                "action": {"tool": tool, "params": params},
+                "result": updated,
+                "tickets": latest_tickets
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No matching ticket found to move."
+            )
+
+    elif tool == "schedule_calendar":
+        title = str(params.get("title", "Scheduled Focus")).strip() or "Scheduled Focus"
+        date_str = str(params.get("date", "")).strip()
+        if not date_str:
+            date_str = datetime.date.today().isoformat()
+        else:
+            try:
+                datetime.date.fromisoformat(date_str)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Invalid date format '{date_str}', expected YYYY-MM-DD."
+                )
+        time_block = params.get("time_block", "Morning Focus")
+        evt = db_service.save_calendar_event(uid=uid, event={
+            "title": title[:200],
+            "date": date_str,
+            "time_block": time_block
+        })
+        return {
+            "status": "executed",
+            "action": {"tool": tool, "params": params},
+            "result": evt
+        }
+
+    elif tool == "save_memory":
+        mem = str(params.get("memory_item", "")).strip()
+        if not mem:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="memory_item cannot be empty.")
+        updated_mems = db_service.append_living_memory(uid=uid, memory_item=mem[:500])
+        return {
+            "status": "executed",
+            "action": {"tool": tool, "params": params},
+            "result": {"memory": mem, "living_memory": updated_mems}
+        }
+
+    elif tool == "synthesize_learned_rule":
+        pref = str(params.get("learned_preference", "")).strip()
+        if not pref:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="learned_preference cannot be empty.")
+        rule_obj = {
+            "trigger": str(params.get("trigger_context", "General interaction")).strip()[:200],
+            "preference": pref[:500],
+            "rationale": str(params.get("rationale", "")).strip()[:300],
+            "learned_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+        }
+        db_service.append_learned_rule(uid=uid, rule=rule_obj)
+        return {
+            "status": "executed",
+            "action": {"tool": tool, "params": params},
+            "result": rule_obj
+        }
+
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail=f"Unsupported tool action: '{tool}'"
+    )
+
 @app.post("/api/agent/live-turn")
 def live_agent_conversational_turn(
     req: LiveTurnRequest,
@@ -165,8 +329,9 @@ def live_agent_conversational_turn(
 ):
     """
     Core Live Agentic Endpoint:
-    Receives voice transcript / chat message, parses intent, executes tool calls,
-    and returns immediate spoken feedback + final conversational response.
+    Receives voice transcript / chat message, parses intent via Gemini,
+    proposes persistent actions for human confirmation, and returns immediate
+    spoken feedback + final conversational response.
     """
     profile = db_service.get_user_profile(uid=user.uid)
     result = gemini_service.live_agent_turn(
@@ -176,80 +341,46 @@ def live_agent_conversational_turn(
         user_profile=profile
     )
 
-    executed_side_effects = []
-    # Execute detected tools in real time
+    proposed_actions = []
+    ui_actions = []
+
+    # Non-persistent UI actions run directly; persistent actions require approval
     for act in result.get("actions", []):
         tool = act.get("tool")
         params = act.get("params", {})
+        if tool in SUPPORTED_UI_TOOLS:
+            ui_actions.append({"tool": tool, "params": params})
+        elif tool in SUPPORTED_PERSISTENT_TOOLS:
+            proposed_actions.append({"tool": tool, "params": params})
 
-        if tool == "create_ticket":
-            tkt = db_service.save_ticket(uid=user.uid, ticket={
-                "title": params.get("title", "New Task"),
-                "priority": params.get("priority", "Medium"),
-                "category": params.get("category", "Work"),
-                "column": params.get("column", "todo")
-            })
-            executed_side_effects.append({"action": "ticket_created", "ticket": tkt})
-
-        elif tool == "move_ticket":
-            new_col = params.get("new_column", "done")
-            # Find matching ticket or update the most recent one
-            all_tkts = db_service.get_tickets(uid=user.uid)
-            target = None
-            term = params.get("ticket_title_or_id", "").lower()
-            for t in all_tkts:
-                if term and (term in t.get("title", "").lower() or term in t.get("id", "").lower()):
-                    target = t
-                    break
-            if not target and all_tkts:
-                target = all_tkts[0]
-
-            if target:
-                updated = db_service.update_ticket_column(uid=user.uid, ticket_id=target["id"], new_column=new_col)
-                executed_side_effects.append({"action": "ticket_moved", "ticket": updated})
-
-        elif tool == "schedule_calendar":
-            evt = db_service.save_calendar_event(uid=user.uid, event={
-                "title": params.get("title", "Scheduled Focus"),
-                "date": params.get("date"),
-                "time_block": params.get("time_block", "Morning Focus")
-            })
-            executed_side_effects.append({"action": "calendar_scheduled", "event": evt})
-
-        elif tool == "trigger_box_breathing":
-            executed_side_effects.append({"action": "trigger_box_breathing"})
-
-        elif tool == "trigger_shutdown_ritual":
-            executed_side_effects.append({"action": "trigger_shutdown_ritual"})
-
-        elif tool == "save_memory":
-            mem = params.get("memory_item")
-            if mem:
-                updated_mems = db_service.append_living_memory(uid=user.uid, memory_item=mem)
-                executed_side_effects.append({"action": "memory_saved", "memory": mem})
-
-        elif tool == "synthesize_learned_rule":
-            rule_obj = {
-                "trigger": params.get("trigger_context", "General interaction"),
-                "preference": params.get("learned_preference", ""),
-                "rationale": params.get("rationale", ""),
-                "learned_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
-            }
-            if rule_obj["preference"]:
-                db_service.append_learned_rule(uid=user.uid, rule=rule_obj)
-                executed_side_effects.append({"action": "rule_synthesized", "rule": rule_obj})
-
-    # Fetch latest tickets to keep client in sync
     latest_tickets = db_service.get_tickets(uid=user.uid)
 
     return {
         "spoken_ack": result.get("spoken_ack", ""),
         "final_reply": result.get("final_reply", ""),
-        "actions_executed": executed_side_effects,
+        "proposed_actions": proposed_actions,
+        "ui_actions": ui_actions,
+        "actions_executed": [],
         "sentiment": result.get("sentiment", 0.5),
         "detected_mode": result.get("detected_mode", req.persona_mode),
         "tickets": latest_tickets
     }
+
+@app.post("/api/agent/actions/confirm")
+def confirm_agent_action(
+    req: ConfirmedActionRequest,
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """
+    Executes exactly one validated persistent action for the authenticated tenant
+    only after explicit human user confirmation.
+    """
+    if not req.confirmed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Action must be confirmed=true to execute."
+        )
+    return execute_persistent_action(uid=user.uid, action=req.action)
 
 # --------------------------------------------------------------------------
 # Drag-and-Drop Kanban Ticketing Endpoints (/api/tickets)

@@ -243,6 +243,33 @@
           <!-- Chat messages rendered dynamically -->
         </div>
 
+        <!-- Action Proposal Card Container (Human Confirmation Gate) -->
+        <div id="action-proposal-container" class="hidden space-y-3 animate-fadeIn">
+          <div class="bg-gradient-to-r from-purple-950/40 to-indigo-950/40 border border-purple-500/50 rounded-xl p-4 shadow-lg backdrop-blur-sm">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="text-base" id="proposal-icon">⚡</span>
+                <span class="text-xs font-semibold uppercase tracking-wider text-purple-300">Proposed Agent Action</span>
+              </div>
+              <span id="proposal-step-indicator" class="text-[10px] text-gray-400 bg-[#161b22] px-2 py-0.5 rounded-full border border-[#30363d]">1 of 1</span>
+            </div>
+            <div class="mt-2 text-xs text-gray-200">
+              <p id="proposal-description" class="font-medium text-white mb-1.5"></p>
+              <div id="proposal-details" class="bg-[#0e1117]/80 rounded-lg p-2.5 text-[11px] text-gray-300 border border-[#30363d] font-mono whitespace-pre-wrap"></div>
+            </div>
+            <div class="flex items-center justify-end space-x-2 mt-3 pt-2 border-t border-purple-500/20">
+              <button id="proposal-dismiss-btn" class="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white bg-[#21262d] hover:bg-[#30363d] rounded-lg transition-colors border border-[#30363d]">
+                Dismiss
+              </button>
+              <button id="proposal-approve-btn" class="px-3.5 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-lg shadow-sm transition-all flex items-center space-x-1.5">
+                <span>✓</span>
+                <span>Approve Action</span>
+              </button>
+            </div>
+            <div id="proposal-feedback" class="hidden mt-2 text-xs font-medium text-center py-1 rounded"></div>
+          </div>
+        </div>
+
         <!-- Brain Dump & Reflection Input Box -->
         <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-3 shadow-sm focus-within:border-indigo-500 transition-colors">
           <textarea id="reflection-input" rows="3" class="w-full bg-transparent border-none text-sm text-[#f0f6fc] focus:outline-none resize-none placeholder-gray-500" placeholder="Rambling thoughts, brain dump, or speak your mind with the mic..."></textarea>

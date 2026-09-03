@@ -16,6 +16,7 @@ const state = {
   conversationHistory: [],
   tickets: [],
   calendarEvents: [],
+  pendingProposals: [],
   settings: {
     voice_responses_enabled: true,
     tibetan_sound_enabled: true,
@@ -327,6 +328,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initSettingsModal();
   initShutdownRitual();
   initDeStressModal();
+  initProposalCard();
 
   // Auth buttons
   const googleBtn = document.getElementById("google-signin-btn");
@@ -807,12 +809,10 @@ function initVoiceAssistant() {
 
 async function processLiveTurn(message) {
   try {
+    const authHeaders = await getAuthorizationHeaders();
     const res = await fetch("/api/agent/live-turn", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${state.token}`
-      },
+      headers: authHeaders,
       body: JSON.stringify({
         message: message,
         conversation_history: state.conversationHistory,
@@ -831,20 +831,20 @@ async function processLiveTurn(message) {
       // Append model response to UI
       appendChatMessage("model", data.final_reply);
 
-      // Refresh tickets if any tools were executed
-      if (data.tickets) {
-        state.tickets = data.tickets;
-        renderKanbanBoard();
-      }
-
-      // Check for actions that trigger modal overlays
-      (data.actions_executed || []).forEach(act => {
-        if (act.action === "trigger_box_breathing") {
+      // Handle non-persistent UI actions immediately
+      (data.ui_actions || []).forEach(act => {
+        if (act.tool === "trigger_box_breathing") {
           document.getElementById("breathing-modal").classList.remove("hidden");
-        } else if (act.action === "trigger_shutdown_ritual") {
+        } else if (act.tool === "trigger_shutdown_ritual") {
           triggerShutdownModal();
         }
       });
+
+      // Queue proposed persistent actions for explicit user approval (Human-in-the-Loop)
+      if (data.proposed_actions && data.proposed_actions.length > 0) {
+        state.pendingProposals = [...(state.pendingProposals || []), ...data.proposed_actions];
+        displayActiveProposal();
+      }
 
       // Update Chart.js emotional arc progression
       updateEmotionalChart(data.sentiment || 0.5);
@@ -854,6 +854,153 @@ async function processLiveTurn(message) {
     console.error("Error processing live turn:", err);
     appendChatMessage("model", "I heard your reflection. Let's ground this with patience.");
   }
+}
+
+// ============================================================================
+// Action Proposal (Human-in-the-Loop Confirmation Gate)
+// ============================================================================
+
+function formatProposalDescription(proposal) {
+  const tool = proposal.tool;
+  const p = proposal.params || {};
+  switch (tool) {
+    case "create_ticket":
+      return `Create task: "${p.title || 'New Task'}" in column "${p.column || 'todo'}"`;
+    case "move_ticket":
+      return `Move task "${p.ticket_title_or_id || 'ticket'}" to "${p.new_column || 'done'}"`;
+    case "schedule_calendar":
+      return `Schedule calendar focus: "${p.title || 'Scheduled Focus'}" on ${p.date || 'today'}`;
+    case "save_memory":
+      return `Save breakthrough/habit into Living Memory`;
+    case "synthesize_learned_rule":
+      return `Adopt learned preference: "${p.learned_preference || ''}"`;
+    default:
+      return `Execute persistent action: ${tool}`;
+  }
+}
+
+function formatProposalDetails(proposal) {
+  const p = proposal.params || {};
+  return JSON.stringify(p, null, 2);
+}
+
+function displayActiveProposal() {
+  const container = document.getElementById("action-proposal-container");
+  if (!container) return;
+
+  if (!state.pendingProposals || state.pendingProposals.length === 0) {
+    container.classList.add("hidden");
+    return;
+  }
+
+  const proposal = state.pendingProposals[0];
+  const descEl = document.getElementById("proposal-description");
+  const detailsEl = document.getElementById("proposal-details");
+  const indicatorEl = document.getElementById("proposal-step-indicator");
+  const feedbackEl = document.getElementById("proposal-feedback");
+
+  if (feedbackEl) {
+    feedbackEl.classList.add("hidden");
+    feedbackEl.textContent = "";
+  }
+
+  if (descEl) descEl.textContent = formatProposalDescription(proposal);
+  if (detailsEl) detailsEl.textContent = formatProposalDetails(proposal);
+  if (indicatorEl) indicatorEl.textContent = `1 of ${state.pendingProposals.length}`;
+
+  const approveBtn = document.getElementById("proposal-approve-btn");
+  const dismissBtn = document.getElementById("proposal-dismiss-btn");
+  if (approveBtn) {
+    approveBtn.disabled = false;
+    approveBtn.innerHTML = `<span>✓</span><span>Approve Action</span>`;
+  }
+  if (dismissBtn) dismissBtn.disabled = false;
+
+  container.classList.remove("hidden");
+}
+
+function dismissActiveProposal() {
+  if (!state.pendingProposals || state.pendingProposals.length === 0) return;
+  const dismissed = state.pendingProposals.shift();
+  appendChatMessage("model", `Action dismissed: ${formatProposalDescription(dismissed)}.`);
+  displayActiveProposal();
+}
+
+async function approveActiveProposal() {
+  if (!state.pendingProposals || state.pendingProposals.length === 0) return;
+  const proposal = state.pendingProposals[0];
+  const approveBtn = document.getElementById("proposal-approve-btn");
+  const dismissBtn = document.getElementById("proposal-dismiss-btn");
+  const feedbackEl = document.getElementById("proposal-feedback");
+
+  if (approveBtn) {
+    approveBtn.disabled = true;
+    approveBtn.innerHTML = `<span>⏳</span><span>Executing...</span>`;
+  }
+  if (dismissBtn) dismissBtn.disabled = true;
+
+  try {
+    const headers = await getAuthorizationHeaders();
+    const res = await fetch("/api/agent/actions/confirm", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        action: proposal,
+        confirmed: true
+      })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (feedbackEl) {
+      feedbackEl.className = "mt-2 text-xs font-medium text-center py-1 rounded bg-emerald-950/60 border border-emerald-500/40 text-emerald-300";
+      feedbackEl.textContent = "✓ Action approved and persisted.";
+      feedbackEl.classList.remove("hidden");
+    }
+
+    // Refresh only the affected view
+    if (proposal.tool === "create_ticket" || proposal.tool === "move_ticket") {
+      if (data.tickets) {
+        state.tickets = data.tickets;
+        renderKanbanBoard();
+      } else {
+        await loadTickets();
+      }
+    } else if (proposal.tool === "schedule_calendar") {
+      await loadCalendarEvents();
+    }
+
+    // Advance to next proposal after brief visual confirmation
+    setTimeout(() => {
+      state.pendingProposals.shift();
+      displayActiveProposal();
+    }, 700);
+
+  } catch (err) {
+    console.error("Action confirmation failed:", err);
+    if (feedbackEl) {
+      feedbackEl.className = "mt-2 text-xs font-medium text-center py-1 rounded bg-rose-950/60 border border-rose-500/40 text-rose-300";
+      feedbackEl.textContent = `Confirmation failed: ${err.message}`;
+      feedbackEl.classList.remove("hidden");
+    }
+    if (approveBtn) {
+      approveBtn.disabled = false;
+      approveBtn.innerHTML = `<span>✓</span><span>Retry Approve</span>`;
+    }
+    if (dismissBtn) dismissBtn.disabled = false;
+  }
+}
+
+function initProposalCard() {
+  const approveBtn = document.getElementById("proposal-approve-btn");
+  if (approveBtn) approveBtn.onclick = approveActiveProposal;
+
+  const dismissBtn = document.getElementById("proposal-dismiss-btn");
+  if (dismissBtn) dismissBtn.onclick = dismissActiveProposal;
 }
 
 function speakAloud(text) {
