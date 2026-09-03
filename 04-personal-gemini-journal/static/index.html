@@ -6,12 +6,62 @@
   <title>Personal Gemini Life Guardian | Notion-Style Workspace</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Pinned Firebase Web SDK (compat mode for vanilla SPA) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
 </head>
-<body class="bg-[#0e1117] text-[#e6edf3] font-sans antialiased h-screen overflow-hidden flex">
+<body class="bg-[#0e1117] text-[#e6edf3] font-sans antialiased h-screen overflow-hidden flex flex-col">
+
+  <!-- ===================================================================== -->
+  <!-- 0. Unauthenticated Landing Screen (Zero-Trust Gate) -->
+  <!-- ===================================================================== -->
+  <div id="auth-landing" class="h-screen w-screen flex flex-col items-center justify-center bg-[#0d1117] text-[#e6edf3] p-6 relative z-40 overflow-y-auto">
+    <div class="max-w-md w-full text-center space-y-6 p-8 rounded-2xl bg-[#161b22] border border-[#30363d] shadow-2xl">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-indigo-500/20 border border-emerald-500/30 mx-auto flex items-center justify-center text-3xl shadow-lg">
+        🌿
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-[#f0f6fc]">Sanctuary OS</h1>
+        <p class="text-xs text-[#8b949e] mt-1">Personal Gemini Guardian & Executive Reflection Studio</p>
+      </div>
+      <div class="p-4 rounded-xl bg-[#0e1117] border border-[#30363d]/80 text-left text-xs text-[#c9d1d9] space-y-2">
+        <div class="flex items-center space-x-2 text-emerald-400 font-medium">
+          <span>🛡️</span>
+          <span>Zero-Trust Privacy & Multi-Tenant Isolation</span>
+        </div>
+        <p class="text-[11px] text-[#8b949e] leading-relaxed">
+          Your reflections, tasks, and memory are cryptographically locked under your private identity (<code class="text-indigo-300">/users/{uid}/*</code>). Zero cross-user leakage, zero data selling.
+        </p>
+      </div>
+      <div class="space-y-3">
+        <button id="google-signin-btn" class="w-full flex items-center justify-center space-x-3 bg-white hover:bg-gray-100 text-gray-900 font-medium text-sm py-2.5 px-4 rounded-lg shadow transition-all">
+          <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Continue with Google</span>
+        </button>
+        <div id="auth-error-msg" class="hidden text-xs text-rose-400 bg-rose-500/10 p-2.5 rounded border border-rose-500/20 text-center"></div>
+      </div>
+      <div id="test-auth-section" class="hidden pt-3 border-t border-[#30363d]/60 text-left">
+        <div class="text-[10px] text-amber-300 font-mono mb-1.5 flex items-center justify-between">
+          <span>⚡ Hermetic Test Mode Enabled</span>
+          <button id="test-signin-quick-btn" class="text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-2 py-0.5 rounded border border-amber-500/30">Sign In as Test User</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- Authenticated Application Shell (Revealed Only After Verification) -->
+  <!-- ===================================================================== -->
+  <div id="app-shell" class="hidden h-screen w-screen overflow-hidden flex flex-1">
 
   <!-- ===================================================================== -->
   <!-- Notion-Style Sidebar (Left) -->
@@ -79,20 +129,25 @@
     <div class="p-3 border-t border-[#30363d] bg-[#161b22]">
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center space-x-2 overflow-hidden">
-          <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0">
-            V
+          <div id="user-avatar-initial" class="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0">
+            J
           </div>
           <div class="truncate">
-            <div id="user-display-name" class="text-xs font-medium text-[#f0f6fc] truncate">Victor</div>
+            <div id="user-display-name" class="text-xs font-medium text-[#f0f6fc] truncate">Journaler</div>
             <div class="text-[10px] text-[#3fb950] flex items-center space-x-1">
               <span class="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse"></span>
               <span>Tenant Isolated</span>
             </div>
           </div>
         </div>
-        <button id="open-settings-bottom-btn" class="text-xs text-gray-400 hover:text-white" title="Preferences">
-          ⚙️
-        </button>
+        <div class="flex items-center space-x-1 shrink-0">
+          <button id="signout-btn" class="text-[11px] text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 px-1.5 py-1 rounded transition-colors" title="Sign Out">
+            Sign Out
+          </button>
+          <button id="open-settings-bottom-btn" class="text-xs text-gray-400 hover:text-white p-1" title="Preferences">
+            ⚙️
+          </button>
+        </div>
       </div>
       <div class="bg-[#0e1117] p-2 rounded border border-[#30363d] flex items-center justify-between">
         <span class="text-[10px] text-[#8b949e]">Burnout Radar</span>
@@ -179,7 +234,7 @@
           <span class="text-2xl shrink-0" id="callout-emoji">💡</span>
           <div class="flex-1 text-xs leading-relaxed text-[#c9d1d9]">
             <strong class="text-[#f0f6fc] block mb-0.5" id="callout-title">Guardian Socratic Check-In</strong>
-            <p id="callout-text">"Welcome back Victor. What is the single most important challenge or feeling occupying your headspace right now?"</p>
+            <p id="callout-text">"Welcome to your sanctuary. What is the single most important challenge or feeling occupying your headspace right now?"</p>
           </div>
         </div>
 
@@ -319,7 +374,7 @@
       <section id="view-rewind-content" class="hidden max-w-3xl mx-auto space-y-6">
         <div class="text-center space-y-1">
           <span class="text-4xl">✨</span>
-          <h3 class="text-xl font-bold text-[#f0f6fc]">Victor's Life Rewind & Growth</h3>
+          <h3 class="text-xl font-bold text-[#f0f6fc]">Your Life Rewind & Growth</h3>
           <p class="text-xs text-[#8b949e]">Celebrating breakthroughs, consistency, and resilience</p>
         </div>
 
@@ -413,7 +468,7 @@
           </div>
           <!-- Live Preview Box -->
           <div id="burnout-preview-box" class="p-2 rounded bg-purple-900/20 border border-purple-500/30 text-[11px] text-purple-200 leading-relaxed">
-            💡 <strong>Live Example:</strong> <em>"Victor ရေ၊ စိတ်ဖိစီးမှု မြင့်တက်နေတာ သတိထားမိပါတယ်။ ၄ စက္ကန့် အသက်ရှူလေ့ကျင့်ခန်း (Box Breathing) လေး ခဏ လုပ်ကြည့်မလားခင်ဗျာ?"</em>
+            💡 <strong>Live Example:</strong> <em>"စိတ်ဖိစီးမှု မြင့်တက်နေတာ သတိထားမိပါတယ်။ ၄ စက္ကန့် အသက်ရှူလေ့ကျင့်ခန်း (Box Breathing) လေး ခဏ လုပ်ကြည့်မလားခင်ဗျာ?"</em>
           </div>
         </div>
 
@@ -477,7 +532,7 @@
       <span class="text-5xl animate-bounce">🌙</span>
       <h3 class="text-xl font-bold text-amber-200">Evening Shutdown Sanctuary</h3>
       <p class="text-xs text-amber-100/80 leading-relaxed" id="shutdown-gratitude-prompt">
-        "ဒီနေ့ တစ်နေကုန် Victor အကောင်းဆုံး ကြိုးစားခဲ့ပါတယ်။ အလုပ်တွေ အကုန်လုံး မနက်ဖြန်အတွက် စနစ်တကျ သိမ်းပြီးပါပြီ။ အိပ်ရာမဝင်ခင်လေး... 'ဒီနေ့မှာ Victor ကိုယ်တိုင်အတွက် စိတ်အကျေနပ်ဆုံး ဖြစ်ခဲ့တဲ့ အရာ ၁ ခု' က ဘာဖြစ်မလဲခင်ဗျာ?"
+        "ဒီနေ့ တစ်နေကုန် အကောင်းဆုံး ကြိုးစားခဲ့ပါတယ်။ အလုပ်တွေ အကုန်လုံး မနက်ဖြန်အတွက် စနစ်တကျ သိမ်းပြီးပါပြီ။ အိပ်ရာမဝင်ခင်လေး... 'ဒီနေ့မှာ ကိုယ်တိုင်အတွက် စိတ်အကျေနပ်ဆုံး ဖြစ်ခဲ့တဲ့ အရာ ၁ ခု' က ဘာဖြစ်မလဲခင်ဗျာ?"
       </p>
 
       <div class="bg-[#161b22] border border-amber-500/30 rounded-xl p-3 text-left">
@@ -492,7 +547,7 @@
       </div>
 
       <div id="shutdown-zen-confirmed" class="hidden space-y-3 pt-4">
-        <p class="text-sm font-medium text-emerald-300">✨ Work is officially closed. Rest well, Victor.</p>
+        <p class="text-sm font-medium text-emerald-300">✨ Work is officially closed. Rest well.</p>
         <button id="wake-workspace-btn" class="bg-[#21262d] hover:bg-[#30363d] text-xs text-white px-4 py-1.5 rounded-full border border-[#30363d]">
           Wake Workspace 🌅
         </button>
@@ -519,6 +574,8 @@
       </button>
     </div>
   </div>
+
+  </div> <!-- /#app-shell -->
 
   <script src="/static/app.js"></script>
 </body>

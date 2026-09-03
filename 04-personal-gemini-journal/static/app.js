@@ -8,8 +8,9 @@
 
 // Application State
 const state = {
-  token: localStorage.getItem("journal_token") || "test-token:victor_kyaw:victor.job154@gmail.com:Victor",
+  token: localStorage.getItem("journal_token") || null,
   user: null,
+  authConfig: null,
   persona: "coach", // "coach" (morning) or "guardian" (evening)
   activeView: "journal", // "journal", "kanban", "calendar", "rewind"
   conversationHistory: [],
@@ -124,12 +125,198 @@ function playTibetanBowlChime() {
 // ============================================================================
 // 4. Initialization & Authentication
 // ============================================================================
-document.addEventListener("DOMContentLoaded", async () => {
-  initDraftAutoSave();
-  await initAuth();
+
+function showAuthLanding(errorMsg = null) {
+  const landing = document.getElementById("auth-landing");
+  const shell = document.getElementById("app-shell");
+  if (landing) landing.classList.remove("hidden");
+  if (shell) shell.classList.add("hidden");
+  const errEl = document.getElementById("auth-error-msg");
+  if (errEl) {
+    if (errorMsg) {
+      errEl.textContent = errorMsg;
+      errEl.classList.remove("hidden");
+    } else {
+      errEl.textContent = "";
+      errEl.classList.add("hidden");
+    }
+  }
+}
+
+function showAppShell() {
+  const landing = document.getElementById("auth-landing");
+  const shell = document.getElementById("app-shell");
+  if (landing) landing.classList.add("hidden");
+  if (shell) shell.classList.remove("hidden");
+  if (state.user) {
+    const nameEl = document.getElementById("user-display-name");
+    const avatarEl = document.getElementById("user-avatar-initial");
+    if (nameEl) nameEl.textContent = state.user.name || state.user.email || "Journaler";
+    if (avatarEl) {
+      const initial = (state.user.name || state.user.email || "J").charAt(0).toUpperCase();
+      avatarEl.textContent = initial;
+    }
+  }
+}
+
+async function getAuthorizationHeaders() {
+  if (state.authConfig && state.authConfig.auth_mode === "firebase" && typeof firebase !== "undefined" && firebase.auth && firebase.auth().currentUser) {
+    try {
+      state.token = await firebase.auth().currentUser.getIdToken();
+    } catch (e) {
+      console.warn("Token refresh fallback:", e);
+    }
+  }
+  return {
+    "Authorization": state.token ? `Bearer ${state.token}` : "",
+    "Content-Type": "application/json"
+  };
+}
+
+async function signInWithGoogle() {
+  const errEl = document.getElementById("auth-error-msg");
+  if (errEl) errEl.classList.add("hidden");
+
+  if (state.authConfig && state.authConfig.auth_mode === "test") {
+    if (window.__SANCTUARY_TEST_AUTH__) {
+      window.__SANCTUARY_TEST_AUTH__.signIn();
+      return;
+    }
+  }
+
+  if (typeof firebase === "undefined" || !firebase.auth) {
+    showAuthLanding("Authentication library could not be loaded.");
+    return;
+  }
+
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    if (window.innerWidth <= 768) {
+      await firebase.auth().signInWithRedirect(provider);
+    } else {
+      await firebase.auth().signInWithPopup(provider);
+    }
+  } catch (err) {
+    console.error("Google sign in error:", err);
+    showAuthLanding(err.message || "Sign in failed. Please try again.");
+  }
+}
+
+async function signOutUser() {
+  try {
+    if (typeof firebase !== "undefined" && firebase.auth && firebase.auth().currentUser) {
+      await firebase.auth().signOut();
+    }
+  } catch (e) {
+    console.warn("Sign out error:", e);
+  }
+  state.token = null;
+  state.user = null;
+  localStorage.removeItem("journal_token");
+  showAuthLanding();
+}
+
+async function loadUserData() {
   await loadUserSettings();
   await loadTickets();
   await loadCalendarEvents();
+  renderHistoryList();
+}
+
+async function initializeAuthentication() {
+  try {
+    const res = await fetch("/api/public-config");
+    if (!res.ok) {
+      throw new Error(`Failed to load public configuration: HTTP ${res.status}`);
+    }
+    const config = await res.json();
+    state.authConfig = config;
+
+    if (config.auth_mode === "test") {
+      const testSection = document.getElementById("test-auth-section");
+      if (testSection) testSection.classList.remove("hidden");
+
+      window.__SANCTUARY_TEST_AUTH__ = {
+        signIn: (uid = "test_user", email = "test@local.test", name = "Test User") => {
+          const token = `test-token:${uid}:${email}:${name}`;
+          state.token = token;
+          state.user = { uid, email, name, auth_provider: "test_harness" };
+          localStorage.setItem("journal_token", token);
+          showAppShell();
+          loadUserData();
+        },
+        signOut: async () => {
+          await signOutUser();
+        }
+      };
+
+      const testBtn = document.getElementById("test-signin-quick-btn");
+      if (testBtn) {
+        testBtn.onclick = () => window.__SANCTUARY_TEST_AUTH__.signIn();
+      }
+
+      if (state.token && state.token.startsWith("test-token:")) {
+        const parts = state.token.split(":");
+        state.user = {
+          uid: parts[1] || "test_user",
+          email: parts[2] || "test@local.test",
+          name: parts[3] || "Test User",
+          auth_provider: "test_harness"
+        };
+        showAppShell();
+        loadUserData();
+      } else {
+        showAuthLanding();
+      }
+    } else {
+      // Production Firebase mode: ensure hermetic adapter is unreachable
+      window.__SANCTUARY_TEST_AUTH__ = undefined;
+      const testSection = document.getElementById("test-auth-section");
+      if (testSection) testSection.classList.add("hidden");
+
+      if (typeof firebase === "undefined" || !config.firebase || !config.firebase.apiKey) {
+        showAuthLanding("Firebase Authentication is not configured on this host.");
+        return;
+      }
+
+      if (!firebase.apps.length) {
+        firebase.initializeApp(config.firebase);
+      }
+
+      firebase.auth().onAuthStateChanged(async (fbUser) => {
+        if (fbUser) {
+          try {
+            const token = await fbUser.getIdToken();
+            state.token = token;
+            state.user = {
+              uid: fbUser.uid,
+              email: fbUser.email,
+              name: fbUser.displayName || (fbUser.email ? fbUser.email.split("@")[0] : "Journaler"),
+              auth_provider: "firebase"
+            };
+            localStorage.setItem("journal_token", token);
+            showAppShell();
+            loadUserData();
+          } catch (err) {
+            console.error("Token acquisition error:", err);
+            showAuthLanding("Could not retrieve session credentials.");
+          }
+        } else {
+          state.token = null;
+          state.user = null;
+          localStorage.removeItem("journal_token");
+          showAuthLanding();
+        }
+      });
+    }
+  } catch (err) {
+    console.error("Authentication initialization failed:", err);
+    showAuthLanding("Could not establish connection to authentication service.");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  initDraftAutoSave();
   initNavigation();
   initKanbanDragAndDrop();
   initVoiceAssistant();
@@ -140,22 +327,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   initSettingsModal();
   initShutdownRitual();
   initDeStressModal();
-  renderHistoryList();
-});
 
-async function initAuth() {
-  try {
-    const res = await fetch("/api/auth/me", {
-      headers: { "Authorization": `Bearer ${state.token}` }
-    });
-    if (res.ok) {
-      state.user = await res.json();
-      document.getElementById("user-display-name").textContent = state.user.name || "Victor";
-    }
-  } catch (err) {
-    console.warn("Auth initialization fallback:", err);
-  }
-}
+  // Auth buttons
+  const googleBtn = document.getElementById("google-signin-btn");
+  if (googleBtn) googleBtn.onclick = signInWithGoogle;
+
+  const signoutBtn = document.getElementById("signout-btn");
+  if (signoutBtn) signoutBtn.onclick = signOutUser;
+
+  await initializeAuthentication();
+});
 
 async function loadUserSettings() {
   try {
@@ -307,7 +488,7 @@ function setPersona(persona) {
 
   calloutEmoji.textContent = "🌿";
   calloutTitle.textContent = "Guardian Socratic Sanctuary";
-  calloutText.textContent = '"Welcome back Victor. What is occupying your headspace or focus right now?"';
+  calloutText.textContent = '"Welcome to your sanctuary. What is occupying your headspace or focus right now?"';
 }
 
 // ============================================================================
@@ -671,7 +852,7 @@ async function processLiveTurn(message) {
     }
   } catch (err) {
     console.error("Error processing live turn:", err);
-    appendChatMessage("model", "I heard your reflection Victor. Let's ground this with patience.");
+    appendChatMessage("model", "I heard your reflection. Let's ground this with patience.");
   }
 }
 
@@ -691,9 +872,10 @@ function appendChatMessage(role, text) {
   msgDiv.className = `flex space-x-3 text-xs leading-relaxed animate-fadeIn ${role === "user" ? "justify-end" : "justify-start"}`;
 
   if (role === "user") {
+    const senderName = (state.user && state.user.name) ? state.user.name : "You";
     msgDiv.innerHTML = `
       <div class="bg-indigo-600/30 border border-indigo-500/40 text-[#f0f6fc] p-3 rounded-xl max-w-lg shadow-sm">
-        <span class="font-semibold text-[10px] text-indigo-300 block mb-0.5">Victor</span>
+        <span class="font-semibold text-[10px] text-indigo-300 block mb-0.5">${escapeHtml(senderName)}</span>
         <p>${escapeHtml(text)}</p>
       </div>
     `;
@@ -1061,7 +1243,7 @@ function generateMarkdownExport() {
 title: Sanctuary Journal Reflection
 date: ${dateStr}
 tags: [sanctuary, reflection, executive-coach]
-user: Victor
+user: ${(state.user && state.user.name) ? state.user.name : "Journaler"}
 ---
 
 # 🌿 Sanctuary Journal & Execution Summary (${dateStr})

@@ -7,7 +7,10 @@ import uvicorn
 import pytest
 from playwright.sync_api import sync_playwright
 
-# Set up test environment
+# Set up hermetic test environment before importing app
+os.environ["ENVIRONMENT"] = "test"
+os.environ["ALLOW_TEST_AUTH"] = "true"
+os.environ["USE_MOCK_DB"] = "true"
 os.environ["SECRET_MANAGER_PROJECT_ID"] = "test-project"
 os.environ["GEMINI_API_KEY"] = "placeholder_key"
 os.environ["IS_TEST_MODE"] = "true"
@@ -40,6 +43,12 @@ def run_test_server():
     yield
     server.should_exit = True
 
+def goto_authenticated(page, name="Alice"):
+    """Loads Sanctuary OS and authenticates via hermetic test adapter."""
+    page.goto(BASE_URL, wait_until="networkidle")
+    page.evaluate(f"() => {{ if (window.__SANCTUARY_TEST_AUTH__) {{ window.__SANCTUARY_TEST_AUTH__.signIn('test_user', 'user@test.local', '{name}'); }} }}")
+    page.wait_for_selector("#app-shell:not(.hidden)", timeout=5000)
+
 def test_browser_ui_shell_and_navigation():
     """Verify Notion shell loading, persona switching, and view toggling with zero console errors."""
     console_errors = []
@@ -52,12 +61,12 @@ def test_browser_ui_shell_and_navigation():
         page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else None)
 
         # 1. Load the Sanctuary OS SPA
-        page.goto(BASE_URL, wait_until="networkidle")
-        page.wait_for_timeout(500)
+        goto_authenticated(page)
+        page.wait_for_timeout(300)
 
         # 2. Verify Title & Core Brand Header
         assert "Personal Gemini Life Guardian" in page.title()
-        brand = page.locator("text=Sanctuary OS").first
+        brand = page.locator("#app-shell").get_by_text("Sanctuary OS").first
         assert brand.is_visible()
 
         # 3. Verify Unified Guardian Sanctuary Callout
@@ -101,7 +110,7 @@ def test_browser_ui_settings_modal_and_toggles():
         page = browser.new_page()
         page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else None)
 
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Open Settings Modal
         settings_btn = page.locator("#open-settings-btn")
@@ -132,7 +141,7 @@ def test_browser_ui_kanban_card_creation():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Navigate to Kanban
         page.locator("#nav-kanban").click()
@@ -150,7 +159,7 @@ def test_browser_ui_language_toggle_burmese():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Open Settings Modal
         page.locator("#open-settings-btn").click()
@@ -185,7 +194,7 @@ def test_browser_ui_export_dropdown_and_options():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Click Export Menu button
         export_btn = page.locator("#export-menu-btn")
@@ -204,7 +213,7 @@ def test_browser_ui_offline_draft_preservation():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Type draft in reflection input
         draft_text = "Late night reflection: Finished the Playwright tests and feeling proud."
@@ -227,7 +236,7 @@ def test_browser_ui_voice_assistant_button_toggle():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         voice_btn = page.locator("#live-voice-toggle-btn")
         assert "Start Live Voice" in voice_btn.text_content()
@@ -250,7 +259,7 @@ def test_browser_ui_add_ticket_button_modal_prompt():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Switch to Kanban view
         page.locator("#nav-kanban").click()
@@ -275,7 +284,7 @@ def test_browser_ui_clear_and_reflect_buttons():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         textarea = page.locator("#reflection-input")
         clear_btn = page.locator("#clear-input-btn")
@@ -305,7 +314,7 @@ def test_browser_ui_destress_breathing_modal_cycle():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Click De-Stress Breathe in sidebar
         page.locator("#nav-destress").click()
@@ -328,7 +337,7 @@ def test_browser_ui_shutdown_ritual_modal():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        goto_authenticated(page)
 
         # Click Evening Shutdown in sidebar
         page.locator("#nav-shutdown").click()
@@ -342,5 +351,111 @@ def test_browser_ui_shutdown_ritual_modal():
         page.locator("#cancel-shutdown-btn").click()
         page.wait_for_timeout(200)
         assert not modal.is_visible()
+
+        browser.close()
+
+
+# ==============================================================================
+# Phase 2 RED Tests: Real Firebase Sign-In, Session UX & Secret Absence
+# ==============================================================================
+
+def test_browser_unauthenticated_landing_state():
+    """
+    RED TEST: Fresh visitor must see unauthenticated landing state with:
+    - #auth-landing visible, #app-shell hidden
+    - Google sign-in CTA, product promise & privacy note
+    - Zero previous owner email or test token in loaded page/source
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+
+        page.goto(BASE_URL, wait_until="networkidle")
+        page.wait_for_timeout(300)
+
+        # 1. Landing state must be visible
+        landing = page.locator("#auth-landing")
+        assert landing.is_visible(), "Expected #auth-landing to be visible for unauthenticated user"
+
+        # 2. Main app shell must be hidden
+        app_shell = page.locator("#app-shell")
+        assert not app_shell.is_visible(), "Expected #app-shell to be hidden before sign-in"
+
+        # 3. Google Sign-In button must be present
+        signin_btn = page.locator("#google-signin-btn")
+        assert signin_btn.is_visible(), "Expected #google-signin-btn to be visible"
+
+        # 4. Zero hardcoded owner identity or tokens in loaded source or text
+        content = page.content().lower()
+        assert "victor.job154@gmail.com" not in content, "Owner personal email leaked in frontend source/DOM!"
+        assert "test-token:victor_kyaw" not in content, "Hardcoded identity token found in frontend source/DOM!"
+
+        browser.close()
+
+
+def test_browser_authenticated_app_reveal_and_signout():
+    """
+    RED TEST: Signing in reveals the application shell with user identity,
+    and clicking Sign Out returns to the landing screen.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+
+        page.goto(BASE_URL, wait_until="networkidle")
+        page.wait_for_timeout(300)
+
+        # Sign in through hermetic test auth adapter
+        page.evaluate("window.__SANCTUARY_TEST_AUTH__ && window.__SANCTUARY_TEST_AUTH__.signIn('alice_1', 'alice@test.com', 'Alice')")
+        page.wait_for_timeout(300)
+
+        # App shell must now be visible, landing hidden
+        assert page.locator("#app-shell").is_visible(), "Expected #app-shell to be visible after sign-in"
+        assert not page.locator("#auth-landing").is_visible(), "Expected #auth-landing to be hidden after sign-in"
+
+        # User identity must be displayed
+        user_name = page.locator("#user-display-name").text_content()
+        assert "Alice" in user_name
+
+        # Sign Out button must be present and functional
+        signout_btn = page.locator("#signout-btn")
+        assert signout_btn.is_visible(), "Expected #signout-btn to be visible"
+        signout_btn.click()
+        page.wait_for_timeout(300)
+
+        # After sign-out, return to landing state
+        assert page.locator("#auth-landing").is_visible(), "Expected #auth-landing to be visible after sign-out"
+        assert not page.locator("#app-shell").is_visible(), "Expected #app-shell to be hidden after sign-out"
+
+        browser.close()
+
+
+def test_hermetic_test_auth_adapter_security_gate():
+    """
+    SECURITY GATE: When auth_mode is 'firebase', the test adapter window.__SANCTUARY_TEST_AUTH__
+    must be strictly undefined/unreachable in client context.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Intercept /api/public-config to simulate production Firebase mode
+        page.route("**/api/public-config", lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body='{"auth_mode": "firebase", "environment": "production", "firebase": {"apiKey": "fake_public_key", "projectId": "intelligent-arc-488111-s0"}}'
+        ))
+
+        page.goto(BASE_URL, wait_until="networkidle")
+        page.wait_for_timeout(300)
+
+        adapter_exists = page.evaluate("typeof window.__SANCTUARY_TEST_AUTH__ !== 'undefined'")
+        assert not adapter_exists, "Security Gate Violation: Test auth adapter is exposed in Firebase auth mode!"
+
+        # Test auth helper section must not be visible
+        test_section = page.locator("#test-auth-section")
+        assert not test_section.is_visible()
 
         browser.close()
