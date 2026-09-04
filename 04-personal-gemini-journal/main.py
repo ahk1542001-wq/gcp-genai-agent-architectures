@@ -47,7 +47,7 @@ class LiveTurnRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=5000)
     history: List[Dict[str, str]] = Field(default_factory=list)
     conversation_history: Optional[List[Dict[str, str]]] = None
-    persona_mode: str = Field(default="balanced", pattern="^(balanced|actionable|philosophy|brainstorm|coach|guardian)$")
+    persona_mode: str = Field(default="auto", pattern="^(auto|balanced|actionable|philosophy|brainstorm|coach|guardian)$")
 
 class SummarizeRequest(BaseModel):
     conversation: List[Dict[str, str]] = Field(default_factory=list)

@@ -210,9 +210,11 @@ def test_browser_ui_kanban_card_creation():
         assert page.locator("#column-in-progress").is_visible()
         assert page.locator("#column-done").is_visible()
 
-        # Handle dialog prompt for creating ticket
-        page.on("dialog", lambda d: d.accept("Verify Security Boundary Component"))
+        # Open New Ticket Modal and create ticket
         page.locator("#add-ticket-btn").click()
+        page.wait_for_selector("#new-ticket-modal:not(.hidden)", timeout=2000)
+        page.locator("#ticket-title-input").fill("Verify Security Boundary Component")
+        page.locator("#submit-ticket-btn").click()
         page.wait_for_timeout(500)
 
         # Verify card rendered in column-todo
@@ -328,7 +330,7 @@ def test_browser_ui_voice_assistant_button_toggle():
         browser.close()
 
 def test_browser_ui_add_ticket_button_modal_prompt():
-    """Verify + New Ticket button opens dialog prompt and creates card in To Do column."""
+    """Verify + New Ticket button opens sleek #new-ticket-modal, supports dismissals, and creates tickets."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
@@ -338,17 +340,125 @@ def test_browser_ui_add_ticket_button_modal_prompt():
         page.locator("#nav-kanban").click()
         page.wait_for_timeout(200)
 
-        # Handle browser prompt dialog
-        page.on("dialog", lambda d: d.accept("Build APAC GenAI Demo Ticket"))
+        modal = page.locator("#new-ticket-modal")
+        assert not modal.is_visible()
 
-        # Click + New Ticket
+        # 1. Click + New Ticket to open modal
         page.locator("#add-ticket-btn").click()
+        page.wait_for_selector("#new-ticket-modal:not(.hidden)", timeout=2000)
+        assert modal.is_visible()
+
+        # 2. Verify inputs and placeholder
+        title_input = page.locator("#ticket-title-input")
+        assert title_input.is_visible()
+        assert title_input.get_attribute("placeholder") == "e.g. Audit Firestore tenant isolation rules"
+
+        # Verify Priority dropdown options
+        priority_options = page.locator("#ticket-priority-select option").all_inner_texts()
+        assert "Urgent" in priority_options
+        assert "High" in priority_options
+        assert "Medium" in priority_options
+        assert "Low" in priority_options
+
+        # Verify Category dropdown options
+        category_options = page.locator("#ticket-category-select option").all_inner_texts()
+        assert "Work" in category_options
+        assert "Wellness" in category_options
+        assert "Study" in category_options
+        assert "Mindset" in category_options
+
+        # Verify Column dropdown options
+        column_options = page.locator("#ticket-column-select option").all_inner_texts()
+        assert "To Do" in column_options
+        assert "In Progress" in column_options
+        assert "Done" in column_options
+
+        # 3. Test Cancel button closes modal
+        page.locator("#cancel-ticket-btn").click()
+        page.wait_for_timeout(200)
+        assert not modal.is_visible()
+
+        # 4. Test Close button (&times;) closes modal
+        page.locator("#add-ticket-btn").click()
+        page.wait_for_timeout(200)
+        assert modal.is_visible()
+        page.locator("#close-ticket-modal-btn").click()
+        page.wait_for_timeout(200)
+        assert not modal.is_visible()
+
+        # 5. Test Escape key closes modal
+        page.locator("#add-ticket-btn").click()
+        page.wait_for_timeout(200)
+        assert modal.is_visible()
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(200)
+        assert not modal.is_visible()
+
+        # 6. Fill and submit form
+        page.locator("#add-ticket-btn").click()
+        page.wait_for_timeout(200)
+        title_input.fill("Build APAC GenAI Demo Ticket")
+        page.locator("#ticket-priority-select").select_option("Urgent")
+        page.locator("#ticket-category-select").select_option("Work")
+        page.locator("#ticket-column-select").select_option("todo")
+        page.locator("#submit-ticket-btn").click()
         page.wait_for_timeout(500)
 
-        # Verify card rendered in column-todo
-        card = page.locator("#column-todo .kanban-card").first
+        # Verify modal closes after submit
+        assert not modal.is_visible()
+
+        # Verify card rendered in column-todo with proper title and priority
+        card = page.locator("#column-todo .kanban-card", has_text="Build APAC GenAI Demo Ticket").first
         assert card.is_visible()
         assert "Build APAC GenAI Demo Ticket" in card.text_content()
+        assert "urgent" in card.text_content().lower()
+
+        # 7. Create another ticket directly in In Progress column
+        page.locator("#add-ticket-btn").click()
+        page.wait_for_timeout(200)
+        title_input.fill("Audit Firestore tenant isolation rules")
+        page.locator("#ticket-priority-select").select_option("High")
+        page.locator("#ticket-category-select").select_option("Study")
+        page.locator("#ticket-column-select").select_option("in_progress")
+        page.locator("#submit-ticket-btn").click()
+        page.wait_for_timeout(500)
+
+        # 8. Test Backdrop click closes modal
+        page.locator("#add-ticket-btn").click()
+        page.wait_for_timeout(200)
+        assert modal.is_visible()
+        # Click outer modal backdrop area
+        modal.click(position={"x": 10, "y": 10})
+        page.wait_for_timeout(200)
+        assert not modal.is_visible()
+
+        # 9. Test empty title submission is prevented
+        page.locator("#add-ticket-btn").click()
+        page.wait_for_timeout(200)
+        title_input.fill("   ")
+        page.locator("#submit-ticket-btn").click()
+        page.wait_for_timeout(200)
+        # Modal remains open because required title is invalid/empty
+        assert modal.is_visible()
+        page.locator("#cancel-ticket-btn").click()
+        page.wait_for_timeout(200)
+
+        # 10. Test Enter key submission directly in Done column
+        page.locator("#add-ticket-btn").click()
+        page.wait_for_timeout(200)
+        title_input.fill("Complete Security Pentest")
+        page.locator("#ticket-priority-select").select_option("Low")
+        page.locator("#ticket-category-select").select_option("Wellness")
+        page.locator("#ticket-column-select").select_option("done")
+        title_input.press("Enter")
+        page.wait_for_timeout(500)
+
+        # Verify rendered in done column
+        assert not modal.is_visible()
+        card_done = page.locator("#column-done .kanban-card", has_text="Complete Security Pentest").first
+        assert card_done.is_visible()
+        assert "Low" in card_done.text_content()
+        assert "#Wellness" in card_done.text_content()
 
         browser.close()
 
@@ -1074,30 +1184,20 @@ def test_browser_reflection_style_selector_and_routing():
         page.on("request", handle_request)
         goto_authenticated(page, name="StyleTester")
 
-        # 1. Verify all 4 cards exist
-        card_balanced = page.locator('.reflection-style-card[data-style="balanced"]')
-        card_actionable = page.locator('.reflection-style-card[data-style="actionable"]')
-        card_philosophy = page.locator('.reflection-style-card[data-style="philosophy"]')
-        card_brainstorm = page.locator('.reflection-style-card[data-style="brainstorm"]')
-
-        assert card_balanced.is_visible()
-        assert card_actionable.is_visible()
-        assert card_philosophy.is_visible()
-        assert card_brainstorm.is_visible()
-
-        # Default is balanced
+        # 1. Verify inline mode pill exists
+        pill = page.locator("#mode-selector-pill")
+        assert pill.is_visible()
         style_label = page.locator("#active-style-label")
-        assert "Balanced" in style_label.inner_text()
-        assert "active" in (card_balanced.get_attribute("class") or "")
+        assert style_label.is_visible()
 
         input_box = page.locator("#reflection-input")
         send_btn = page.locator("#send-reflection-btn")
 
-        # 2. Click Actionable -> toggles active state, updates persona mode, sends persona_mode: "actionable"
-        card_actionable.click()
+        # 2. Click pill -> opens dropdown, click Actionable
+        pill.click()
+        page.wait_for_selector("#mode-dropdown-menu:not(.hidden)", timeout=3000)
+        page.locator('.mode-dropdown-item[data-style="actionable"]').click()
         assert "Actionable" in style_label.inner_text()
-        assert "active" in (card_actionable.get_attribute("class") or "")
-        assert "active" not in (card_balanced.get_attribute("class") or "")
         assert "🎯" in page.locator("#callout-emoji").inner_text()
         assert "Actionable" in page.locator("#callout-title").inner_text()
 
@@ -1108,10 +1208,10 @@ def test_browser_reflection_style_selector_and_routing():
         assert captured_payloads[-1].get("persona_mode") == "actionable"
 
         # 3. Click Deep Philosophy -> toggles active state, updates persona mode, sends persona_mode: "philosophy"
-        card_philosophy.click()
+        pill.click()
+        page.wait_for_selector("#mode-dropdown-menu:not(.hidden)", timeout=3000)
+        page.locator('.mode-dropdown-item[data-style="philosophy"]').click()
         assert "Deep Philosophy" in style_label.inner_text()
-        assert "active" in (card_philosophy.get_attribute("class") or "")
-        assert "active" not in (card_actionable.get_attribute("class") or "")
         assert "📜" in page.locator("#callout-emoji").inner_text()
         assert "Deep Philosophy" in page.locator("#callout-title").inner_text()
 
@@ -1122,10 +1222,10 @@ def test_browser_reflection_style_selector_and_routing():
         assert captured_payloads[-1].get("persona_mode") == "philosophy"
 
         # 4. Click Brainstorm -> toggles active state, updates persona mode, sends persona_mode: "brainstorm"
-        card_brainstorm.click()
+        pill.click()
+        page.wait_for_selector("#mode-dropdown-menu:not(.hidden)", timeout=3000)
+        page.locator('.mode-dropdown-item[data-style="brainstorm"]').click()
         assert "Brainstorm" in style_label.inner_text()
-        assert "active" in (card_brainstorm.get_attribute("class") or "")
-        assert "active" not in (card_philosophy.get_attribute("class") or "")
         assert "💡" in page.locator("#callout-emoji").inner_text()
         assert "Brainstorm" in page.locator("#callout-title").inner_text()
 
@@ -1136,10 +1236,10 @@ def test_browser_reflection_style_selector_and_routing():
         assert captured_payloads[-1].get("persona_mode") == "brainstorm"
 
         # 5. Click Balanced -> toggles active state, updates persona mode, sends persona_mode: "balanced"
-        card_balanced.click()
+        pill.click()
+        page.wait_for_selector("#mode-dropdown-menu:not(.hidden)", timeout=3000)
+        page.locator('.mode-dropdown-item[data-style="balanced"]').click()
         assert "Balanced" in style_label.inner_text()
-        assert "active" in (card_balanced.get_attribute("class") or "")
-        assert "active" not in (card_brainstorm.get_attribute("class") or "")
         assert "🧭" in page.locator("#callout-emoji").inner_text()
         assert "Balanced" in page.locator("#callout-title").inner_text()
 
@@ -1414,33 +1514,28 @@ def test_browser_rapid_reflection_style_switching_during_turn():
         page.on("request", handle_request)
         goto_authenticated(page, name="RapidStyleUser")
 
-        card_balanced = page.locator('.reflection-style-card[data-style="balanced"]')
-        card_actionable = page.locator('.reflection-style-card[data-style="actionable"]')
-        card_philosophy = page.locator('.reflection-style-card[data-style="philosophy"]')
-        card_brainstorm = page.locator('.reflection-style-card[data-style="brainstorm"]')
+        pill = page.locator("#mode-selector-pill")
+        dropdown = page.locator("#mode-dropdown-menu")
         style_label = page.locator("#active-style-label")
 
-        # Rapid succession clicking
-        card_actionable.click()
-        card_philosophy.click()
-        card_brainstorm.click()
-        card_actionable.click()
+        # Open pill dropdown and click Actionable
+        pill.click()
+        page.wait_for_selector("#mode-dropdown-menu:not(.hidden)", timeout=3000)
+        page.locator('.mode-dropdown-item[data-style="actionable"]').click()
 
         # Final active state must be Actionable
         assert "Actionable" in style_label.inner_text()
-        assert "active" in (card_actionable.get_attribute("class") or "")
-        assert "active" not in (card_philosophy.get_attribute("class") or "")
-        assert "active" not in (card_brainstorm.get_attribute("class") or "")
 
         # Send turn with actionable mode
         input_box = page.locator("#reflection-input")
         input_box.fill("Action item rapid test.")
         page.locator("#send-reflection-btn").click()
 
-        # Rapidly switch style to Deep Philosophy immediately after send
-        card_philosophy.click()
+        # Switch style to Deep Philosophy immediately after send via pill dropdown
+        pill.click()
+        page.wait_for_selector("#mode-dropdown-menu:not(.hidden)", timeout=3000)
+        page.locator('.mode-dropdown-item[data-style="philosophy"]').click()
         assert "Deep Philosophy" in style_label.inner_text()
-        assert "active" in (card_philosophy.get_attribute("class") or "")
 
         page.wait_for_selector("#chat-stream .model-badge", timeout=6000)
         assert len(captured_payloads) >= 1

@@ -85,18 +85,29 @@ def test_full_browser_automation_lifecycle():
         page.screenshot(path=os.path.join(screenshot_dir, "01_sanctuary_dashboard.png"))
 
         # Step 2: Reflection Style Selector & Multi-Turn Dialogue with Badges
-        # 2A. Test Reflection Style Selector across all 4 modes
+        pill = page.locator("#mode-selector-pill")
         card_actionable = page.locator('.reflection-style-card[data-style="actionable"]')
         card_philosophy = page.locator('.reflection-style-card[data-style="philosophy"]')
         card_brainstorm = page.locator('.reflection-style-card[data-style="brainstorm"]')
         card_balanced = page.locator('.reflection-style-card[data-style="balanced"]')
 
+        pill.click()
+        page.wait_for_selector("#mode-dropdown-menu:not(.hidden)", timeout=3000)
         card_actionable.click()
         assert "Actionable" in page.locator("#active-style-label").inner_text()
+
+        pill.click()
+        page.wait_for_selector("#mode-dropdown-menu:not(.hidden)", timeout=3000)
         card_philosophy.click()
         assert "Deep Philosophy" in page.locator("#active-style-label").inner_text()
+
+        pill.click()
+        page.wait_for_selector("#mode-dropdown-menu:not(.hidden)", timeout=3000)
         card_brainstorm.click()
         assert "Brainstorm" in page.locator("#active-style-label").inner_text()
+
+        pill.click()
+        page.wait_for_selector("#mode-dropdown-menu:not(.hidden)", timeout=3000)
         card_balanced.click()
         assert "Balanced" in page.locator("#active-style-label").inner_text()
         page.screenshot(path=os.path.join(screenshot_dir, "02a_reflection_style_selector.png"))

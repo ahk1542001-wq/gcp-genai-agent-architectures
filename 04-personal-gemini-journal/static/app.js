@@ -11,8 +11,8 @@ const state = {
   token: localStorage.getItem("journal_token") || null,
   user: null,
   authConfig: null,
-  reflectionStyle: "balanced",
-  persona: "balanced", // "balanced", "actionable", "philosophy", "brainstorm", or legacy "coach"/"guardian"
+  reflectionStyle: "auto",
+  persona: "auto", // "auto", "balanced", "actionable", "philosophy", "brainstorm", or legacy "coach"/"guardian"
   activeView: "journal", // "journal", "kanban", "calendar", "rewind"
   conversationHistory: [],
   tickets: [],
@@ -360,6 +360,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initDraftAutoSave();
   initNavigation();
   initKanbanDragAndDrop();
+  initNewTicketModal();
   initVoiceAssistant();
   initShortcuts();
   initEmotionalChart();
@@ -372,6 +373,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initExecutiveReport();
   initHistoryReviewModal();
   initReflectionStyleSelector();
+  initMentionAutocomplete();
   initMultiTurnActionBar();
   initHistoryFilters();
 
@@ -575,30 +577,54 @@ function setReflectionStyle(style) {
   state.reflectionStyle = style;
   state.persona = style;
 
-  // Update style cards visual state
-  const cards = document.querySelectorAll(".reflection-style-card");
-  cards.forEach(card => {
-    const cardStyle = card.getAttribute("data-style");
-    if (cardStyle === style) {
-      card.classList.add("active", "border-indigo-500/50", "bg-[#1c2128]");
-      card.classList.remove("border-[#30363d]", "bg-[#161b22]");
-    } else {
-      card.classList.remove("active", "border-indigo-500/50", "bg-[#1c2128]");
-      card.classList.add("border-[#30363d]", "bg-[#161b22]");
-    }
-  });
-
-  // Update label
-  const label = document.getElementById("active-style-label");
+  const styleIcons = {
+    auto: "✨",
+    balanced: "🧭",
+    actionable: "🎯",
+    philosophy: "📜",
+    brainstorm: "💡"
+  };
   const styleNames = {
+    auto: "Auto-Detect",
     balanced: "Balanced",
     actionable: "Actionable",
     philosophy: "Deep Philosophy",
     brainstorm: "Brainstorm"
   };
-  if (label) {
-    label.textContent = `Mode: ${styleNames[style] || "Balanced"}`;
+
+  // Update pill icon and active label
+  const pillIcon = document.getElementById("mode-pill-icon");
+  const label = document.getElementById("active-style-label");
+  if (pillIcon) {
+    pillIcon.textContent = styleIcons[style] || "✨";
   }
+  if (label) {
+    label.textContent = styleNames[style] || "Auto-Detect";
+  }
+
+  // Update dropdown items visual state
+  const dropdownItems = document.querySelectorAll(".mode-dropdown-item");
+  dropdownItems.forEach(item => {
+    const itemMode = item.getAttribute("data-mode") || item.getAttribute("data-style");
+    if (itemMode === style) {
+      item.classList.add("active", "bg-indigo-600/30", "text-white");
+      item.classList.remove("text-gray-200");
+    } else {
+      item.classList.remove("active", "bg-indigo-600/30", "text-white");
+      item.classList.add("text-gray-200");
+    }
+  });
+
+  // Update cards visual state (for any .reflection-style-card elements)
+  const cards = document.querySelectorAll(".reflection-style-card");
+  cards.forEach(card => {
+    const cardStyle = card.getAttribute("data-style") || card.getAttribute("data-mode");
+    if (cardStyle === style) {
+      card.classList.add("active");
+    } else {
+      card.classList.remove("active");
+    }
+  });
 
   // Update Notion callout block
   const calloutTitle = document.getElementById("callout-title");
@@ -617,21 +643,212 @@ function setReflectionStyle(style) {
       calloutEmoji.textContent = "💡";
       calloutTitle.textContent = "Lateral Sparks & Creative Brainstorm";
       calloutText.textContent = '"No limits or early filters. What unconventional possibilities or ideas can we explore?"';
-    } else {
+    } else if (style === "balanced") {
       calloutEmoji.textContent = "🧭";
       calloutTitle.textContent = "Balanced Clarity & Sanctuary";
       calloutText.textContent = '"Welcome to your sanctuary. What is occupying your headspace or focus right now?"';
+    } else {
+      calloutEmoji.textContent = "✨";
+      calloutTitle.textContent = "Intelligent Guardian Sanctuary";
+      calloutText.textContent = '"Welcome to your sanctuary. Speak or write freely; Gemini intelligently adapts to your reflection mode."';
     }
   }
 }
 
 function initReflectionStyleSelector() {
-  const cards = document.querySelectorAll(".reflection-style-card");
+  const pill = document.getElementById("mode-selector-pill");
+  const menu = document.getElementById("mode-dropdown-menu");
+  const options = document.querySelectorAll(".mode-dropdown-item");
+
+  if (pill && menu) {
+    pill.addEventListener("click", (e) => {
+      e.stopPropagation();
+      menu.classList.toggle("hidden");
+      pill.setAttribute("aria-expanded", !menu.classList.contains("hidden"));
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target) && e.target !== pill && !pill.contains(e.target)) {
+        menu.classList.add("hidden");
+        pill.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    options.forEach(opt => {
+      opt.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const mode = opt.getAttribute("data-mode") || opt.getAttribute("data-style") || "auto";
+        setReflectionStyle(mode);
+        menu.classList.add("hidden");
+        pill.setAttribute("aria-expanded", "false");
+      });
+    });
+  }
+
+  // Also support any cards with .reflection-style-card (for backwards compatibility)
+  const cards = document.querySelectorAll(".reflection-style-card:not(.mode-dropdown-item)");
   cards.forEach(card => {
     card.addEventListener("click", () => {
-      const style = card.getAttribute("data-style") || "balanced";
+      const style = card.getAttribute("data-style") || card.getAttribute("data-mode") || "auto";
       setReflectionStyle(style);
     });
+  });
+
+  setReflectionStyle(state.persona || "auto");
+}
+
+function initMentionAutocomplete() {
+  const inputEl = document.getElementById("reflection-input");
+  const menuEl = document.getElementById("mention-autocomplete-menu");
+  const itemsContainer = document.getElementById("mention-autocomplete-items");
+
+  if (!inputEl || !menuEl || !itemsContainer) return;
+
+  const MODES = [
+    { id: "auto", name: "Auto-Detect", icon: "✨", tag: "auto", desc: "Intelligently adapts to reflection" },
+    { id: "actionable", name: "Actionable", icon: "🎯", tag: "actionable", desc: "Next steps & Kanban tickets" },
+    { id: "philosophy", name: "Deep Philosophy", icon: "📜", tag: "philosophy", desc: "Stoic reframing & resilience" },
+    { id: "brainstorm", name: "Brainstorm", icon: "💡", tag: "brainstorm", desc: "Lateral creative sparks" },
+    { id: "balanced", name: "Balanced", icon: "🧭", tag: "balanced", desc: "Holistic clarity & grounding" }
+  ];
+
+  let currentContext = null;
+  let activeIndex = 0;
+  let currentFiltered = [];
+
+  function hideMenu() {
+    menuEl.classList.add("hidden");
+    currentContext = null;
+    currentFiltered = [];
+    activeIndex = 0;
+  }
+
+  function renderItems() {
+    itemsContainer.innerHTML = "";
+    currentFiltered.forEach((mode, idx) => {
+      const itemBtn = document.createElement("button");
+      itemBtn.type = "button";
+      itemBtn.className = `mention-autocomplete-item w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors ${
+        idx === activeIndex
+          ? "bg-indigo-600/30 text-white border-l-2 border-indigo-400 pl-2.5"
+          : "text-gray-300 hover:bg-[#21262d] hover:text-white"
+      }`;
+      itemBtn.setAttribute("data-mode", mode.id);
+
+      itemBtn.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <span class="text-sm shrink-0">${mode.icon}</span>
+          <div>
+            <span class="font-medium text-white">${mode.name}</span>
+            <span class="text-[10px] text-gray-400 ml-1.5">${mode.desc}</span>
+          </div>
+        </div>
+        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#0e1117] text-indigo-300 border border-[#30363d]">
+          ${currentContext ? currentContext.trigger : "@"}${mode.tag}
+        </span>
+      `;
+
+      itemBtn.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        selectMode(mode);
+      });
+
+      itemBtn.addEventListener("mouseenter", () => {
+        activeIndex = idx;
+        renderItems();
+      });
+
+      itemsContainer.appendChild(itemBtn);
+    });
+  }
+
+  function selectMode(mode) {
+    if (!currentContext) return;
+    const text = inputEl.value;
+    const before = text.slice(0, currentContext.start);
+    const after = text.slice(currentContext.end);
+    inputEl.value = before + after;
+    const newCursor = currentContext.start;
+    inputEl.setSelectionRange(newCursor, newCursor);
+
+    setReflectionStyle(mode.id);
+    hideMenu();
+    inputEl.focus();
+  }
+
+  function checkTrigger() {
+    const cursorPos = inputEl.selectionStart || 0;
+    const textBefore = inputEl.value.slice(0, cursorPos);
+    const match = textBefore.match(/(?:^|\s)([@\/])([a-zA-Z0-9_-]*)$/);
+
+    if (!match) {
+      hideMenu();
+      return;
+    }
+
+    const triggerChar = match[1];
+    const query = match[2].toLowerCase();
+    const matchIndex = match.index + (match[0].startsWith(" ") ? 1 : 0);
+
+    currentContext = {
+      trigger: triggerChar,
+      start: matchIndex,
+      end: cursorPos
+    };
+
+    currentFiltered = MODES.filter(m =>
+      m.id.toLowerCase().includes(query) ||
+      m.name.toLowerCase().includes(query) ||
+      m.tag.toLowerCase().includes(query)
+    );
+
+    if (currentFiltered.length === 0) {
+      hideMenu();
+      return;
+    }
+
+    if (activeIndex >= currentFiltered.length) {
+      activeIndex = 0;
+    }
+
+    renderItems();
+    menuEl.classList.remove("hidden");
+  }
+
+  inputEl.addEventListener("input", checkTrigger);
+  inputEl.addEventListener("keyup", (e) => {
+    if (["ArrowDown", "ArrowUp", "Enter", "Tab", "Escape"].includes(e.key)) {
+      return;
+    }
+    checkTrigger();
+  });
+
+  inputEl.addEventListener("keydown", (e) => {
+    if (menuEl.classList.contains("hidden")) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeIndex = (activeIndex + 1) % currentFiltered.length;
+      renderItems();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeIndex = (activeIndex - 1 + currentFiltered.length) % currentFiltered.length;
+      renderItems();
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      if (currentFiltered.length > 0) {
+        e.preventDefault();
+        selectMode(currentFiltered[activeIndex]);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      hideMenu();
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!menuEl.contains(e.target) && e.target !== inputEl) {
+      hideMenu();
+    }
   });
 }
 
@@ -751,18 +968,90 @@ function initKanbanDragAndDrop() {
       await moveTicketColumn(ticketId, colName);
     });
   });
+}
 
-  // Add Ticket Button Modal Prompt
+// ============================================================================
+// New Ticket Modal (Notion Serene)
+// ============================================================================
+function initNewTicketModal() {
+  const modal = document.getElementById("new-ticket-modal");
   const addBtn = document.getElementById("add-ticket-btn");
+  const closeBtn = document.getElementById("close-ticket-modal-btn");
+  const cancelBtn = document.getElementById("cancel-ticket-btn");
+  const form = document.getElementById("new-ticket-form");
+  const titleInput = document.getElementById("ticket-title-input");
+  const prioritySelect = document.getElementById("ticket-priority-select");
+  const categorySelect = document.getElementById("ticket-category-select");
+  const columnSelect = document.getElementById("ticket-column-select");
+
+  if (!modal) return;
+
+  function openModal() {
+    if (form) form.reset();
+    if (prioritySelect) prioritySelect.value = "Medium";
+    if (categorySelect) categorySelect.value = "Work";
+    if (columnSelect) columnSelect.value = "todo";
+    modal.classList.remove("hidden");
+    if (titleInput) {
+      setTimeout(() => titleInput.focus(), 50);
+    }
+  }
+
+  function closeModal() {
+    modal.classList.add("hidden");
+    if (form) form.reset();
+  }
+
   if (addBtn) {
-    addBtn.addEventListener("click", async () => {
-      const title = prompt("Enter new task title:");
-      if (!title || !title.trim()) return;
+    addBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      openModal();
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeModal);
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", closeModal);
+  }
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.classList.contains("hidden")) {
+      closeModal();
+    }
+  });
+
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const title = titleInput ? titleInput.value.trim() : "";
+      if (!title) {
+        if (titleInput) titleInput.focus();
+        return;
+      }
+
+      const priority = prioritySelect ? prioritySelect.value : "Medium";
+      const category = categorySelect ? categorySelect.value : "Work";
+      let column = columnSelect ? columnSelect.value : "todo";
+      if (column === "To Do") column = "todo";
+      else if (column === "In Progress") column = "in_progress";
+      else if (column === "Done") column = "done";
+
+      closeModal();
+
       await createTicket({
-        title: title.trim(),
-        priority: "High",
-        category: "Work",
-        column: "todo"
+        title,
+        priority,
+        category,
+        column
       });
     });
   }
@@ -800,10 +1089,12 @@ async function createTicket(ticketData) {
       const data = await res.json();
       state.tickets.push(data.ticket);
       renderKanbanBoard();
+      return data.ticket;
     }
   } catch (err) {
     console.warn("Create ticket error:", err);
   }
+  return null;
 }
 
 async function deleteTicket(ticketId) {
@@ -1434,7 +1725,8 @@ function initShortcuts() {
         "journal-review-modal",
         "executive-report-modal",
         "export-dropdown",
-        "breathing-modal"
+        "breathing-modal",
+        "new-ticket-modal"
       ];
       modalIds.forEach(id => {
         const el = document.getElementById(id);
