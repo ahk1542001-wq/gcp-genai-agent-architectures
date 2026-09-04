@@ -243,10 +243,48 @@ class FirestoreService:
             return []
         if self.is_live and self.client:
             ref = self.client.collection("users").document(uid).collection("calendar").stream()
-            return [doc.to_dict() for doc in ref]
+            events = [doc.to_dict() for doc in ref]
         else:
             bucket = _get_memory_bucket(uid, "calendar")
-            return list(bucket.values())
+            events = list(bucket.values())
+
+        if not events and not getattr(self, f"_calendar_seeded_{uid}", False):
+            setattr(self, f"_calendar_seeded_{uid}", True)
+            events = self._seed_default_calendar_events(uid)
+
+        return events
+
+    def _seed_default_calendar_events(self, uid: str) -> List[Dict[str, Any]]:
+        today_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+        tomorrow_str = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+
+        default_events = [
+            {
+                "id": f"evt_seed_1_{uuid.uuid4().hex[:6]}",
+                "title": "Deep Work: Sanctuary OS Architecture & Vertex AI Engine",
+                "date": today_str,
+                "time_block": "Morning Focus",
+                "notes": "Core architecture review, Vertex AI streaming & living memory"
+            },
+            {
+                "id": f"evt_seed_2_{uuid.uuid4().hex[:6]}",
+                "title": "Focus Sprint: Mindful Reflection & Cognitive Synthesis",
+                "date": today_str,
+                "time_block": "Afternoon Sprint",
+                "notes": "Deep focus block, cognitive clarity, and journal synthesis"
+            },
+            {
+                "id": f"evt_seed_3_{uuid.uuid4().hex[:6]}",
+                "title": "Evening Shutdown: Daily Reflection & Mindful Closure",
+                "date": today_str,
+                "time_block": "Evening Wind-down",
+                "notes": "Daily notes reconciliation, cognitive grounding, and gratitude journaling"
+            }
+        ]
+        saved = []
+        for evt in default_events:
+            saved.append(self.save_calendar_event(uid, evt))
+        return saved
 
     def delete_calendar_event(self, uid: str, event_id: str) -> bool:
         if not uid or not event_id:

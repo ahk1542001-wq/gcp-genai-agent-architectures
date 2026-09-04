@@ -435,7 +435,12 @@ const UI_TRANSLATIONS = {
     colDone: "Done & Celebrated",
     voiceStart: "Start Live Voice",
     export: "Export",
-    reflectBtn: "Reflect ➔"
+    reflectBtn: "Reflect ➔",
+    pastReflections: "Past Reflections & Wisdom",
+    pastReflectionsSubtitle: "Personal Journal Wisdom & Recall",
+    reviewModalTitle: "Past Reflection & Wisdom",
+    calloutTitle: "Guardian Daily Focus & Mindful Wisdom",
+    calloutText: "\"Welcome to your sanctuary. Reflect freely on your projects and ideas; Gemini provides clarity, wisdom, and next steps.\""
   },
   my: {
     brandSubtitle: "ကိုယ်ပိုင် Gemini ဘဝစောင့်ရှောက်သူ",
@@ -452,7 +457,12 @@ const UI_TRANSLATIONS = {
     colDone: "ပြီးမြောက် အောင်မြင်",
     voiceStart: "အသံဖြင့် စတင်စကားပြောရန်",
     export: "ထုတ်ယူရန်",
-    reflectBtn: "သုံးသပ်ပါ ➔"
+    reflectBtn: "သုံးသပ်ပါ ➔",
+    pastReflections: "အတိတ်က အတွေးအမြင်နှင့် သင်ခန်းစာများ",
+    pastReflectionsSubtitle: "ကိုယ်ပိုင် ဂျာနယ် မှတ်တမ်းနှင့် အသိဉာဏ်များ",
+    reviewModalTitle: "အတိတ်က အတွေးအမြင်နှင့် သင်ခန်းစာ",
+    calloutTitle: "Guardian · နေ့စဉ် အတွေးအမြင်နှင့် ဉာဏ်ပညာ နေရာ",
+    calloutText: "\"သင့်စိတ်ထဲရှိရာများကို လွတ်လပ်စွာ မျှဝေဆွေးနွေးနိုင်ပါတယ်။ Gemini က သင့်အတွေးများကို သင့်လျော်စွာ နားထောင်ပြီး ကူညီပေးပါမယ်။\""
   }
 };
 
@@ -484,6 +494,23 @@ function applyLanguage(lang) {
 
   const countDoneText = document.querySelector(".kanban-column[data-column='done'] .uppercase");
   if (countDoneText) countDoneText.textContent = dict.colDone;
+
+  const pastHeaderSpan = document.getElementById("past-reflections-header-text");
+  if (pastHeaderSpan && dict.pastReflections) pastHeaderSpan.textContent = dict.pastReflections;
+
+  const pastSubtitle = document.getElementById("past-reflections-subtitle");
+  if (pastSubtitle && dict.pastReflectionsSubtitle) pastSubtitle.textContent = dict.pastReflectionsSubtitle;
+
+  const reviewModalTitle = document.getElementById("review-modal-title");
+  if (reviewModalTitle && dict.reviewModalTitle && (!reviewModalTitle.dataset.customTitle || reviewModalTitle.textContent.includes("Past Reflection"))) {
+    reviewModalTitle.textContent = dict.reviewModalTitle;
+  }
+
+  const calloutTitle = document.getElementById("callout-title");
+  if (calloutTitle && dict.calloutTitle) calloutTitle.textContent = dict.calloutTitle;
+
+  const calloutText = document.getElementById("callout-text");
+  if (calloutText && dict.calloutText) calloutText.textContent = dict.calloutText;
 }
 
 // ============================================================================
@@ -531,6 +558,7 @@ function initNavigation() {
     document.getElementById("view-icon").textContent = cfg.icon;
     document.getElementById("view-title").textContent = cfg.title;
 
+    if (viewKey === "kanban") loadTickets();
     if (viewKey === "calendar") loadCalendarEvents();
     if (viewKey === "rewind") loadRewindMetrics();
     trackEvent("view_switched", { view: viewKey });
@@ -633,24 +661,24 @@ function setReflectionStyle(style) {
   if (calloutTitle && calloutText && calloutEmoji) {
     if (style === "actionable") {
       calloutEmoji.textContent = "🎯";
-      calloutTitle.textContent = "Actionable Momentum & Next Steps";
+      calloutTitle.textContent = "Actionable Focus & Next Steps";
       calloutText.textContent = '"Let\'s break down what\'s in front of you into high-leverage habits and immediate execution."';
     } else if (style === "philosophy") {
       calloutEmoji.textContent = "📜";
-      calloutTitle.textContent = "Deep Philosophy & Socratic Reframing";
+      calloutTitle.textContent = "Deep Philosophy & Stoic Perspective";
       calloutText.textContent = '"Step back and reframe this from a higher vantage point. What assumptions can we examine together?"';
     } else if (style === "brainstorm") {
       calloutEmoji.textContent = "💡";
-      calloutTitle.textContent = "Lateral Sparks & Creative Brainstorm";
+      calloutTitle.textContent = "Brainstorm Exploration & Ideas";
       calloutText.textContent = '"No limits or early filters. What unconventional possibilities or ideas can we explore?"';
     } else if (style === "balanced") {
       calloutEmoji.textContent = "🧭";
-      calloutTitle.textContent = "Balanced Clarity & Sanctuary";
+      calloutTitle.textContent = "Balanced Daily Sanctuary & Clarity";
       calloutText.textContent = '"Welcome to your sanctuary. What is occupying your headspace or focus right now?"';
     } else {
       calloutEmoji.textContent = "✨";
-      calloutTitle.textContent = "Intelligent Guardian Sanctuary";
-      calloutText.textContent = '"Welcome to your sanctuary. Speak or write freely; Gemini intelligently adapts to your reflection mode."';
+      calloutTitle.textContent = "Guardian Daily Focus & Mindful Wisdom";
+      calloutText.textContent = '"Welcome to your sanctuary. Reflect freely on your projects and ideas; Gemini provides clarity, wisdom, and next steps."';
     }
   }
 }
@@ -1521,7 +1549,7 @@ function appendChatMessage(role, text) {
         <div class="flex items-center justify-between flex-wrap gap-1">
           <div class="flex items-center space-x-1.5">
             <span class="font-semibold text-[10px] text-purple-300">Personal Gemini Guardian</span>
-            <span class="model-badge inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-purple-950/60 text-purple-300 border border-purple-500/30">gemini-3.7-flash</span>
+            <span class="model-badge inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-indigo-950/60 text-indigo-300 border border-indigo-500/30">gemini-2.5-flash · gemini-3.7-flash</span>
           </div>
           <span class="text-[9px] text-gray-500 font-mono">${timeStr}</span>
         </div>

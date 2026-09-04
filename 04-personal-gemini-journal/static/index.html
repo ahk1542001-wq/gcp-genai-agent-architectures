@@ -108,10 +108,11 @@
 
       <!-- Past Reflections List -->
       <div class="mt-5 px-3">
-        <div class="flex items-center justify-between text-[11px] font-semibold text-[#8b949e] uppercase tracking-wider mb-2 px-1">
-          <span>Past Reflections</span>
+        <div class="flex items-center justify-between text-[11px] font-semibold text-[#8b949e] uppercase tracking-wider mb-1 px-1">
+          <span id="past-reflections-header-text">Past Reflections & Wisdom</span>
           <button id="refresh-history-btn" class="hover:text-white text-xs" title="Refresh">↻</button>
         </div>
+        <p class="text-[10px] text-gray-400 font-normal px-1 mb-2" id="past-reflections-subtitle">Personal Journal Wisdom & Recall</p>
 
         <!-- Search Input -->
         <div class="relative mb-2">
@@ -169,31 +170,31 @@
   <main class="flex-1 flex flex-col h-full overflow-hidden bg-[#0d1117]">
 
     <!-- Notion-Style Top Header Bar -->
-    <header class="h-14 border-b border-[#30363d] bg-[#161b22]/70 backdrop-blur-md px-6 flex items-center justify-between shrink-0">
-      <div class="flex items-center space-x-3">
-        <button id="sidebar-toggle-btn" class="hidden md:flex p-1.5 rounded text-gray-400 hover:text-white hover:bg-[#21262d] transition-colors" title="Toggle Sidebar">
+    <header class="relative z-40 h-14 border-b border-[#30363d] bg-[#161b22] px-4 md:px-6 flex items-center justify-between shrink-0 shadow-sm">
+      <div class="flex items-center space-x-3 min-w-0">
+        <button id="sidebar-toggle-btn" class="hidden md:flex p-1.5 rounded text-gray-400 hover:text-white hover:bg-[#21262d] transition-colors shrink-0" title="Toggle Sidebar">
           ☰
         </button>
-        <span id="view-icon" class="text-xl">📝</span>
-        <h2 id="view-title" class="text-sm font-semibold text-[#f0f6fc]">Sanctuary Journal & Reflection Studio</h2>
-        <span class="text-xs text-[#8b949e] border-l border-[#30363d] pl-3" id="current-date-display">Today</span>
+        <span id="view-icon" class="text-xl shrink-0">📝</span>
+        <h2 id="view-title" class="text-sm font-semibold text-[#f0f6fc] truncate">Sanctuary Journal & Reflection Studio</h2>
+        <span class="text-xs text-[#8b949e] border-l border-[#30363d] pl-3 shrink-0 hidden sm:inline" id="current-date-display">Today</span>
       </div>
 
       <!-- Action Utilities -->
-      <div class="flex items-center space-x-2.5">
+      <div class="flex items-center space-x-2 shrink-0">
         <!-- Live Voice Pulsing Breathing Orb -->
         <div id="voice-breathing-orb" class="hidden w-3 h-3 rounded-full bg-gradient-to-tr from-indigo-400 to-purple-400 animate-pulse shadow-md shadow-indigo-500/50" title="Voice Channel Active"></div>
 
         <!-- Live Voice Button -->
-        <button id="live-voice-toggle-btn" class="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-md transition-all">
+        <button id="live-voice-toggle-btn" class="flex items-center space-x-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-medium px-2.5 py-1.5 rounded-full shadow-md transition-all">
           <span id="voice-icon" class="animate-pulse">🎙️</span>
-          <span id="voice-btn-text">Start Live Voice</span>
+          <span id="voice-btn-text" class="hidden sm:inline">Start Live Voice</span>
         </button>
 
         <!-- Executive Data Report Button -->
-        <button id="executive-report-btn" class="flex items-center space-x-1.5 bg-[#21262d] hover:bg-[#30363d] text-xs font-medium px-2.5 py-1.5 rounded-md border border-[#30363d] transition-colors text-indigo-300 hover:text-white" title="Cognitive & Productivity Data Report">
+        <button id="executive-report-btn" class="flex items-center space-x-1 bg-[#21262d] hover:bg-[#30363d] text-xs font-medium px-2.5 py-1.5 rounded-md border border-[#30363d] transition-colors text-indigo-300 hover:text-white" title="Cognitive & Productivity Data Report">
           <span>📊</span>
-          <span>Report</span>
+          <span class="hidden sm:inline">Report</span>
         </button>
 
         <!-- Export Dropdown -->
@@ -203,16 +204,16 @@
             <span>Export</span>
             <span class="text-[9px]">▼</span>
           </button>
-          <div id="export-dropdown" class="hidden absolute right-0 mt-1 w-44 bg-[#161b22] border border-[#30363d] rounded-lg shadow-xl py-1 z-30 text-xs">
-            <button id="export-md-btn" class="w-full text-left px-3 py-2 hover:bg-[#21262d] flex items-center space-x-2 text-gray-200">
+          <div id="export-dropdown" class="hidden absolute right-0 top-full mt-2 w-48 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl py-1.5 z-50 text-xs backdrop-blur-md">
+            <button id="export-md-btn" class="w-full text-left px-3.5 py-2 hover:bg-[#21262d] flex items-center space-x-2 text-gray-200 transition-colors">
               <span>📓</span>
               <span>Markdown (.md)</span>
             </button>
-            <button id="export-txt-btn" class="w-full text-left px-3 py-2 hover:bg-[#21262d] flex items-center space-x-2 text-gray-200">
+            <button id="export-txt-btn" class="w-full text-left px-3.5 py-2 hover:bg-[#21262d] flex items-center space-x-2 text-gray-200 transition-colors">
               <span>📄</span>
               <span>Plain Text (.txt)</span>
             </button>
-            <button id="export-pdf-btn" class="w-full text-left px-3 py-2 hover:bg-[#21262d] flex items-center space-x-2 text-gray-200">
+            <button id="export-pdf-btn" class="w-full text-left px-3.5 py-2 hover:bg-[#21262d] flex items-center space-x-2 text-gray-200 transition-colors">
               <span>🖨️</span>
               <span>Print / Save PDF</span>
             </button>
@@ -246,14 +247,14 @@
       <!-- ================================================================= -->
       <!-- VIEW 1: SANCTUARY JOURNAL & BRAIN DUMP -->
       <!-- ================================================================= -->
-      <section id="view-journal-content" class="max-w-4xl mx-auto space-y-6">
+      <section id="view-journal-content" class="max-w-4xl mx-auto space-y-6 pt-4 sm:pt-6">
         
         <!-- Notion Callout Block -->
-        <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4 flex items-start space-x-3 shadow-sm">
+        <div id="callout-card" class="bg-[#161b22] border border-[#30363d] rounded-xl p-4 flex items-start space-x-3 shadow-sm relative z-0 transition-all">
           <span class="text-2xl shrink-0" id="callout-emoji">✨</span>
           <div class="flex-1 text-xs leading-relaxed text-[#c9d1d9]">
-            <strong class="text-[#f0f6fc] block mb-0.5" id="callout-title">Guardian Socratic Sanctuary</strong>
-            <p id="callout-text">"Welcome to your sanctuary. Speak or write freely; Gemini intelligently adapts to your reflection mode."</p>
+            <strong class="text-[#f0f6fc] block mb-0.5" id="callout-title">Guardian Daily Focus & Mindful Wisdom</strong>
+            <p id="callout-text">"Welcome to your sanctuary. Reflect freely on your projects and ideas; Gemini provides clarity, wisdom, and next steps."</p>
           </div>
         </div>
 
@@ -789,7 +790,7 @@
         <div>
           <div class="flex items-center space-x-2">
             <span class="text-indigo-400 text-sm">📖</span>
-            <h3 id="review-modal-title" class="text-base font-semibold text-white">Past Reflection</h3>
+            <h3 id="review-modal-title" class="text-base font-semibold text-white">Past Reflection & Wisdom</h3>
           </div>
           <p id="review-modal-date" class="text-xs text-gray-400 mt-0.5">Recorded on --</p>
         </div>

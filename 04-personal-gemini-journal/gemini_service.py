@@ -14,7 +14,7 @@ import datetime
 from typing import List, Dict, Any, Optional
 
 GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "intelligent-arc-488111-s0")
-MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-3.7-flash")
+MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
 def get_secret_from_secret_manager(secret_id: str) -> Optional[str]:
     """
@@ -32,6 +32,19 @@ def get_secret_from_secret_manager(secret_id: str) -> Optional[str]:
     except Exception as e:
         print(f"[SecretManager] Secret Manager retrieval for '{secret_id}' skipped/failed: {e}")
         return None
+
+
+def _clean_and_parse_json(raw_text: str) -> Dict[str, Any]:
+    """Safely cleans markdown code fences or surrounding text and parses JSON."""
+    text = raw_text.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"\s*```$", "", text)
+        text = text.strip()
+    match = re.search(r"(\{.*\})", text, re.DOTALL)
+    if match:
+        return json.loads(match.group(1))
+    return json.loads(text)
 
 
 def resolve_gemini_api_key() -> Optional[str]:
@@ -172,14 +185,15 @@ class GeminiJournalService:
                 print(f"[GeminiService] Initialized Google GenAI client with API key and model: {MODEL_NAME}")
             except Exception as e:
                 print(f"[GeminiService] Notice: Could not initialize google-genai client with API key: {e}")
-        elif os.environ.get("GCP_PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT"):
-            try:
-                from google import genai
-                project = os.environ.get("GCP_PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT")
-                self.client = genai.Client(vertexai=True, project=project, location="us-central1")
-                print(f"[GeminiService] Initialized Google GenAI Vertex AI client for project {project} with model: {MODEL_NAME}")
-            except Exception as e:
-                print(f"[GeminiService] Notice: Could not initialize Vertex AI client: {e}")
+        if not self.client and not (os.environ.get("ENVIRONMENT") == "test" or os.environ.get("IS_TEST_MODE") == "true"):
+            project = os.environ.get("GCP_PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT") or GCP_PROJECT_ID
+            if project:
+                try:
+                    from google import genai
+                    self.client = genai.Client(vertexai=True, project=project, location="us-central1")
+                    print(f"[GeminiService] Initialized Google GenAI Vertex AI client for project {project} with model: {MODEL_NAME}")
+                except Exception as e:
+                    print(f"[GeminiService] Notice: Could not initialize Vertex AI client: {e}")
 
     # --------------------------------------------------------------------------
     # Live Conversational Agent with Autonomous Tool Calling & Hermes Self-Learning
@@ -245,8 +259,8 @@ Analyze the user's latest statement in context of their prior conversation and d
 1. Is the user asking to create a task, move a task, schedule an event, express high anxiety/burnout, or conclude their day?
 2. Did the user correct a past mistake, state an explicit personal preference, or clarify a rule? (Hermes Closed-Loop Learning)
 3. If so, generate structured tool action(s).
-4. Provide an immediate spoken acknowledgment (e.g. "I am adding that to your To Do board right now, please wait...")
-5. Provide a warm, conversational final reply suitable for text-to-speech.
+4. Provide an immediate spoken acknowledgment (in the user's language - Burmese if user wrote in Burmese, English if English).
+5. Provide a warm, empathetic, and conversational final reply. Language Rule: If the user inputs in Burmese (မြန်မာဘာသာ), you MUST reply in natural, fluent Burmese. If English, reply in English. Always end your reply with an insightful, proactive follow-up question or suggestion in the same language to maintain a genuine, back-and-forth conversational dialogue (တစ်ခုပြီးတစ်ခု အပြန်အလှန် မေးမြန်းဆွေးနွေးပေးခြင်း).
 6. Identify the optimal persona mode and return it as 'detected_mode'.
 
 Supported Tool Actions:
@@ -281,15 +295,15 @@ Output STRICT JSON:
                     contents=prompt,
                     config={"response_mime_type": "application/json"}
                 )
-                parsed = json.loads(response.text.strip())
+                parsed = _clean_and_parse_json(response.text)
                 if not parsed.get("detected_mode") or parsed.get("detected_mode") == "auto":
                     parsed["detected_mode"] = self._detect_persona_heuristically(sanitized, effective_mode)
                 return parsed
             except Exception as e:
                 print(f"[GeminiService] Live turn generation error: {e}")
-                return self._fallback_live_turn(sanitized, effective_mode)
+                return self._fallback_live_turn(sanitized, effective_mode, user_profile=user_profile)
         else:
-            return self._fallback_live_turn(sanitized, effective_mode)
+            return self._fallback_live_turn(sanitized, effective_mode, user_profile=user_profile)
 
     def _detect_persona_heuristically(self, user_msg: str, mode: str = "auto") -> str:
         """Heuristic intent analyzer for offline/fallback mode or unclassified prompts."""
@@ -315,12 +329,23 @@ Output STRICT JSON:
         # 4. Default to balanced
         return "balanced"
 
-    def _fallback_live_turn(self, user_msg: str, mode: str) -> Dict[str, Any]:
+    def _fallback_live_turn(self, user_msg: str, mode: str, user_profile: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Local offline rule-based parser for tests and development without API key."""
         lower_msg = user_msg.lower()
         actions = []
         spoken_ack = ""
         detected_mode = self._detect_persona_heuristically(user_msg, mode)
+
+        name = ""
+        if user_profile and isinstance(user_profile, dict):
+            raw_name = (user_profile.get("name") or "").strip()
+            if raw_name:
+                name = raw_name.split()[0]
+
+        call_name = f"{name} ရေ" if name else "ခင်ဗျာ"
+        user_stated = f"{name} ပြောတဲ့" if name else "ဝေမျှပေးတဲ့"
+        user_possessive = f"{name} ရဲ့" if name else "မိတ်ဆွေရဲ့"
+        user_shared = f"{name} မျှဝေတဲ့" if name else "ဝေမျှပေးတဲ့"
 
         # Check for task creation intent
         if any(w in lower_msg for w in ["task", "todo", "create", "လုပ်ပေး", "ticket"]):
@@ -334,7 +359,7 @@ Output STRICT JSON:
                     "column": "todo"
                 }
             })
-            spoken_ack = f"ဟုတ်ကဲ့ပါ Victor ရေ၊ အခုပဲ '{task_title[:30]}' ကို To Do board ထဲ ထည့်ပေးနေပါတယ် ခဏစောင့်ပါ..."
+            spoken_ack = f"ဟုတ်ကဲ့ပါ {call_name}၊ အခုပဲ '{task_title[:30]}' ကို To Do board ထဲ ထည့်ပေးနေပါတယ် ခဏစောင့်ပါ..."
 
         # Check for task move to done
         elif any(w in lower_msg for w in ["done", "finished", "completed", "ပြီးပြီ", "ရွှေ့"]):
@@ -345,19 +370,39 @@ Output STRICT JSON:
                     "new_column": "done"
                 }
             })
-            spoken_ack = "ဟုတ်ကဲ့ပါ Victor ရေ၊ လုပ်ဆောင်ပြီးသွားပြီမို့ Done ထဲ ရွှေ့ပေးနေပါပြီ ခဏစောင့်ပါ..."
+            spoken_ack = f"ဟုတ်ကဲ့ပါ {call_name}၊ လုပ်ဆောင်ပြီးသွားပြီမို့ Done ထဲ ရွှေ့ပေးနေပါပြီ ခဏစောင့်ပါ..."
 
         # Check for stress / breathing
         elif any(w in lower_msg for w in ["breathe", "stress", "anxious", "overwhelmed", "စိတ်ဖိစီး", "မော"]):
             actions.append({"tool": "trigger_box_breathing", "params": {"reason": "Stress relief"}})
-            spoken_ack = "စိတ်အေးအေးထားပါ Victor ရေ... အသက်ရှူစက်ဝိုင်းလေး ဖွင့်ပေးနေပါတယ်..."
+            spoken_ack = f"စိတ်အေးအေးထားပါ {call_name}... အသက်ရှူစက်ဝိုင်းလေး ဖွင့်ပေးနေပါတယ်..."
 
-        reply = (
-            "Victor ရဲ့ အတွေးတွေကို အမြဲ အလေးထား နားထောင်ပေးနေပါတယ်။ "
-            "ဒီနေ့ အလုပ်တွေအဆင်ပြေရဲ့လား၊ နောက်ထပ် ဘာကူညီပေးရမလဲခင်ဗျာ?"
-        )
+        user_snippet = user_msg.strip()
+        if len(user_snippet) > 50:
+            user_snippet = user_snippet[:47] + "..."
+
+        if any(w in lower_msg for w in ["မင်္ဂလာပါ", "ဟိုင်း", "hello", "hi"]):
+            reply = f"မင်္ဂလာပါ {call_name}။ '{user_snippet}' ဆိုတဲ့ နှုတ်ခွန်းဆက်စကားအတွက် ဝမ်းသာပါတယ်။ ဒီနေ့ ဘယ်အကြောင်းအရာတွေကို အဓိကထား အာရုံစိုက် ဆွေးနွေးကြမလဲခင်ဗျာ?"
+        elif actions:
+            action_desc = "လုပ်ဆောင်ချက်"
+            if actions[0]["tool"] == "create_ticket":
+                action_desc = f"'{actions[0]['params']['title']}' task အသစ်"
+            elif actions[0]["tool"] == "move_ticket":
+                action_desc = "task ကို Done အဖြစ်"
+            elif actions[0]["tool"] == "trigger_box_breathing":
+                action_desc = "Box Breathing အသက်ရှူလေ့ကျင့်ခန်း"
+            reply = f"{user_stated} '{user_snippet}' အရ {action_desc} ကို စနစ်တကျ ပြင်ဆင်ပေးထားပါတယ်။ နောက်ထပ် ဘာတွေကို ဆက်လက်ဆောင်ရွက်ချင်ပါသလဲခင်ဗျာ?"
+        elif detected_mode == "actionable":
+            reply = f"{user_possessive} '{user_snippet}' အပေါ် မူတည်ပြီး လက်တွေ့ကျတဲ့ လုပ်ဆောင်ချက်တွေအဖြစ် ပြောင်းလဲပေးနိုင်ပါတယ်။ ဒီနေ့အတွက် ဘယ်အပိုင်းကို ဦးစားပေး ပြီးစီးချင်ပါသလဲခင်ဗျာ?"
+        elif detected_mode == "philosophy":
+            reply = f"{user_shared} '{user_snippet}' က အလွန်နက်နဲတဲ့ အချက်ဖြစ်ပါတယ်။ ဒီအခြေအနေမှာ ကိုယ်တိုင် ပြောင်းလဲနိုင်တဲ့ အတွေးအမြင်နဲ့ လက်ခံရမယ့်အရာတွေကို သီးခြားစီ ခွဲခြမ်းစိတ်ဖြာကြည့်ကြမလားခင်ဗျာ?"
+        elif detected_mode == "brainstorm":
+            reply = f"'{user_snippet}' ဆိုတဲ့ အယူအဆက အသစ်အဆန်းပါပဲ။ ဒီအတွေးကို အခြေခံပြီး တခြား ဘယ်လို ဆန်းသစ်တဲ့ နည်းလမ်းတွေနဲ့ စမ်းသပ်ကြည့်နိုင်မလဲ စဉ်းစားကြည့်ရအောင်ခင်ဗျာ။"
+        else:
+            reply = f"{user_possessive} '{user_snippet}' ဆိုတဲ့ အတွေးအမြင်တွေကို အမြဲ အလေးထား နားထောင်ပေးနေပါတယ်။ စိတ်ထဲမှာ နောက်ထပ် ဘာတွေ မျှဝေချင်ပါသေးလဲခင်ဗျာ?"
+
         return {
-            "spoken_ack": spoken_ack or "ဟုတ်ကဲ့ပါ Victor ရေ... အခုပဲ စဉ်းစားပေးနေပါတယ်...",
+            "spoken_ack": spoken_ack or f"ဟုတ်ကဲ့ပါ {call_name}... '{user_snippet[:25]}' အတွက် အခုပဲ စဉ်းစားပေးနေပါတယ်...",
             "actions": actions,
             "final_reply": reply,
             "sentiment": 0.6,
@@ -427,7 +472,7 @@ Output strict JSON:
                     contents=prompt,
                     config={"response_mime_type": "application/json"}
                 )
-                return json.loads(response.text.strip())
+                return _clean_and_parse_json(response.text)
             except Exception as e:
                 print(f"[GeminiService] Fallback summarization: {e}")
                 return self._fallback_summary(conversation_history)
@@ -474,7 +519,7 @@ If no connection is relevant, output {{"matched_entry_id": null}}
                     contents=prompt,
                     config={"response_mime_type": "application/json"}
                 )
-                data = json.loads(response.text.strip())
+                data = _clean_and_parse_json(response.text)
                 return data if data.get("matched_entry_id") else None
             except Exception as e:
                 print(f"[GeminiService] Memory recall fallback: {e}")
@@ -513,7 +558,7 @@ Output strict JSON:
                     contents=prompt,
                     config={"response_mime_type": "application/json"}
                 )
-                return json.loads(response.text.strip())
+                return _clean_and_parse_json(response.text)
             except Exception as e:
                 print(f"[GeminiService] Fallback arc extraction: {e}")
                 return self._fallback_emotional_arc(conversation_history)
@@ -546,7 +591,7 @@ Output strict JSON list:
                     contents=prompt,
                     config={"response_mime_type": "application/json"}
                 )
-                return json.loads(response.text.strip())
+                return _clean_and_parse_json(response.text)
             except Exception as e:
                 print(f"[GeminiService] Action distillation fallback: {e}")
                 return self._fallback_action_items(journal_content)
@@ -604,9 +649,10 @@ system: Personal Gemini Life Guardian
     # Fallbacks
     # --------------------------------------------------------------------------
     def _fallback_chat_response(self, text: str) -> str:
+        user_snippet = text.strip()[:60]
         return (
-            "I hear you clearly. Navigating this takes patience and space. "
-            "When you reflect on this situation, what part of it feels most within your control right now?"
+            f"ဝေမျှပေးတဲ့ '{user_snippet}' ဆိုတဲ့ အတွေးကို အသေအချာ မှတ်သားထားပါတယ်။ "
+            "ဒီအခြေအနေမှာ ကိုယ်တိုင် ထိန်းချုပ်နိုင်တဲ့ အပိုင်းက ဘာဖြစ်မလဲ၊ ဘယ်လိုရှေ့ဆက်ချင်ပါသလဲခင်ဗျာ?"
         )
 
     def _fallback_summary(self, history: List[Dict[str, str]]) -> Dict[str, Any]:
