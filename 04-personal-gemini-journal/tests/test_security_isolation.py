@@ -714,3 +714,36 @@ def test_live_turn_reflection_style_modes():
         assert len(data["final_reply"]) > 0
 
 
+
+
+def test_deployment_configuration_and_project_guard():
+    """
+    Phase 6 Release Gate Contract:
+    Verify that deploy.sh strictly halts if the active gcloud project is empty or
+    differs from intelligent-arc-488111-s0, includes the mandatory hackathon label,
+    binds GEMINI_API_KEY via Secret Manager, enforces production environment,
+    and contains zero hardcoded API keys or credentials.
+    """
+    deploy_script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "deploy.sh"))
+    assert os.path.isfile(deploy_script_path), "deploy.sh must exist in the application root"
+
+    with open(deploy_script_path, "r", encoding="utf-8") as sf:
+        content = sf.read()
+
+    # 1. Strict GCP project guard
+    assert 'EXPECTED_PROJECT="intelligent-arc-488111-s0"' in content
+    assert "Active gcloud project" in content or "EXPECTED_PROJECT" in content
+    assert "exit 1" in content
+
+    # 2. Mandatory hackathon evaluation label
+    assert "dev-tutorial=cloud-run-ai-challenge" in content
+
+    # 3. Production environment enforcement
+    assert "ENVIRONMENT=production" in content
+
+    # 4. Secret Manager integration
+    assert '--set-secrets="GEMINI_API_KEY=GEMINI_API_KEY:latest"' in content
+
+    # 5. Zero hardcoded secrets in deployment script
+    assert "AIzaSy" not in content
+    assert "BEGIN PRIVATE KEY" not in content

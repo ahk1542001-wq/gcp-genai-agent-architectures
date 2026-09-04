@@ -6,7 +6,22 @@
 
 set -e
 
-PROJECT_ID=$(gcloud config get-value project 2>/dev/null || echo "intelligent-arc-488111-s0")
+EXPECTED_PROJECT="intelligent-arc-488111-s0"
+ACTIVE_PROJECT=$(gcloud config get-value project 2>/dev/null || true)
+
+if [ -z "${ACTIVE_PROJECT}" ]; then
+    echo "❌ Deployment halted: No active gcloud project configured." >&2
+    echo "Please set it using: gcloud config set project ${EXPECTED_PROJECT}" >&2
+    exit 1
+fi
+
+if [ "${ACTIVE_PROJECT}" != "${EXPECTED_PROJECT}" ]; then
+    echo "❌ Deployment halted: Active gcloud project '${ACTIVE_PROJECT}' does not match expected target '${EXPECTED_PROJECT}'." >&2
+    echo "Please switch using: gcloud config set project ${EXPECTED_PROJECT}" >&2
+    exit 1
+fi
+
+PROJECT_ID="${EXPECTED_PROJECT}"
 REGION="us-central1"
 SERVICE_NAME="personal-gemini-journal"
 
@@ -38,6 +53,7 @@ gcloud run deploy "${SERVICE_NAME}" \
     --allow-unauthenticated \
     --labels="dev-tutorial=cloud-run-ai-challenge" \
     --set-env-vars="GCP_PROJECT_ID=${PROJECT_ID},ENVIRONMENT=production,GEMINI_MODEL=gemini-3.7-flash" \
+    --set-secrets="GEMINI_API_KEY=GEMINI_API_KEY:latest" \
     --memory="512Mi" \
     --cpu="1" \
     --min-instances="0" \

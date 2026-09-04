@@ -613,10 +613,12 @@ def chat_with_gemini(
             past_wisdom_text = f"{recalled.get('past_wisdom')} ({recalled.get('encouragement', '')})"
             matched_past_entry = recalled
 
+    user_profile = db_service.get_user_profile(user.uid)
     ai_reply = gemini_service.chat_turn(
         conversation_history=req.history,
         user_message=req.message,
-        past_wisdom=past_wisdom_text
+        past_wisdom=past_wisdom_text,
+        user_profile=user_profile
     )
 
     return {

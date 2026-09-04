@@ -67,7 +67,12 @@ def test_full_browser_automation_lifecycle():
     8. Test Dynamic History Sidebar and Review Drawer.
     9. Capture screenshots of key stages.
     """
-    screenshot_dir = os.path.join(os.path.dirname(__file__), "screenshots")
+    screenshot_dir = os.environ.get("SANCTUARY_SCREENSHOT_DIR")
+    if not screenshot_dir:
+        if os.environ.get("UPDATE_SCREENSHOTS") == "1":
+            screenshot_dir = os.path.join(os.path.dirname(__file__), "screenshots")
+        else:
+            screenshot_dir = os.path.join(os.path.dirname(__file__), "screenshots", "real_user_verification")
     os.makedirs(screenshot_dir, exist_ok=True)
 
     with sync_playwright() as p:
@@ -77,11 +82,11 @@ def test_full_browser_automation_lifecycle():
 
         # Step 1: Open Application & Authenticate
         page.goto(BASE_URL, wait_until="networkidle")
-        page.evaluate("() => { if (window.__SANCTUARY_TEST_AUTH__) { window.__SANCTUARY_TEST_AUTH__.signIn('exec_tester', 'exec@sanctuary.test', 'Aung Hein Kyaw'); } }")
+        page.evaluate("() => { if (window.__SANCTUARY_TEST_AUTH__) { window.__SANCTUARY_TEST_AUTH__.signIn('exec_tester', 'exec@sanctuary.test', 'Sanctuary Executive'); } }")
         page.wait_for_selector("#app-shell:not(.hidden)", timeout=5000)
         
         # Verify authenticated tenant identity
-        assert page.locator("#user-display-name").inner_text() == "Aung Hein Kyaw"
+        assert page.locator("#user-display-name").inner_text() == "Sanctuary Executive"
         page.screenshot(path=os.path.join(screenshot_dir, "01_sanctuary_dashboard.png"))
 
         # Step 2: Reflection Style Selector & Multi-Turn Dialogue with Badges

@@ -412,7 +412,7 @@ Output STRICT JSON:
     # --------------------------------------------------------------------------
     # Multi-turn Chat & Summary
     # --------------------------------------------------------------------------
-    def chat_turn(self, conversation_history: List[Dict[str, str]], user_message: str, past_wisdom: Optional[str] = None) -> str:
+    def chat_turn(self, conversation_history: List[Dict[str, str]], user_message: str, past_wisdom: Optional[str] = None, user_profile: Optional[Dict[str, Any]] = None) -> str:
         sanitized_message = user_message.strip()
         context_block = ""
         if past_wisdom:
@@ -426,7 +426,14 @@ Output STRICT JSON:
             ])
             history_block = f"\n[Conversation History]:\n{formatted_turns}\n"
 
+        profile_block = ""
+        if user_profile and isinstance(user_profile, dict):
+            name = (user_profile.get("name") or "").strip()
+            if name:
+                profile_block = f"\nUser Name: {name}\n"
+
         prompt = f"""{SYSTEM_INSTRUCTIONS_COACH}
+{profile_block}
 {context_block}
 {history_block}
 <user_journal_reflection>
@@ -444,9 +451,9 @@ Provide a warm, empathetic, and reflective response that encourages deeper self-
                 return response.text.strip()
             except Exception as e:
                 print(f"[GeminiService] Error generating chat response: {e}")
-                return self._fallback_chat_response(sanitized_message)
+                return self._fallback_chat_response(sanitized_message, user_profile=user_profile)
         else:
-            return self._fallback_chat_response(sanitized_message)
+            return self._fallback_chat_response(sanitized_message, user_profile=user_profile)
 
     def summarize_session(self, conversation_history: List[Dict[str, str]]) -> Dict[str, Any]:
         text_transcript = "\n".join([f"{msg.get('role', 'user').title()}: {msg.get('text', '')}" for msg in conversation_history])
@@ -648,11 +655,20 @@ system: Personal Gemini Life Guardian
     # --------------------------------------------------------------------------
     # Fallbacks
     # --------------------------------------------------------------------------
-    def _fallback_chat_response(self, text: str) -> str:
+    def _fallback_chat_response(self, text: str, user_profile: Optional[Dict[str, Any]] = None) -> str:
         user_snippet = text.strip()[:60]
+        name = ""
+        if user_profile and isinstance(user_profile, dict):
+            raw_name = (user_profile.get("name") or "").strip()
+            if raw_name:
+                name = raw_name.split()[0]
+
+        call_name = f"{name} ရေ" if name else "ခင်ဗျာ"
+        user_stated = f"{name} ပြောတဲ့" if name else "ဝေမျှပေးတဲ့"
+
         return (
-            f"ဝေမျှပေးတဲ့ '{user_snippet}' ဆိုတဲ့ အတွေးကို အသေအချာ မှတ်သားထားပါတယ်။ "
-            "ဒီအခြေအနေမှာ ကိုယ်တိုင် ထိန်းချုပ်နိုင်တဲ့ အပိုင်းက ဘာဖြစ်မလဲ၊ ဘယ်လိုရှေ့ဆက်ချင်ပါသလဲခင်ဗျာ?"
+            f"{user_stated} '{user_snippet}' ဆိုတဲ့ အတွေးကို အသေအချာ မှတ်သားထားပါတယ်။ "
+            f"ဒီအခြေအနေမှာ ကိုယ်တိုင် ထိန်းချုပ်နိုင်တဲ့ အပိုင်းက ဘာဖြစ်မလဲ၊ ဘယ်လိုရှေ့ဆက်ချင်ပါသလဲ {call_name}?"
         )
 
     def _fallback_summary(self, history: List[Dict[str, str]]) -> Dict[str, Any]:
