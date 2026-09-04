@@ -948,8 +948,9 @@ async function processLiveTurn(message) {
       method: "POST",
       body: JSON.stringify({
         message: message,
+        history: state.conversationHistory,
         conversation_history: state.conversationHistory,
-        persona_mode: state.persona
+        persona_mode: state.persona || "balanced"
       })
     });
 
@@ -984,8 +985,11 @@ async function processLiveTurn(message) {
       updateEmotionalChart(data.sentiment || 0.5);
 
       return true;
+    } else {
+      console.warn("Live turn request returned non-OK status:", res.status);
+      appendChatMessage("model", "I heard your reflection. Let's take a centered breath and explore this further together.");
+      return false;
     }
-    return false;
   } catch (err) {
     console.error("Error processing live turn:", err);
     appendChatMessage("model", "I heard your reflection. Let's ground this with patience.");

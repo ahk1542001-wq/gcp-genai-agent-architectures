@@ -46,6 +46,7 @@ class ChatRequest(BaseModel):
 class LiveTurnRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=5000)
     history: List[Dict[str, str]] = Field(default_factory=list)
+    conversation_history: Optional[List[Dict[str, str]]] = None
     persona_mode: str = Field(default="balanced", pattern="^(balanced|actionable|philosophy|brainstorm|coach|guardian)$")
 
 class SummarizeRequest(BaseModel):
@@ -342,10 +343,11 @@ def live_agent_conversational_turn(
     proposes persistent actions for human confirmation, and returns immediate
     spoken feedback + final conversational response.
     """
+    history = req.history or req.conversation_history or []
     profile = db_service.get_user_profile(uid=user.uid)
     result = gemini_service.live_agent_turn(
         user_message=req.message,
-        conversation_history=req.history,
+        conversation_history=history,
         persona_mode=req.persona_mode,
         user_profile=profile
     )
