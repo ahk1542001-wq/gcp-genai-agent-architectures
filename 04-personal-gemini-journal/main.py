@@ -137,6 +137,8 @@ def health_check():
         "gcp_project": GCP_PROJECT_ID,
         "gemini_model": MODEL_NAME,
         "firestore_live": db_service.is_live,
+        "ai_engine": gemini_service.engine,
+        "vertex_ai_active": gemini_service.engine == "vertex_ai",
         "secret_manager_integrated": gemini_service.api_key is not None
     }
 

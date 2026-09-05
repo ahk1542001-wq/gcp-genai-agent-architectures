@@ -40,6 +40,9 @@ def test_health_endpoint():
     data = res.json()
     assert data["status"] == "healthy"
     assert "personal-gemini-journal" in data["service"]
+    assert "ai_engine" in data
+    assert "vertex_ai_active" in data
+    assert "firestore_live" in data
 
 def test_unauthenticated_request_rejected():
     """Verify that requests missing Authorization headers are rejected with 401."""
@@ -741,9 +744,90 @@ def test_deployment_configuration_and_project_guard():
     # 3. Production environment enforcement
     assert "ENVIRONMENT=production" in content
 
-    # 4. Secret Manager integration
-    assert '--set-secrets="GEMINI_API_KEY=GEMINI_API_KEY:latest"' in content
+    # 4. Dual-Engine Architecture & Secret Manager integration
+    assert "GEMINI_API_KEY=GEMINI_API_KEY:latest" in content
+    assert "USE_VERTEX_AI" in content
+    assert "aiplatform.googleapis.com" in content
 
     # 5. Zero hardcoded secrets in deployment script
     assert "AIzaSy" not in content
     assert "BEGIN PRIVATE KEY" not in content
+
+
+def test_dual_engine_service_modes(monkeypatch):
+    """
+    Verify Dual-Engine Architecture in GeminiJournalService:
+    1. In hermetic test mode (ENVIRONMENT=test), operates safely with test_mock engine.
+    2. Explicit constructor parameters are honored.
+    3. Fallback live turn returns correct schema and action proposal.
+    4. Mocked live engine selection:
+       a. USE_VERTEX_AI=true initializes Vertex AI client with vertexai=True.
+       b. USE_VERTEX_AI=false with API key initializes Gemini API client with api_key.
+       c. Auto-detection selects Vertex AI when no GEMINI_API_KEY is available.
+       d. Explicit use_vertex=False prevents fallback to Vertex AI.
+    """
+    from unittest.mock import MagicMock
+    from gemini_service import GeminiJournalService
+    import google.genai as genai
+
+    # 1. Hermetic test mode behavior
+    test_svc = GeminiJournalService()
+    assert test_svc.engine == "test_mock"
+    assert test_svc.client is None
+    assert test_svc.project_id == "intelligent-arc-488111-s0"
+    assert test_svc.location == "us-central1"
+
+    # 2. Explicit constructor parameters
+    v_svc = GeminiJournalService(use_vertex=True, project="test-gcp-project", location="us-central1")
+    assert v_svc.project_id == "test-gcp-project"
+    assert v_svc.location == "us-central1"
+
+    # 3. Fallback live turn works properly with all expected fields
+    fallback_res = test_svc._fallback_live_turn("Create task: verify vertex engine", "actionable")
+    assert "spoken_ack" in fallback_res
+    assert "final_reply" in fallback_res
+    assert "actions" in fallback_res
+    assert fallback_res["detected_mode"] == "actionable"
+    assert len(fallback_res["actions"]) == 1
+    assert fallback_res["actions"][0]["tool"] == "create_ticket"
+
+    # 4. Engine selection verification (mocking genai.Client)
+    mock_client_instance = MagicMock()
+    mock_client_cls = MagicMock(return_value=mock_client_instance)
+    monkeypatch.setattr(genai, "Client", mock_client_cls)
+    monkeypatch.setenv("FORCE_LIVE_AI", "true")
+
+    # 4a. USE_VERTEX_AI=true initializes Vertex AI
+    monkeypatch.setenv("USE_VERTEX_AI", "true")
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    mock_client_cls.reset_mock()
+    svc_vertex = GeminiJournalService(project="mock-vertex-project", location="us-central1")
+    assert svc_vertex.engine == "vertex_ai"
+    assert svc_vertex.client == mock_client_instance
+    mock_client_cls.assert_called_once_with(vertexai=True, project="mock-vertex-project", location="us-central1")
+
+    # 4b. USE_VERTEX_AI=false with API key initializes Gemini API Key mode
+    monkeypatch.setenv("USE_VERTEX_AI", "false")
+    monkeypatch.setenv("GEMINI_API_KEY", "AIzaSyMockKeyForDualEngineTesting99")
+    mock_client_cls.reset_mock()
+    svc_api_key = GeminiJournalService()
+    assert svc_api_key.engine == "api_key"
+    assert svc_api_key.client == mock_client_instance
+    mock_client_cls.assert_called_once_with(api_key="AIzaSyMockKeyForDualEngineTesting99")
+
+    # 4c. Auto-detection: without GEMINI_API_KEY and without USE_VERTEX_AI flag, defaults to Vertex AI
+    monkeypatch.delenv("USE_VERTEX_AI", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    mock_client_cls.reset_mock()
+    svc_autodetect = GeminiJournalService()
+    assert svc_autodetect.engine == "vertex_ai"
+    mock_client_cls.assert_called_once_with(vertexai=True, project="intelligent-arc-488111-s0", location="us-central1")
+
+    # 4d. Explicit use_vertex=False without API key does NOT fallback to Vertex AI
+    monkeypatch.setattr("gemini_service.get_secret_from_secret_manager", lambda *args, **kwargs: None)
+    mock_client_cls.reset_mock()
+    svc_disabled = GeminiJournalService(use_vertex=False)
+    assert svc_disabled.engine == "offline_fallback"
+    assert svc_disabled.client is None
+    mock_client_cls.assert_not_called()
+

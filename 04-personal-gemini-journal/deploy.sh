@@ -44,7 +44,25 @@ gcloud services enable \
     texttospeech.googleapis.com \
     --project="${PROJECT_ID}"
 
-# 2. Deploy to Cloud Run from Source
+# 2. Configure Dual-Engine AI Authentication (Vertex AI vs Secret Manager Gemini API Key)
+ENV_VARS="GCP_PROJECT_ID=${PROJECT_ID},ENVIRONMENT=production,GEMINI_MODEL=gemini-2.5-flash,GOOGLE_CLOUD_LOCATION=${REGION}"
+SECRET_ARGS=()
+
+if [ "${USE_VERTEX_AI}" = "true" ] || [ "${USE_VERTEX_AI}" = "1" ]; then
+    echo "  ℹ️ AI Engine: Vertex AI Enterprise IAM (roles/aiplatform.user) explicitly selected."
+    ENV_VARS="${ENV_VARS},USE_VERTEX_AI=true"
+else
+    # Check if GEMINI_API_KEY exists in GCP Secret Manager
+    if gcloud secrets describe GEMINI_API_KEY --project="${PROJECT_ID}" >/dev/null 2>&1; then
+        echo "  ℹ️ AI Engine: Found 'GEMINI_API_KEY' in Secret Manager. Binding secret to Cloud Run."
+        SECRET_ARGS=(--set-secrets="GEMINI_API_KEY=GEMINI_API_KEY:latest")
+    else
+        echo "  ℹ️ AI Engine: 'GEMINI_API_KEY' not found in Secret Manager. Defaulting to Vertex AI IAM authentication."
+        ENV_VARS="${ENV_VARS},USE_VERTEX_AI=true"
+    fi
+fi
+
+# 3. Deploy to Cloud Run from Source
 echo "[2/4] Building container and deploying to Cloud Run..."
 gcloud run deploy "${SERVICE_NAME}" \
     --source . \
@@ -52,8 +70,8 @@ gcloud run deploy "${SERVICE_NAME}" \
     --project="${PROJECT_ID}" \
     --allow-unauthenticated \
     --labels="dev-tutorial=cloud-run-ai-challenge" \
-    --set-env-vars="GCP_PROJECT_ID=${PROJECT_ID},ENVIRONMENT=production,GEMINI_MODEL=gemini-3.7-flash" \
-    --set-secrets="GEMINI_API_KEY=GEMINI_API_KEY:latest" \
+    --set-env-vars="${ENV_VARS}" \
+    ${SECRET_ARGS[@]+"${SECRET_ARGS[@]}"} \
     --memory="512Mi" \
     --cpu="1" \
     --min-instances="0" \

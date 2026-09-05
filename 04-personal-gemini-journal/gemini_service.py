@@ -13,18 +13,20 @@ import uuid
 import datetime
 from typing import List, Dict, Any, Optional
 
-GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "intelligent-arc-488111-s0")
+GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT", "intelligent-arc-488111-s0")
 MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+VERTEX_LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION") or os.environ.get("VERTEX_AI_LOCATION") or "us-central1"
 
-def get_secret_from_secret_manager(secret_id: str) -> Optional[str]:
+def get_secret_from_secret_manager(secret_id: str, project_id: Optional[str] = None) -> Optional[str]:
     """
     Fetches secret from Google Cloud Secret Manager using Application Default Credentials.
     Ensures zero hardcoded credentials in source code.
     """
     try:
         from google.cloud import secretmanager
+        target_project = project_id or GCP_PROJECT_ID
         client = secretmanager.SecretManagerServiceClient()
-        name = f"projects/{GCP_PROJECT_ID}/secrets/{secret_id}/versions/latest"
+        name = f"projects/{target_project}/secrets/{secret_id}/versions/latest"
         response = client.access_secret_version(request={"name": name})
         secret_value = response.payload.data.decode("UTF-8").strip()
         print(f"[SecretManager] Successfully retrieved secret '{secret_id}' from GCP Secret Manager.")
@@ -34,25 +36,56 @@ def get_secret_from_secret_manager(secret_id: str) -> Optional[str]:
         return None
 
 
-def _clean_and_parse_json(raw_text: str) -> Dict[str, Any]:
-    """Safely cleans markdown code fences or surrounding text and parses JSON."""
+def _clean_and_parse_json(raw_text: str) -> Any:
+    """Safely cleans markdown code fences or surrounding text and parses JSON (both dict and list)."""
     text = raw_text.strip()
     if text.startswith("```"):
         text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
         text = re.sub(r"\s*```$", "", text)
         text = text.strip()
-    match = re.search(r"(\{.*\})", text, re.DOTALL)
-    if match:
-        return json.loads(match.group(1))
+
+    # 1. Direct parse attempt
+    try:
+        return json.loads(text)
+    except Exception:
+        pass
+
+    # 2. Extract balanced array or object if surrounded by markdown commentary
+    candidates = []
+    array_match = re.search(r"(\[.*\])", text, re.DOTALL)
+    if array_match:
+        candidates.append((array_match.start(), array_match.group(1)))
+    obj_match = re.search(r"(\{.*\})", text, re.DOTALL)
+    if obj_match:
+        candidates.append((obj_match.start(), obj_match.group(1)))
+
+    # Try earliest match first
+    candidates.sort(key=lambda x: x[0])
+    for _, snippet in candidates:
+        try:
+            return json.loads(snippet)
+        except Exception:
+            continue
+
     return json.loads(text)
 
 
-def resolve_gemini_api_key() -> Optional[str]:
-    """Resolves Gemini API key from environment variable or Secret Manager."""
+def resolve_gemini_api_key(project_id: Optional[str] = None, use_vertex: Optional[bool] = None) -> Optional[str]:
+    """
+    Resolves Gemini API key from environment variable or Secret Manager.
+    Returns None in test mode or when USE_VERTEX_AI is explicitly requested.
+    """
+    is_test = (os.environ.get("ENVIRONMENT") == "test" or os.environ.get("IS_TEST_MODE") == "true") and not os.environ.get("FORCE_LIVE_AI")
     key = os.environ.get("GEMINI_API_KEY")
     if key and key != "placeholder_key":
         return key
-    sm_key = get_secret_from_secret_manager("GEMINI_API_KEY")
+    if is_test:
+        return None
+    # If explicitly forcing Vertex AI, skip Secret Manager query
+    env_use_vertex = os.environ.get("USE_VERTEX_AI", "").strip().lower()
+    if use_vertex is True or env_use_vertex in ("true", "1", "yes"):
+        return None
+    sm_key = get_secret_from_secret_manager("GEMINI_API_KEY", project_id=project_id)
     if sm_key:
         return sm_key
     return None
@@ -175,25 +208,80 @@ ADK_ROOT_AGENT = LlmAgent(
 ) if LlmAgent else None
 
 class GeminiJournalService:
-    def __init__(self):
-        self.api_key = resolve_gemini_api_key()
+    def __init__(self, use_vertex: Optional[bool] = None, project: Optional[str] = None, location: Optional[str] = None):
+        is_test = (os.environ.get("ENVIRONMENT") == "test" or os.environ.get("IS_TEST_MODE") == "true") and not os.environ.get("FORCE_LIVE_AI")
+        self.project_id = project or os.environ.get("GCP_PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT") or GCP_PROJECT_ID
+        self.location = location or VERTEX_LOCATION
+        self.model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
         self.client = None
-        if self.api_key:
-            try:
-                from google import genai
-                self.client = genai.Client(api_key=self.api_key)
-                print(f"[GeminiService] Initialized Google GenAI client with API key and model: {MODEL_NAME}")
-            except Exception as e:
-                print(f"[GeminiService] Notice: Could not initialize google-genai client with API key: {e}")
-        if not self.client and not (os.environ.get("ENVIRONMENT") == "test" or os.environ.get("IS_TEST_MODE") == "true"):
-            project = os.environ.get("GCP_PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT") or GCP_PROJECT_ID
-            if project:
-                try:
-                    from google import genai
-                    self.client = genai.Client(vertexai=True, project=project, location="us-central1")
-                    print(f"[GeminiService] Initialized Google GenAI Vertex AI client for project {project} with model: {MODEL_NAME}")
-                except Exception as e:
-                    print(f"[GeminiService] Notice: Could not initialize Vertex AI client: {e}")
+        self.engine = "offline_fallback"
+
+        # Check for explicit API key already in environment
+        raw_key = os.environ.get("GEMINI_API_KEY")
+        self.api_key = raw_key if (raw_key and raw_key != "placeholder_key") else None
+
+        if is_test:
+            self.engine = "test_mock"
+            print(f"[GeminiService] Test mode active: running hermetically with offline mock engine.")
+            return
+
+        # Determine preference: Vertex AI vs Google AI Studio Gemini API Key
+        env_use_vertex = os.environ.get("USE_VERTEX_AI", "").strip().lower()
+        explicit_vertex_forced = (use_vertex is True or env_use_vertex in ("true", "1", "yes"))
+        explicit_vertex_disabled = (use_vertex is False or env_use_vertex in ("false", "0", "no"))
+
+        if explicit_vertex_forced:
+            prefer_vertex = True
+        elif explicit_vertex_disabled:
+            prefer_vertex = False
+        else:
+            # Auto-detection: Prefer Vertex AI if no API key is provided, or if on GCP
+            prefer_vertex = not bool(self.api_key)
+
+        if prefer_vertex:
+            # 1. Attempt Vertex AI
+            if self._init_vertex_ai():
+                return
+            # 2. Fallback to API Key if available
+            if not self.api_key:
+                self.api_key = resolve_gemini_api_key(project_id=self.project_id, use_vertex=use_vertex)
+            if self.api_key and self._init_api_key():
+                return
+        else:
+            # 1. Attempt API Key
+            if not self.api_key:
+                self.api_key = resolve_gemini_api_key(project_id=self.project_id, use_vertex=use_vertex)
+            if self.api_key and self._init_api_key():
+                return
+            # 2. Fallback to Vertex AI ONLY if Vertex AI was not explicitly disabled
+            if not explicit_vertex_disabled and self._init_vertex_ai():
+                return
+
+        print(f"[GeminiService] Notice: Neither Vertex AI nor Gemini API key initialized. Operating in offline fallback mode.")
+
+    def _init_vertex_ai(self) -> bool:
+        """Initializes Google GenAI Client with Vertex AI backend."""
+        try:
+            from google import genai
+            self.client = genai.Client(vertexai=True, project=self.project_id, location=self.location)
+            self.engine = "vertex_ai"
+            print(f"[GeminiService] Initialized Google GenAI Vertex AI client (project='{self.project_id}', location='{self.location}', model='{self.model_name}')")
+            return True
+        except Exception as e:
+            print(f"[GeminiService] Notice: Could not initialize Vertex AI client: {e}")
+            return False
+
+    def _init_api_key(self) -> bool:
+        """Initializes Google GenAI Client with Gemini API Key."""
+        try:
+            from google import genai
+            self.client = genai.Client(api_key=self.api_key)
+            self.engine = "api_key"
+            print(f"[GeminiService] Initialized Google GenAI client with Gemini API key (model='{self.model_name}')")
+            return True
+        except Exception as e:
+            print(f"[GeminiService] Notice: Could not initialize google-genai client with API key: {e}")
+            return False
 
     # --------------------------------------------------------------------------
     # Live Conversational Agent with Autonomous Tool Calling & Hermes Self-Learning
@@ -291,7 +379,7 @@ Output STRICT JSON:
         if self.client:
             try:
                 response = self.client.models.generate_content(
-                    model=MODEL_NAME,
+                    model=self.model_name,
                     contents=prompt,
                     config={"response_mime_type": "application/json"}
                 )
@@ -381,9 +469,7 @@ Output STRICT JSON:
         if len(user_snippet) > 50:
             user_snippet = user_snippet[:47] + "..."
 
-        if any(w in lower_msg for w in ["မင်္ဂလာပါ", "ဟိုင်း", "hello", "hi"]):
-            reply = f"မင်္ဂလာပါ {call_name}။ '{user_snippet}' ဆိုတဲ့ နှုတ်ခွန်းဆက်စကားအတွက် ဝမ်းသာပါတယ်။ ဒီနေ့ ဘယ်အကြောင်းအရာတွေကို အဓိကထား အာရုံစိုက် ဆွေးနွေးကြမလဲခင်ဗျာ?"
-        elif actions:
+        if actions:
             action_desc = "လုပ်ဆောင်ချက်"
             if actions[0]["tool"] == "create_ticket":
                 action_desc = f"'{actions[0]['params']['title']}' task အသစ်"
@@ -392,6 +478,8 @@ Output STRICT JSON:
             elif actions[0]["tool"] == "trigger_box_breathing":
                 action_desc = "Box Breathing အသက်ရှူလေ့ကျင့်ခန်း"
             reply = f"{user_stated} '{user_snippet}' အရ {action_desc} ကို စနစ်တကျ ပြင်ဆင်ပေးထားပါတယ်။ နောက်ထပ် ဘာတွေကို ဆက်လက်ဆောင်ရွက်ချင်ပါသလဲခင်ဗျာ?"
+        elif any(w in lower_msg for w in ["မင်္ဂလာပါ", "ဟိုင်း", "hello", "hi"]):
+            reply = f"မင်္ဂလာပါ {call_name}။ '{user_snippet}' ဆိုတဲ့ နှုတ်ခွန်းဆက်စကားအတွက် ဝမ်းသာပါတယ်။ ဒီနေ့ ဘယ်အကြောင်းအရာတွေကို အဓိကထား အာရုံစိုက် ဆွေးနွေးကြမလဲခင်ဗျာ?"
         elif detected_mode == "actionable":
             reply = f"{user_possessive} '{user_snippet}' အပေါ် မူတည်ပြီး လက်တွေ့ကျတဲ့ လုပ်ဆောင်ချက်တွေအဖြစ် ပြောင်းလဲပေးနိုင်ပါတယ်။ ဒီနေ့အတွက် ဘယ်အပိုင်းကို ဦးစားပေး ပြီးစီးချင်ပါသလဲခင်ဗျာ?"
         elif detected_mode == "philosophy":
@@ -445,7 +533,7 @@ Provide a warm, empathetic, and reflective response that encourages deeper self-
         if self.client:
             try:
                 response = self.client.models.generate_content(
-                    model=MODEL_NAME,
+                    model=self.model_name,
                     contents=prompt
                 )
                 return response.text.strip()
@@ -475,7 +563,7 @@ Output strict JSON:
         if self.client:
             try:
                 response = self.client.models.generate_content(
-                    model=MODEL_NAME,
+                    model=self.model_name,
                     contents=prompt,
                     config={"response_mime_type": "application/json"}
                 )
@@ -522,7 +610,7 @@ If no connection is relevant, output {{"matched_entry_id": null}}
         if self.client:
             try:
                 response = self.client.models.generate_content(
-                    model=MODEL_NAME,
+                    model=self.model_name,
                     contents=prompt,
                     config={"response_mime_type": "application/json"}
                 )
@@ -561,7 +649,7 @@ Output strict JSON:
         if self.client:
             try:
                 response = self.client.models.generate_content(
-                    model=MODEL_NAME,
+                    model=self.model_name,
                     contents=prompt,
                     config={"response_mime_type": "application/json"}
                 )
@@ -594,7 +682,7 @@ Output strict JSON list:
         if self.client:
             try:
                 response = self.client.models.generate_content(
-                    model=MODEL_NAME,
+                    model=self.model_name,
                     contents=prompt,
                     config={"response_mime_type": "application/json"}
                 )

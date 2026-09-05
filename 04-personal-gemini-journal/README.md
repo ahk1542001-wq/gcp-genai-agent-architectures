@@ -7,7 +7,7 @@
 [![Cloud Firestore](https://img.shields.io/badge/Google_Cloud-Firestore-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/docs/firestore)
 [![Secret Manager](https://img.shields.io/badge/Google_Cloud-Secret_Manager-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/secret-manager)
 [![Gemini 2.5 & 3.7 Flash](https://img.shields.io/badge/Gemini-2.5_%26_3.7_Flash-8A2BE2?logo=google&logoColor=white)](https://ai.google.dev)
-[![Test Suite](https://img.shields.io/badge/Tests-67%2F67_Passing_(100%25)-34A853?logo=pytest&logoColor=white)](./tests)
+[![Test Suite](https://img.shields.io/badge/Tests-68%2F68_Passing_(100%25)-34A853?logo=pytest&logoColor=white)](./tests)
 [![Design](https://img.shields.io/badge/UI_Craft-Zero_AI_Slop-indigo)](./static)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -97,6 +97,69 @@ flowchart TD
     TenantDB <-->|6. Scoped Tenant Read/Write| FirestoreDB
     ArcEngine -->|7. Turn-by-Turn Dynamic Points| ArcChart
 ```
+
+---
+
+## ⚡ Dual-Engine Architecture: Vertex AI & Google AI Studio
+
+Sanctuary OS provides a **robust Dual-Engine Architecture** that adapts automatically to the developer or judge's available Google Cloud credentials:
+
+```
+                  ┌────────────────────────────────────────────────────────┐
+                  │                 GeminiJournalService                   │
+                  └──────────────────────────┬─────────────────────────────┘
+                                             │
+                       Auto-Detection / USE_VERTEX_AI Flag
+                                             │
+                     ┌───────────────────────┴───────────────────────┐
+                     ▼                                               ▼
+      ┌─────────────────────────────┐                 ┌─────────────────────────────┐
+      │   Option A: Vertex AI       │                 │   Option B: Google AI       │
+      │   Enterprise IAM            │                 │   Studio Gemini API Key     │
+      ├─────────────────────────────┤                 ├─────────────────────────────┤
+      │ • roles/aiplatform.user     │                 │ • GEMINI_API_KEY env var or │
+      │ • Application Default Creds │                 │   GCP Secret Manager        │
+      │ • Region: us-central1       │                 │ • No GCP IAM role needed    │
+      │ • Zero API keys in config   │                 │ • Drop-in rapid evaluation  │
+      │ • Flag: USE_VERTEX_AI=true  │                 │ • Flag: USE_VERTEX_AI=false │
+      └──────────────┬──────────────┘                 └──────────────┬──────────────┘
+                     │                                               │
+                     └───────────────────────┬───────────────────────┘
+                                             ▼
+                               ┌───────────────────────────┐
+                               │     Google GenAI SDK      │
+                               │  model: gemini-2.5-flash  │
+                               └───────────────────────────┘
+```
+
+### Option A: Google Cloud Vertex AI (Enterprise IAM) — Primary
+- **Target Persona**: Developers and judges who authenticate via Google Cloud IAM (`roles/aiplatform.user` on GCP project `intelligent-arc-488111-s0`) and do not possess or wish to manage personal Gemini API keys.
+- **Authentication**: Keyless Application Default Credentials (ADC) locally (`gcloud auth application-default login`) or the Cloud Run Compute Engine Service Account in production.
+- **How to Activate**:
+  ```bash
+  export USE_VERTEX_AI=true
+  export GCP_PROJECT_ID="intelligent-arc-488111-s0"
+  export GOOGLE_CLOUD_LOCATION="us-central1"
+  export GEMINI_MODEL="gemini-2.5-flash"
+  ```
+- **Deployment**: `deploy.sh` automatically checks if `GEMINI_API_KEY` is not present in Secret Manager or if `USE_VERTEX_AI=true` is set, and deploys to Cloud Run using Vertex AI IAM without halting the build.
+
+### Option B: Google AI Studio Gemini API Key — Alternative
+- **Target Persona**: Developers, evaluators, or judges who prefer using a personal Google AI Studio API Key (`AIzaSy...`).
+- **Authentication**: Direct Gemini API key passed via the `GEMINI_API_KEY` environment variable or retrieved securely at runtime from Google Cloud Secret Manager (`projects/{project}/secrets/GEMINI_API_KEY/versions/latest`).
+- **How to Activate**:
+  ```bash
+  export GEMINI_API_KEY="AIzaSy..."
+  # USE_VERTEX_AI can be omitted or set to false
+  ```
+- **Deployment**: `deploy.sh` automatically discovers `GEMINI_API_KEY` in Secret Manager if present, binding it via `--set-secrets="GEMINI_API_KEY=GEMINI_API_KEY:latest"`.
+
+### Seamless Auto-Detection & Fallback Protocol
+1. If `USE_VERTEX_AI=true`, the service initializes `genai.Client(vertexai=True, project=..., location=...)`. If Vertex AI encounters a temporary regional quota issue and a Gemini API Key is available, it gracefully falls back to the API key.
+2. If `USE_VERTEX_AI=false` (or not set) and a valid `GEMINI_API_KEY` is provided, the service initializes `genai.Client(api_key=...)`. If that fails, it falls back to Vertex AI ADC.
+3. In hermetic test environments (`ENVIRONMENT=test` or `IS_TEST_MODE=true`), the service operates in offline mock mode to ensure 100% deterministic, instant (<2s) test runs with zero network latency.
+
+---
 
 ### 2. The 4-Step Focused Sanctuary Loop
 Rather than overwhelming the user with fragmented tools, Sanctuary OS guides the user through a serene, cyclic 4-step workflow:
@@ -319,6 +382,9 @@ playwright install chromium
 
 | Variable | Development / Test Value | Production Cloud Run Value | Purpose |
 | :--- | :--- | :--- | :--- |
+| `USE_VERTEX_AI` | `true` (or `false` for AI Studio) | `true` (Enterprise IAM) | Force Vertex AI (`true`) or Google AI Studio (`false`). If unset, auto-detects. |
+| `GOOGLE_CLOUD_LOCATION` | `us-central1` | `us-central1` | Vertex AI regional endpoint location |
+| `GEMINI_API_KEY` | `AIzaSy...` (Optional) | Secret Manager or unset | Google AI Studio API key (optional when Vertex AI IAM is used) |
 | `ENVIRONMENT` | `development` or `test` | `production` | Enables fail-closed auth; disables all test tokens in production |
 | `ALLOW_TEST_AUTH` | `true` | `false` | Enables deterministic developer tokens for testing and automation |
 | `USE_MOCK_DB` | `true` | `false` | In-memory mock Firestore for hermetic offline testing |
@@ -327,7 +393,12 @@ playwright install chromium
 
 ### 4. Run Locally
 ```bash
-ENVIRONMENT=development ALLOW_TEST_AUTH=true USE_MOCK_DB=true uvicorn main:app --host 127.0.0.1 --port 8080 --reload
+# Option A: With Google Cloud Vertex AI (Default & Recommended)
+gcloud auth application-default login
+USE_VERTEX_AI=true GCP_PROJECT_ID=intelligent-arc-488111-s0 ENVIRONMENT=development ALLOW_TEST_AUTH=true USE_MOCK_DB=true uvicorn main:app --host 127.0.0.1 --port 8080 --reload
+
+# Option B: With Google AI Studio API Key
+GEMINI_API_KEY="your-api-key" USE_VERTEX_AI=false ENVIRONMENT=development ALLOW_TEST_AUTH=true USE_MOCK_DB=true uvicorn main:app --host 127.0.0.1 --port 8080 --reload
 ```
 Open your browser at `http://localhost:8080`.
 
@@ -353,7 +424,7 @@ gcloud run deploy "${SERVICE_NAME}" \
     --project="${PROJECT_ID}" \
     --allow-unauthenticated \
     --labels="dev-tutorial=cloud-run-ai-challenge" \
-    --set-env-vars="GCP_PROJECT_ID=${PROJECT_ID},ENVIRONMENT=production,GEMINI_MODEL=gemini-2.5-flash" \
+    --set-env-vars="GCP_PROJECT_ID=${PROJECT_ID},ENVIRONMENT=production,GEMINI_MODEL=gemini-2.5-flash,USE_VERTEX_AI=true,GOOGLE_CLOUD_LOCATION=${REGION}" \
     --memory="512Mi" \
     --cpu="1" \
     --min-instances="0" \
