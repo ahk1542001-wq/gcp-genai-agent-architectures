@@ -275,19 +275,20 @@ html, body {
    Genie Chatbot Floating Action Dock & Museum Archive Aesthetics
    ========================================================================== */
 .genie-dock-card {
-  background: rgba(255, 255, 255, 0.9) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid #E5DBD0 !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 8px 24px rgba(58, 38, 24, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 2px 8px rgba(58, 38, 24, 0.04);
   color: #3A2618 !important;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .genie-dock-card:hover {
-  transform: translateY(-3px) scale(1.02);
+  transform: translateY(-1.5px) scale(1.02);
   border-color: #A9744F !important;
-  box-shadow: 0 14px 30px rgba(169, 116, 79, 0.22) !important;
+  background-color: #FAF6F0 !important;
+  box-shadow: 0 6px 18px rgba(169, 116, 79, 0.16) !important;
 }
 
 .floating-pill-dock {
@@ -384,6 +385,16 @@ html, body {
   animation: mapRadarPulse 2.4s infinite cubic-bezier(0.25, 1, 0.5, 1);
 }
 
+.gps-radar-wave {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: rgba(169, 116, 79, 0.35);
+  animation: mapRadarPulse 2.4s infinite cubic-bezier(0.25, 1, 0.5, 1);
+  pointer-events: none;
+}
+
 /* Direct Location Label Pin */
 .map-point-badge {
   background-color: #3A2618 !important;
@@ -398,6 +409,56 @@ html, body {
   border-color: #A9744F !important;
   transform: scale(1.08) translateY(-2px);
   box-shadow: 0 6px 20px rgba(169, 116, 79, 0.35) !important;
+}
+
+/* Authentic Leaflet GPS Cartographic Styling */
+.gps-navigator-frame {
+  position: relative;
+  background-color: #EFE9DF;
+  border-radius: 1rem;
+}
+
+#places-leaflet-map {
+  border-radius: 1rem;
+  overflow: hidden;
+  background-color: #E8E2D5;
+}
+
+#places-leaflet-map .leaflet-tile {
+  filter: sepia(18%) contrast(104%) brightness(97%) hue-rotate(-8deg);
+}
+
+.gps-marker-wrapper {
+  overflow: visible !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+.custom-gps-pin {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-gps-badge {
+  background-color: #3A2618 !important;
+  color: #FBF6EF !important;
+  border: 1px solid rgba(169, 116, 79, 0.55) !important;
+  box-shadow: 0 4px 14px rgba(58, 38, 24, 0.25) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.custom-gps-badge:hover,
+.custom-gps-badge.active-loc {
+  background-color: #4D3320 !important;
+  border-color: #A9744F !important;
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(169, 116, 79, 0.4) !important;
+}
+
+.gps-telemetry-badge {
+  box-shadow: 0 4px 14px rgba(58, 38, 24, 0.25);
 }
 
 /* ==========================================================================
@@ -659,9 +720,9 @@ header #current-date-display {
 }
 
 .genie-dock-card:hover {
-  transform: translateY(-3px) scale(1.02);
+  transform: translateY(-1.5px) scale(1.02);
   border-color: #A9744F !important;
-  box-shadow: 0 14px 30px rgba(169, 116, 79, 0.22) !important;
+  box-shadow: 0 6px 18px rgba(169, 116, 79, 0.16) !important;
 }
 
 /* Floating Pill Input Bar */
@@ -804,6 +865,76 @@ header #current-date-display {
 #journal-review-modal h3,
 #new-ticket-modal h3,
 #shutdown-modal h3 {
+  color: #3A2618 !important;
+}
+
+/* Modal High-Contrast Text Enforcement */
+#shutdown-modal p,
+#shutdown-gratitude-prompt {
+  color: #564538 !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.5 !important;
+}
+
+#shutdown-gratitude-input {
+  background-color: #FAF6F0 !important;
+  color: #3A2618 !important;
+  border: 1px solid #D8CBBF !important;
+  border-radius: 0.75rem !important;
+}
+
+#shutdown-gratitude-input::placeholder {
+  color: #9E8C7E !important;
+}
+
+#cancel-shutdown-btn {
+  color: #635345 !important;
+  background-color: #FAF6F0 !important;
+  border: 1px solid #D8CBBF !important;
+}
+
+#cancel-shutdown-btn:hover {
+  background-color: #EFE6DC !important;
+  color: #3A2618 !important;
+}
+
+#shutdown-zen-confirmed p {
+  color: #2D6A4F !important;
+  font-weight: 600 !important;
+}
+
+#wake-workspace-btn {
+  background-color: #3A2618 !important;
+  color: #FBF6EF !important;
+  border: 1px solid #3A2618 !important;
+}
+
+#wake-workspace-btn:hover {
+  background-color: #28190E !important;
+}
+
+#settings-modal .text-gray-200,
+#settings-modal .text-gray-300,
+#settings-modal h4 {
+  color: #3A2618 !important;
+}
+
+#settings-modal .text-gray-400 {
+  color: #635345 !important;
+}
+
+#settings-modal .bg-\[\#0d1117\] {
+  background-color: #FAF6F0 !important;
+  border-color: #E5DBD0 !important;
+}
+
+#memory-context-modal .text-amber-300\/80,
+#memory-context-modal .text-gray-400 {
+  color: #635345 !important;
+}
+
+#memory-context-modal .text-gray-200,
+#memory-context-modal .text-gray-300 {
   color: #3A2618 !important;
 }
 

@@ -238,10 +238,10 @@ def record_browser_session():
         page.locator("#clear-input-btn").click()
         page.wait_for_timeout(400)
 
-        # Step 5: Realistic Burmese Reflection Typing & Gemini 2.5 Flash Response (0:36 - 0:52)
-        print("  5/16. Realistic Burmese Reflection & Empathetic Gemini 2.5 Flash Response...")
-        journal_thought = "ဒီနေ့ Cloud Run ပေါ်မှာ Sanctuary OS ကို အောင်မြင်စွာ Deploy လုပ်ပြီးပြီ။ Security Constitution နဲ့ Firestore Multi-Tenancy ကို စစ်ဆေးပြီးပြီ။ Executive tasks တွေ စီစဉ်ချင်တယ်။"
-        input_box.type(journal_thought, delay=35)
+        # Step 5: Realistic Reflection Typing & Gemini 2.5 Flash Response (0:36 - 0:52)
+        print("  5/16. Realistic Reflection & Empathetic Gemini 2.5 Flash Response...")
+        journal_thought = "Deployed Sanctuary OS to Cloud Run with Vertex AI Gemini 2.5 Flash. Synthesize high-priority Kanban tickets and a focus block for launch."
+        input_box.type(journal_thought, delay=30)
         page.wait_for_timeout(800)
 
         # Submit to Gemini via circular send button
@@ -484,7 +484,7 @@ def record_browser_session():
         if gratitude_box.is_visible():
             smooth_move(page, gratitude_box)
             gratitude_box.click()
-            gratitude_box.type("Sanctuary OS အောင်မြင်စွာ တည်ဆောက်ပြီးစီးခြင်း။", delay=35)
+            gratitude_box.type("Successfully verified Sanctuary OS with zero-trust security and Cloud Run deployment.", delay=25)
             page.wait_for_timeout(800)
 
         zen_btn = page.locator("#confirm-shutdown-btn")
@@ -523,7 +523,7 @@ def build_audio_track(total_duration):
     ]
 
     # 1. Generate individual narration AIFF clips
-    voice = "Samantha"
+    voice = "Daniel"
     for timestamp, filename, text in narration_segments:
         clip_path = AUDIO_DIR / filename
         cmd = ["say", "-v", voice, "-r", "165", text, "-o", str(clip_path)]

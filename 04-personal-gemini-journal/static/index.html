@@ -10,6 +10,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <link rel="stylesheet" href="/static/style.css">
+  <!-- Leaflet.js for Authentic GPS & Cartographic Places Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
@@ -20,21 +23,29 @@
   <!-- ===================================================================== -->
   <!-- 0. Unauthenticated Landing Screen (Boutique Wellness Sanctuary OS Gate) -->
   <!-- ===================================================================== -->
-  <div id="auth-landing" class="fixed inset-0 h-screen w-screen flex flex-col items-center justify-center bg-[#FBF6EF] text-[#3A2618] p-6 relative z-40 overflow-y-auto">
-    <div class="max-w-4xl w-full text-center py-10 px-4 sm:px-6 my-auto">
+  <div id="auth-landing" class="fixed inset-0 h-screen w-screen flex flex-col items-center justify-center bg-[#FBF6EF] text-[#3A2618] p-4 sm:p-6 relative z-40 overflow-y-auto">
+    <!-- Ambient Subtle Warm Light Layer -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden select-none" aria-hidden="true">
+      <div class="absolute -top-[20%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-to-b from-[#A9744F]/12 via-[#F5ECE1]/50 to-transparent rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-[20%] right-[-10%] w-[600px] h-[400px] bg-gradient-to-tl from-[#A9744F]/8 via-transparent to-transparent rounded-full blur-2xl"></div>
+    </div>
+
+    <div class="max-w-4xl w-full text-center py-8 sm:py-12 px-4 sm:px-6 my-auto relative z-10">
       
-      <!-- Top Pill Badge -->
-      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-semibold tracking-wider uppercase bg-[#F5ECE1] border border-[#A9744F]/30 text-[#A9744F] shadow-sm mb-6">
-        <span>🌿</span>
-        <span>SANCTUARY OS · SOVEREIGN COGNITIVE LIFE GUARDIAN</span>
+      <!-- Top Pill Badge with Live Amber Pulse -->
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-semibold tracking-wider uppercase bg-[#F5ECE1] border border-[#A9744F]/30 text-[#A9744F] shadow-sm mb-6 transition-all hover:border-[#A9744F]/60">
+        <span class="w-2 h-2 rounded-full bg-[#A9744F] animate-pulse"></span>
+        <span>🌿 SANCTUARY OS · SOVEREIGN COGNITIVE LIFE GUARDIAN</span>
+        <span class="text-[#3A2618]/40 hidden sm:inline">•</span>
+        <span class="text-[10px] text-[#7A6858] font-mono hidden sm:inline">APAC COHORT 3</span>
       </div>
 
-      <!-- Original Bespoke Headline -->
-      <h1 class="text-4xl sm:text-5xl md:text-6xl font-normal tracking-tight text-[#3A2618] leading-[1.15] mb-5" style="font-family: 'Newsreader', Georgia, serif;">
-        Where deep reflection meets<br class="hidden sm:inline"> sovereign human agency.
+      <!-- Grand Editorial Headline -->
+      <h1 class="text-4xl sm:text-5xl md:text-6xl font-normal tracking-tight text-[#3A2618] leading-[1.12] mb-5" style="font-family: 'Newsreader', Georgia, serif;">
+        Where deep reflection meets<br class="hidden sm:inline"> <em class="italic text-[#8C5635]">sovereign human agency</em>.
       </h1>
 
-      <!-- Original Grounded Sub-headline -->
+      <!-- Grounded Editorial Sub-headline -->
       <p class="text-[#635345] text-base sm:text-lg font-normal max-w-2xl mx-auto leading-relaxed mb-8">
         An enterprise personal sanctuary designed for founders, architects, and builders. Reflect freely across languages, transform wandering thoughts into structured action, and preserve your personal growth in a tenant-isolated private vault.
       </p>
@@ -42,7 +53,7 @@
       <!-- Action Buttons Row -->
       <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto">
         <!-- Google Sign-In Button -->
-        <button id="google-signin-btn" class="w-full sm:w-auto inline-flex items-center justify-center space-x-3 bg-[#3A2618] hover:bg-[#4d3320] text-[#FBF6EF] font-medium text-sm py-3 px-6 rounded-xl shadow transition-all duration-150">
+        <button id="google-signin-btn" class="w-full sm:w-auto inline-flex items-center justify-center space-x-3 bg-[#3A2618] hover:bg-[#28190E] text-[#FBF6EF] font-medium text-sm py-3 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 ring-1 ring-[#A9744F]/30">
           <svg class="w-4 h-4" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -53,7 +64,7 @@
         </button>
 
         <!-- 1-Click Guest Evaluator Button -->
-        <button id="guest-signin-btn" class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white hover:bg-[#F5EDE1] text-[#3A2618] border border-[#A9744F]/40 font-medium text-sm py-3 px-5 rounded-xl shadow-sm transition-all duration-150">
+        <button id="guest-signin-btn" class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-[#FFFDFB] hover:bg-[#F5EDE1] text-[#3A2618] border border-[#A9744F]/50 font-medium text-sm py-3 px-5 rounded-xl shadow-sm hover:shadow transition-all duration-200 transform hover:-translate-y-0.5">
           <span>⚡</span>
           <span>Continue as Guest Evaluator</span>
         </button>
@@ -61,47 +72,96 @@
 
       <!-- Trust Subtext -->
       <p class="text-xs text-[#7A6B5C] flex items-center justify-center gap-1.5 mt-3">
-        <svg class="w-3.5 h-3.5 text-emerald-600 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="w-3.5 h-3.5 text-emerald-700 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
         </svg>
         <span>Zero login friction • Instant sandbox exploration • Multi-tenant Cloud Firestore</span>
       </p>
 
       <!-- Auth Error Container -->
-      <div id="auth-error-msg" class="hidden text-xs text-rose-700 bg-rose-50 p-3 rounded-xl border border-rose-200 text-center max-w-md mx-auto mt-4"></div>
+      <div id="auth-error-msg" class="hidden text-xs text-rose-800 bg-rose-50/90 p-3 rounded-xl border border-rose-200 text-center max-w-md mx-auto mt-4"></div>
+
+      <!-- Product Preview Showcase Mockup (Artisanal Sanctuary UI Teaser) -->
+      <div class="mt-10 max-w-3xl mx-auto rounded-2xl border border-[#E5DBD0] bg-white/80 backdrop-blur-md p-4 shadow-xl text-left hidden sm:block">
+        <div class="flex items-center justify-between border-b border-[#E5DBD0] pb-2.5 mb-3">
+          <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-[#DE9E74]"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-[#A9744F]"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-[#3A2618]"></div>
+            <span class="text-xs font-serif text-[#3A2618] font-semibold ml-2">Sanctuary OS Studio Canvas</span>
+          </div>
+          <span class="text-[10px] font-mono bg-[#F5ECE1] text-[#A9744F] px-2.5 py-0.5 rounded-full border border-[#A9744F]/30 font-semibold">VERTEX AI · GEMINI 2.5 FLASH</span>
+        </div>
+        <div class="grid grid-cols-3 gap-3 text-xs">
+          <div class="col-span-2 bg-[#FAF6F0] rounded-xl p-3 border border-[#E5DBD0]">
+            <span class="text-[10px] font-semibold text-[#A9744F] uppercase tracking-wider block mb-1">🇲🇲 BILINGUAL REFLECTION & ACTION ENGINE</span>
+            <p class="text-[#3A2618] font-normal leading-relaxed text-xs">
+              "ဒီနေ့ architect အနေနဲ့ system architecture ကို သေချာ optimize လုပ်နိုင်ခဲ့တယ်။ မနက်ဖြန် focus လုပ်ရမယ့် အဓိက priority တွေကို Kanban board ထဲ ထည့်သွင်းပေးပါ။"
+            </p>
+            <div class="mt-2 flex items-center gap-2">
+              <span class="text-[10px] bg-white px-2 py-0.5 rounded-md border border-[#D8CBBF] text-[#635345]">#architecture</span>
+              <span class="text-[10px] bg-white px-2 py-0.5 rounded-md border border-[#D8CBBF] text-[#635345]">#singapore-hub</span>
+              <span class="text-[10px] text-emerald-700 font-medium">✓ 2 Actions Synthesized</span>
+            </div>
+          </div>
+          <div class="bg-[#FAF6F0] rounded-xl p-3 border border-[#E5DBD0] flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between text-[10px] text-[#7A6858] font-mono mb-1">
+                <span>GPS FIX 3D</span>
+                <span class="text-emerald-700">● LIVE</span>
+              </div>
+              <div class="font-serif font-bold text-sm text-[#3A2618]">📍 Bangkok Sanctuary</div>
+              <div class="text-[10px] text-[#635345] mt-0.5">42 Catalogued Relics</div>
+            </div>
+            <div class="pt-2 border-t border-[#E5DBD0] flex items-center justify-between text-[10px]">
+              <span class="text-[#C25E5E] font-mono font-bold">[CATALOGUED]</span>
+              <span class="text-[#A9744F]">S-2026-0906-042</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- 3 Bespoke Sanctuary OS Capability Highlights -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto mt-12 text-left">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto mt-8 text-left">
         <!-- Card 1: Museum Memory Archive & Places Map -->
-        <div class="bg-[#F5EDE1] border border-[#A9744F]/25 rounded-2xl p-6 shadow-sm hover:border-[#A9744F]/50 transition-colors">
-          <div class="w-8 h-8 rounded-lg bg-[#EBDDCB] text-[#3A2618] flex items-center justify-center font-serif text-sm font-semibold mb-4 shadow-xs">
-            🏛️
+        <div class="bg-[#FAF5EE] border border-[#A9744F]/25 rounded-2xl p-6 shadow-sm hover:border-[#A9744F]/50 transition-all duration-200 hover:-translate-y-0.5">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-9 h-9 rounded-xl bg-[#F0E6D8] text-[#3A2618] flex items-center justify-center font-serif text-base font-semibold shadow-xs">
+              🏛️
+            </div>
+            <span class="text-[9px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[#F5ECE1] border border-[#A9744F]/30 text-[#A9744F]">SPATIAL MEMORY</span>
           </div>
           <h3 class="text-base font-semibold text-[#3A2618] mb-1.5" style="font-family: 'Newsreader', Georgia, serif;">Museum Memory Archive</h3>
           <p class="text-xs text-[#635345] leading-relaxed">
-            Transmute reflections into catalogued relics with vintage stamps, handwritten paper notes, and spatial anchors across Southeast Asia & global personal sanctuaries.
+            Transmute reflections into catalogued relics with vintage stamps, handwritten paper notes, and GPS radar coordinates across Southeast Asia sanctuaries.
           </p>
         </div>
 
         <!-- Card 2: Human-in-the-Loop Sovereign Gate -->
-        <div class="bg-[#F5EDE1] border border-[#A9744F]/25 rounded-2xl p-6 shadow-sm hover:border-[#A9744F]/50 transition-colors">
-          <div class="w-8 h-8 rounded-lg bg-[#EBDDCB] text-[#3A2618] flex items-center justify-center font-serif text-sm font-semibold mb-4 shadow-xs">
-            🛡️
+        <div class="bg-[#FAF5EE] border border-[#A9744F]/25 rounded-2xl p-6 shadow-sm hover:border-[#A9744F]/50 transition-all duration-200 hover:-translate-y-0.5">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-9 h-9 rounded-xl bg-[#F0E6D8] text-[#3A2618] flex items-center justify-center font-serif text-base font-semibold shadow-xs">
+              🛡️
+            </div>
+            <span class="text-[9px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[#F5ECE1] border border-[#A9744F]/30 text-[#A9744F]">SOVEREIGN GATE</span>
           </div>
           <h3 class="text-base font-semibold text-[#3A2618] mb-1.5" style="font-family: 'Newsreader', Georgia, serif;">Sovereign Gate & Governance</h3>
           <p class="text-xs text-[#635345] leading-relaxed">
-            Gemini proposes structured Kanban tickets and calendar focus blocks, but never mutates persistent state without your explicit human approval.
+            Gemini proposes structured Kanban tickets and focus blocks, but never mutates state without your explicit human approval.
           </p>
         </div>
 
         <!-- Card 3: Multimodal Voice & Genie Action Dock -->
-        <div class="bg-[#F5EDE1] border border-[#A9744F]/25 rounded-2xl p-6 shadow-sm hover:border-[#A9744F]/50 transition-colors">
-          <div class="w-8 h-8 rounded-lg bg-[#EBDDCB] text-[#3A2618] flex items-center justify-center font-serif text-sm font-semibold mb-4 shadow-xs">
-            🎙️
+        <div class="bg-[#FAF5EE] border border-[#A9744F]/25 rounded-2xl p-6 shadow-sm hover:border-[#A9744F]/50 transition-all duration-200 hover:-translate-y-0.5">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-9 h-9 rounded-xl bg-[#F0E6D8] text-[#3A2618] flex items-center justify-center font-serif text-base font-semibold shadow-xs">
+              🎙️
+            </div>
+            <span class="text-[9px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[#F5ECE1] border border-[#A9744F]/30 text-[#A9744F]">MULTIMODAL GEMINI</span>
           </div>
           <h3 class="text-base font-semibold text-[#3A2618] mb-1.5" style="font-family: 'Newsreader', Georgia, serif;">Multimodal Voice & Genie Dock</h3>
           <p class="text-xs text-[#635345] leading-relaxed">
-            Bilingual Burmese 🇲🇲 & English reflection, live audio chat with breathing orb, Google Drive context injection, and authentic Tibetan singing bowl rituals.
+            Bilingual Burmese 🇲🇲 & English voice mode, Google Drive context injection, ambient breathing orb, and authentic Tibetan bowl audio.
           </p>
         </div>
       </div>
@@ -238,55 +298,46 @@
   <!-- ===================================================================== -->
   <main class="flex-1 flex flex-col h-full overflow-hidden bg-[#0d1117]">
 
-    <!-- Notion-Style Top Header Bar -->
-    <header class="relative z-40 h-14 border-b border-[#30363d] bg-[#161b22] px-4 md:px-6 flex items-center justify-between shrink-0 shadow-sm">
+    <!-- Notion-Style Top Header Bar (Clean & Professional) -->
+    <header class="relative z-40 h-14 border-b border-[#E5DBD0] bg-white/95 backdrop-blur-md px-4 md:px-6 flex items-center justify-between shrink-0 shadow-xs">
       <div class="flex items-center space-x-3 min-w-0">
-        <button id="sidebar-toggle-btn" class="hidden md:flex p-1.5 rounded text-gray-400 hover:text-white hover:bg-[#21262d] transition-colors shrink-0" title="Toggle Sidebar">
+        <button id="sidebar-toggle-btn" class="hidden md:flex p-1.5 rounded-lg text-[#7A6858] hover:text-[#3A2618] hover:bg-[#FAF6F0] transition-colors shrink-0" title="Toggle Sidebar">
           ☰
         </button>
-        <span id="view-icon" class="text-xl shrink-0">📝</span>
-        <h2 id="view-title" class="text-sm font-semibold text-[#f0f6fc] truncate">Sanctuary Journal & Reflection Studio</h2>
-        <span class="text-xs text-[#8b949e] border-l border-[#30363d] pl-3 shrink-0 hidden sm:inline" id="current-date-display">Today</span>
+        <span id="view-icon" class="text-lg shrink-0">📝</span>
+        <h2 id="view-title" class="text-sm font-semibold font-serif text-[#3A2618] truncate">Sanctuary Journal & Reflection Studio</h2>
+        <span class="text-xs text-[#7A6858] border-l border-[#E5DBD0] pl-3 shrink-0 hidden sm:inline font-sans" id="current-date-display">Today</span>
       </div>
 
-      <!-- Action Utilities -->
+      <!-- Action Utilities (Clean Antigravity-Style Header) -->
       <div class="flex items-center space-x-2 shrink-0">
-        <!-- Live Voice Pulsing Breathing Orb -->
-        <div id="voice-breathing-orb" class="hidden w-3 h-3 rounded-full bg-gradient-to-tr from-indigo-400 to-purple-400 animate-pulse shadow-md shadow-indigo-500/50" title="Voice Channel Active"></div>
-
-        <!-- Live Voice Button -->
-        <button id="live-voice-toggle-btn" class="flex items-center space-x-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-medium px-2.5 py-1.5 rounded-full shadow-md transition-all">
-          <span id="voice-icon" class="animate-pulse">🎙️</span>
-          <span id="voice-btn-text" class="hidden sm:inline">Start Live Voice</span>
-        </button>
-
         <!-- Executive Data Report Button -->
-        <button id="executive-report-btn" class="flex items-center space-x-1 bg-[#21262d] hover:bg-[#30363d] text-xs font-medium px-2.5 py-1.5 rounded-md border border-[#30363d] transition-colors text-indigo-300 hover:text-white" title="Cognitive & Productivity Data Report">
+        <button id="executive-report-btn" class="flex items-center space-x-1.5 bg-[#FAF6F0] hover:bg-[#F0E6D8] text-xs font-medium px-3 py-1.5 rounded-xl border border-[#D8CBBF] transition-colors text-[#3A2618] shadow-xs" title="Cognitive & Productivity Data Report">
           <span>📊</span>
           <span class="hidden sm:inline">Report</span>
         </button>
 
         <!-- Export Dropdown -->
         <div class="relative">
-          <button id="export-menu-btn" class="flex items-center space-x-1.5 bg-[#21262d] hover:bg-[#30363d] text-xs font-medium px-2.5 py-1.5 rounded-md border border-[#30363d] transition-colors text-[#e6edf3]">
+          <button id="export-menu-btn" class="flex items-center space-x-1.5 bg-[#FAF6F0] hover:bg-[#F0E6D8] text-xs font-medium px-3 py-1.5 rounded-xl border border-[#D8CBBF] transition-colors text-[#3A2618] shadow-xs">
             <span>📥</span>
             <span>Export</span>
-            <span class="text-[9px]">▼</span>
+            <span class="text-[9px] text-[#A9744F]">▼</span>
           </button>
-          <div id="export-dropdown" class="hidden absolute right-0 top-full mt-2 w-48 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl py-1.5 z-50 text-xs backdrop-blur-md">
-            <button id="export-md-btn" class="w-full text-left px-3.5 py-2 hover:bg-[#21262d] flex items-center space-x-2 text-gray-200 transition-colors">
+          <div id="export-dropdown" class="hidden absolute right-0 top-full mt-2 w-48 bg-white border border-[#E5DBD0] rounded-2xl shadow-xl py-1.5 z-50 text-xs backdrop-blur-md">
+            <button id="export-md-btn" class="w-full text-left px-3.5 py-2 hover:bg-[#FAF6F0] flex items-center space-x-2 text-[#3A2618] transition-colors">
               <span>📓</span>
               <span>Markdown (.md)</span>
             </button>
-            <button id="export-txt-btn" class="w-full text-left px-3.5 py-2 hover:bg-[#21262d] flex items-center space-x-2 text-gray-200 transition-colors">
+            <button id="export-txt-btn" class="w-full text-left px-3.5 py-2 hover:bg-[#FAF6F0] flex items-center space-x-2 text-[#3A2618] transition-colors">
               <span>📄</span>
               <span>Plain Text (.txt)</span>
             </button>
-            <button id="export-pdf-btn" class="w-full text-left px-3.5 py-2 hover:bg-[#21262d] flex items-center space-x-2 text-gray-200 transition-colors">
+            <button id="export-pdf-btn" class="w-full text-left px-3.5 py-2 hover:bg-[#FAF6F0] flex items-center space-x-2 text-[#3A2618] transition-colors">
               <span>🖨️</span>
               <span>Print / Save PDF</span>
             </button>
-            <button id="export-gdrive-btn" class="w-full text-left px-3.5 py-2 hover:bg-[#21262d] flex items-center space-x-2 text-blue-300 transition-colors">
+            <button id="export-gdrive-btn" class="w-full text-left px-3.5 py-2 hover:bg-[#FAF6F0] flex items-center space-x-2 text-[#8C5635] transition-colors font-medium">
               <span>📁</span>
               <span>Google Drive Context</span>
             </button>
@@ -294,162 +345,136 @@
         </div>
 
         <!-- Quick Memory Context & Profile Trigger -->
-        <button id="open-memory-context-btn" class="p-1.5 rounded-md bg-[#21262d] hover:bg-[#30363d] text-xs text-amber-300/90 border border-[#30363d] flex items-center space-x-1" title="Personal Memory & Context">
+        <button id="open-memory-context-btn" class="p-1.5 px-2.5 rounded-xl bg-[#FAF6F0] hover:bg-[#F0E6D8] text-xs text-[#3A2618] border border-[#D8CBBF] flex items-center space-x-1 shadow-xs" title="Personal Memory & Context">
           <span>🧠</span>
           <span class="hidden sm:inline text-[11px] font-medium">Bio</span>
         </button>
 
         <!-- Quick Settings Trigger -->
-        <button id="open-settings-btn" class="p-1.5 rounded-md bg-[#21262d] hover:bg-[#30363d] text-xs text-gray-300 border border-[#30363d]" title="Settings">
+        <button id="open-settings-btn" class="p-1.5 px-2 rounded-xl bg-[#FAF6F0] hover:bg-[#F0E6D8] text-xs text-[#3A2618] border border-[#D8CBBF] shadow-xs" title="Settings">
           ⚙️
         </button>
       </div>
     </header>
 
     <!-- Content Workspace Container -->
-    <div class="flex-1 overflow-y-auto p-6 relative" id="workspace-container">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 relative" id="workspace-container">
 
       <!-- Live Voice Soundwave Visualizer Overlay (Active when speaking) -->
-      <div id="soundwave-bar" class="hidden mb-4 bg-purple-900/30 border border-purple-500/40 rounded-xl p-3 flex items-center justify-between animate-fadeIn">
+      <div id="soundwave-bar" class="hidden mb-4 bg-[#FAF6F0] border border-[#A9744F]/40 rounded-2xl p-3 flex items-center justify-between shadow-sm animate-fadeIn">
         <div class="flex items-center space-x-3">
           <div class="sound-wave flex space-x-1 items-center h-5">
-            <span class="w-1 bg-purple-400 rounded-full animate-wave"></span>
-            <span class="w-1 bg-purple-400 rounded-full animate-wave delay-100"></span>
-            <span class="w-1 bg-purple-400 rounded-full animate-wave delay-200"></span>
-            <span class="w-1 bg-purple-400 rounded-full animate-wave delay-300"></span>
+            <span class="w-1 bg-[#A9744F] rounded-full animate-wave"></span>
+            <span class="w-1 bg-[#A9744F] rounded-full animate-wave delay-100"></span>
+            <span class="w-1 bg-[#A9744F] rounded-full animate-wave delay-200"></span>
+            <span class="w-1 bg-[#A9744F] rounded-full animate-wave delay-300"></span>
           </div>
-          <span id="soundwave-status" class="text-xs font-medium text-purple-200">Listening to your voice... Speak freely</span>
+          <span id="soundwave-status" class="text-xs font-medium text-[#3A2618]">Listening to your voice... Speak freely</span>
         </div>
-        <button id="stop-voice-btn" class="text-xs text-purple-300 hover:text-white px-2 py-0.5 rounded bg-purple-800/40">Stop Voice</button>
+        <button id="stop-voice-btn" class="text-xs text-[#A9744F] hover:text-[#3A2618] px-2.5 py-1 rounded-lg bg-white border border-[#D8CBBF]">Stop Voice</button>
       </div>
 
       <!-- ================================================================= -->
-      <!-- VIEW 1: SANCTUARY JOURNAL & BRAIN DUMP -->
+      <!-- VIEW 1: SANCTUARY JOURNAL & BRAIN DUMP (CLEAN AI CHAT CANVAS) -->
       <!-- ================================================================= -->
-      <section id="view-journal-content" class="max-w-4xl mx-auto space-y-6 pt-4 sm:pt-6">
+      <section id="view-journal-content" class="max-w-3xl mx-auto space-y-5 pt-3 sm:pt-5 pb-8">
         
-        <!-- Notion Callout Block -->
-        <div id="callout-card" class="bg-[#161b22] border border-[#30363d] rounded-xl p-4 flex items-start space-x-3 shadow-sm relative z-0 transition-all">
+        <!-- Subtle Notion Callout Block -->
+        <div id="callout-card" class="bg-white/85 border border-[#E5DBD0] rounded-2xl p-4 flex items-start space-x-3.5 shadow-xs relative z-0 transition-all hover:border-[#A9744F]/50">
           <span class="text-2xl shrink-0" id="callout-emoji">✨</span>
-          <div class="flex-1 text-xs leading-relaxed text-[#c9d1d9]">
-            <strong class="text-[#f0f6fc] block mb-0.5" id="callout-title">Guardian Daily Focus & Mindful Wisdom</strong>
-            <p id="callout-text">"Welcome to your sanctuary. Reflect freely on your projects and ideas; Gemini provides clarity, wisdom, and next steps."</p>
+          <div class="flex-1 text-xs leading-relaxed text-[#635345]">
+            <strong class="text-[#3A2618] font-serif text-sm block mb-0.5" id="callout-title">Guardian Daily Focus & Mindful Wisdom</strong>
+            <p id="callout-text" class="italic text-[#7A6858]">"Welcome to your sanctuary. Reflect freely on your projects and ideas; Gemini provides clarity, wisdom, and next steps."</p>
           </div>
         </div>
 
         <!-- Multi-Turn Dialogue Header & Action Bar -->
-        <div class="flex items-center justify-between pt-2 border-t border-[#30363d]/60">
+        <div class="flex items-center justify-between pt-1 border-t border-[#E5DBD0]/70 text-xs">
           <div class="flex items-center space-x-2">
-            <span class="text-[11px] font-semibold text-[#8b949e] uppercase tracking-wider">Multi-Turn Dialogue</span>
-            <span id="turn-counter-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-[#21262d] border border-[#30363d] text-gray-300 font-mono">0 Turns</span>
-            <span id="firestore-sync-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 font-medium flex items-center space-x-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-[11px] font-semibold text-[#7A6858] uppercase tracking-wider">Multi-Turn Dialogue</span>
+            <span id="turn-counter-badge" class="text-[10px] px-2.5 py-0.5 rounded-full bg-white border border-[#D8CBBF] text-[#3A2618] font-mono shadow-xs">0 Turns</span>
+            <span id="firestore-sync-badge" class="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 font-medium flex items-center space-x-1.5 shadow-xs">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>Firestore Synchronized</span>
             </span>
           </div>
           <div class="flex items-center space-x-2">
-            <button type="button" id="auto-summarize-btn" class="px-2.5 py-1 text-xs text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg border border-amber-500/30 transition-colors flex items-center space-x-1">
+            <button type="button" id="auto-summarize-btn" class="px-3 py-1.5 text-xs text-[#A9744F] hover:text-[#3A2618] bg-[#FAF6F0] hover:bg-[#F4EDE3] rounded-xl border border-[#D8CBBF] transition-colors flex items-center space-x-1 font-medium shadow-xs">
               <span>✨</span>
               <span>Auto-Summarize</span>
             </button>
-            <button type="button" id="save-session-btn" class="px-3 py-1 text-xs text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-sm transition-all flex items-center space-x-1 font-medium">
+            <button type="button" id="save-session-btn" class="px-3.5 py-1.5 text-xs text-[#FBF6EF] bg-[#3A2618] hover:bg-[#28190E] rounded-xl shadow-xs transition-all flex items-center space-x-1 font-medium ring-1 ring-[#A9744F]/30 hover:scale-105 active:scale-95">
               <span>💾</span>
               <span>Save Reflection</span>
             </button>
           </div>
         </div>
 
-        <!-- Conversational Chat Stream -->
+        <!-- Conversational Chat Stream (Centered, Breathable Column) -->
         <div id="chat-stream" class="space-y-4 min-h-[140px]">
           <!-- Chat messages rendered dynamically -->
         </div>
 
-        <!-- Action Proposal Card Container (Human Confirmation Gate) -->
-        <div id="action-proposal-container" class="hidden space-y-3 animate-fadeIn">
-          <div class="bg-gradient-to-r from-purple-950/40 to-indigo-950/40 border border-purple-500/50 rounded-xl p-4 shadow-lg backdrop-blur-sm">
+        <!-- Action Proposal Card Container (Human Confirmation Gate - Sovereign Human Agency) -->
+        <div id="action-proposal-container" class="hidden space-y-3 animate-fadeIn my-3">
+          <div class="bg-[#FAF6F0] border-2 border-[#A9744F]/40 rounded-2xl p-4 sm:p-5 shadow-md">
             <div class="flex items-start justify-between">
               <div class="flex items-center space-x-2">
                 <span class="text-base" id="proposal-icon">⚡</span>
-                <span class="text-xs font-semibold uppercase tracking-wider text-purple-300">Proposed Agent Action</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-[#A9744F]">Proposed Autonomous Action</span>
               </div>
-              <span id="proposal-step-indicator" class="text-[10px] text-gray-400 bg-[#161b22] px-2 py-0.5 rounded-full border border-[#30363d]">1 of 1</span>
+              <span id="proposal-step-indicator" class="text-[10px] text-[#7A6858] bg-white px-2.5 py-0.5 rounded-full border border-[#D8CBBF] font-mono">1 of 1</span>
             </div>
-            <div class="mt-2 text-xs text-gray-200">
-              <p id="proposal-description" class="font-medium text-white mb-1.5"></p>
-              <div id="proposal-details" class="bg-[#0e1117]/80 rounded-lg p-2.5 text-[11px] text-gray-300 border border-[#30363d] font-mono whitespace-pre-wrap"></div>
+            <div class="mt-2.5 text-xs text-[#3A2618]">
+              <p id="proposal-description" class="font-medium text-[#3A2618] text-sm mb-2"></p>
+              <div id="proposal-details" class="bg-white rounded-xl p-3 text-xs text-[#635345] border border-[#E5DBD0] font-mono whitespace-pre-wrap leading-relaxed"></div>
             </div>
-            <div class="flex items-center justify-end space-x-2 mt-3 pt-2 border-t border-purple-500/20">
-              <button id="proposal-dismiss-btn" class="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white bg-[#21262d] hover:bg-[#30363d] rounded-lg transition-colors border border-[#30363d]">
+            <div class="flex items-center justify-end space-x-2.5 mt-3.5 pt-2.5 border-t border-[#E5DBD0]">
+              <button id="proposal-dismiss-btn" class="px-3.5 py-1.5 text-xs font-medium text-[#7A6858] hover:text-[#3A2618] bg-white hover:bg-[#F4EDE3] rounded-xl transition-colors border border-[#D8CBBF] shadow-xs">
                 Dismiss
               </button>
-              <button id="proposal-approve-btn" class="px-3.5 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-lg shadow-sm transition-all flex items-center space-x-1.5">
+              <button id="proposal-approve-btn" class="px-4 py-1.5 text-xs font-semibold text-[#FBF6EF] bg-[#3A2618] hover:bg-[#28190E] rounded-xl shadow-sm transition-all flex items-center space-x-1.5 ring-1 ring-[#A9744F]/30 hover:scale-105 active:scale-95">
                 <span>✓</span>
                 <span>Approve Action</span>
               </button>
             </div>
-            <div id="proposal-feedback" class="hidden mt-2 text-xs font-medium text-center py-1 rounded"></div>
+            <div id="proposal-feedback" class="hidden mt-2.5 text-xs font-medium text-center py-1.5 rounded-xl"></div>
           </div>
         </div>
 
-        <!-- Genie Chatbot Signature Floating Action Dock (4 Frosted Glass Cards) -->
-        <div class="flex items-center justify-center gap-2.5 sm:gap-4 my-2 px-1">
+        <!-- Sleek Auxiliary Action Chips (ChatGPT / Claude Style Prompt & Modal Tools) -->
+        <div class="flex items-center justify-center gap-2 sm:gap-2.5 my-3 px-1 flex-wrap">
           <!-- Card 1: Chat Files (Google Drive & Context Export Modal) -->
-          <button type="button" id="dock-chat-files-btn" class="genie-dock-card group relative flex flex-col items-center justify-between p-2.5 sm:p-3 w-20 h-22 sm:w-28 sm:h-28 rounded-2xl bg-white/5 hover:bg-white/10 dark:bg-[#161b22]/80 dark:hover:bg-[#21262d] border border-white/10 dark:border-[#30363d] shadow-lg cursor-pointer">
-            <div class="relative w-9 h-9 sm:w-10 sm:h-10 mt-1 flex items-center justify-center">
-              <div class="absolute left-1 top-0.5 w-6 h-8 sm:w-7 sm:h-9 bg-rose-500/90 rounded-md shadow-md transform -rotate-6 flex flex-col items-center justify-center text-[7px] sm:text-[8px] font-bold text-white uppercase border border-rose-400/50">PDF</div>
-              <div class="absolute right-1 top-1.5 w-6 h-8 sm:w-7 sm:h-9 bg-blue-600/90 rounded-md shadow-md transform rotate-6 flex flex-col items-center justify-center text-[7px] sm:text-[8px] font-bold text-white uppercase border border-blue-400/50">DOC</div>
-            </div>
-            <div class="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-300 group-hover:text-white">
-              <span>📁</span>
-              <span>Chat Files</span>
-            </div>
+          <button type="button" id="dock-chat-files-btn" class="genie-dock-card group flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 hover:bg-[#FAF6F0] border border-[#E5DBD0] hover:border-[#A9744F] text-[#3A2618] shadow-xs transition-all hover:scale-[1.02] cursor-pointer" title="Attach Files & Google Drive Context">
+            <span class="text-sm">📁</span>
+            <span class="text-xs font-medium">Chat Files</span>
           </button>
 
           <!-- Card 2: Images (Visual Reflections & Mood Artifacts) -->
-          <button type="button" id="dock-images-btn" class="genie-dock-card group relative flex flex-col items-center justify-between p-2.5 sm:p-3 w-20 h-22 sm:w-28 sm:h-28 rounded-2xl bg-white/5 hover:bg-white/10 dark:bg-[#161b22]/80 dark:hover:bg-[#21262d] border border-white/10 dark:border-[#30363d] shadow-lg cursor-pointer">
-            <div class="relative w-9 h-9 sm:w-10 sm:h-10 mt-1 rounded-xl overflow-hidden shadow-md border border-emerald-400/40 bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-base sm:text-xl">
-              🦜
-            </div>
-            <div class="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-300 group-hover:text-white">
-              <span>🖼️</span>
-              <span>Images</span>
-            </div>
+          <button type="button" id="dock-images-btn" class="genie-dock-card group flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 hover:bg-[#FAF6F0] border border-[#E5DBD0] hover:border-[#A9744F] text-[#3A2618] shadow-xs transition-all hover:scale-[1.02] cursor-pointer" title="Visual Memories & Rewind">
+            <span class="text-sm">🖼️</span>
+            <span class="text-xs font-medium">Images</span>
           </button>
 
           <!-- Card 3: Translate (Bilingual Burmese & English Dialogue) -->
-          <button type="button" id="dock-translate-btn" class="genie-dock-card group relative flex flex-col items-center justify-between p-2.5 sm:p-3 w-20 h-22 sm:w-28 sm:h-28 rounded-2xl bg-white/5 hover:bg-white/10 dark:bg-[#161b22]/80 dark:hover:bg-[#21262d] border border-white/10 dark:border-[#30363d] shadow-lg cursor-pointer">
-            <div class="relative w-9 h-9 sm:w-10 sm:h-10 mt-1 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-500 shadow-md flex items-center justify-center text-white font-bold text-xs sm:text-sm border border-sky-400/40">
-              <span>G 文</span>
-            </div>
-            <div class="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-300 group-hover:text-white">
-              <span>🌐</span>
-              <span id="dock-translate-label">Translate</span>
-            </div>
+          <button type="button" id="dock-translate-btn" class="genie-dock-card group flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 hover:bg-[#FAF6F0] border border-[#E5DBD0] hover:border-[#A9744F] text-[#3A2618] shadow-xs transition-all hover:scale-[1.02] cursor-pointer" title="Toggle Bilingual Burmese Mode">
+            <span class="text-sm">🌐</span>
+            <span id="dock-translate-label" class="text-xs font-medium">Translate</span>
           </button>
 
           <!-- Card 4: Audio Chat (Live Voice Assistant Toggle) -->
-          <button type="button" id="dock-audio-chat-btn" class="genie-dock-card group relative flex flex-col items-center justify-between p-2.5 sm:p-3 w-20 h-22 sm:w-28 sm:h-28 rounded-2xl bg-white/5 hover:bg-white/10 dark:bg-[#161b22]/80 dark:hover:bg-[#21262d] border border-white/10 dark:border-[#30363d] shadow-lg cursor-pointer">
-            <div class="relative w-9 h-9 sm:w-10 sm:h-10 mt-1 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 shadow-md flex items-center justify-center border border-purple-400/40">
-              <div class="flex items-center gap-0.5 h-4">
-                <span class="w-1 h-2 bg-white rounded-full animate-pulse"></span>
-                <span class="w-1 h-4 bg-white rounded-full animate-pulse delay-75"></span>
-                <span class="w-1 h-3 bg-white rounded-full animate-pulse delay-150"></span>
-                <span class="w-1 h-2 bg-white rounded-full animate-pulse"></span>
-              </div>
-            </div>
-            <div class="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-300 group-hover:text-white">
-              <span>🎙️</span>
-              <span>Audio Chat</span>
-            </div>
+          <button type="button" id="dock-audio-chat-btn" class="genie-dock-card group flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 hover:bg-[#FAF6F0] border border-[#E5DBD0] hover:border-[#A9744F] text-[#3A2618] shadow-xs transition-all hover:scale-[1.02] cursor-pointer" title="Start Live Voice Assistant">
+            <span class="text-sm">🎙️</span>
+            <span class="text-xs font-medium">Audio Chat</span>
           </button>
         </div>
 
-        <!-- Brain Dump & Reflection Floating Pill Input Box -->
-        <div class="floating-pill-dock bg-[#161b22]/95 border border-[#30363d] rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 shadow-2xl focus-within:border-indigo-500/80 transition-all relative">
+        <!-- Brain Dump & Reflection Floating Pill Input Box (Sleek Minimal AI Dock) -->
+        <div class="floating-pill-dock bg-white/95 border border-[#D8CBBF] rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 shadow-xl focus-within:border-[#A9744F] transition-all relative">
           <!-- Sleek Floating Mention / Slash Autocomplete Popup -->
-          <div id="mention-autocomplete-menu" class="hidden absolute bottom-full left-3 mb-2 w-72 rounded-xl bg-[#161b22]/95 border border-indigo-500/40 shadow-2xl z-40 py-1.5 backdrop-blur-md overflow-hidden animate-fadeIn">
-            <div class="px-3 py-1.5 border-b border-[#30363d]/80 flex items-center justify-between text-[10px] text-gray-400">
-              <span class="font-semibold uppercase tracking-wider text-indigo-400">Mode Shortcut</span>
+          <div id="mention-autocomplete-menu" class="hidden absolute bottom-full left-3 mb-2 w-72 rounded-2xl bg-white border border-[#D8CBBF] shadow-2xl z-40 py-1.5 backdrop-blur-md overflow-hidden animate-fadeIn">
+            <div class="px-3.5 py-2 border-b border-[#E5DBD0] flex items-center justify-between text-[10px] text-[#7A6858]">
+              <span class="font-bold uppercase tracking-wider text-[#A9744F]">Mode Shortcut</span>
               <span>↑↓ navigate · ↵ select</span>
             </div>
             <div id="mention-autocomplete-items" class="py-1 max-h-60 overflow-y-auto">
@@ -457,98 +482,105 @@
             </div>
           </div>
 
-          <textarea id="reflection-input" rows="3" class="w-full bg-transparent border-none text-sm text-[#f0f6fc] focus:outline-none resize-none placeholder-gray-500" placeholder="Ask me anything... rambling thoughts, brain dump, or speak with mic (Tip: type @ or / for modes)"></textarea>
+          <textarea id="reflection-input" rows="3" class="w-full bg-transparent border-none text-sm text-[#3A2618] focus:outline-none resize-none placeholder-[#9C8979] leading-relaxed" placeholder="Ask me anything... rambling thoughts, brain dump, or speak with mic (Tip: type @ or / for modes)"></textarea>
           
-          <div class="flex items-center justify-between pt-2.5 border-t border-[#30363d]/60 mt-1">
+          <div class="flex items-center justify-between pt-2.5 border-t border-[#E5DBD0]/70 mt-1">
             <div class="flex items-center space-x-2">
-              <button id="mic-input-btn" class="p-1.5 text-gray-400 hover:text-white hover:bg-[#21262d] rounded-md transition-colors text-xs flex items-center space-x-1" title="Speak into input">
+              <button id="mic-input-btn" class="px-2.5 py-1 text-[#7A6858] hover:text-[#3A2618] hover:bg-[#FAF6F0] rounded-xl transition-colors text-xs flex items-center space-x-1" title="Speak into input">
                 <span>🎤</span>
                 <span>Speak</span>
               </button>
-              <button id="clear-input-btn" class="p-1.5 text-gray-400 hover:text-white hover:bg-[#21262d] rounded-md transition-colors text-xs">
+              <button id="clear-input-btn" class="px-2.5 py-1 text-[#7A6858] hover:text-[#3A2618] hover:bg-[#FAF6F0] rounded-xl transition-colors text-xs">
                 Clear
               </button>
 
               <!-- Inline Style Pill Dropdown (Next to Speak and Clear) -->
               <div class="relative inline-block text-left" id="mode-selector-wrapper">
-                <button type="button" id="mode-selector-pill" class="px-2.5 py-1 text-xs text-indigo-300 hover:text-indigo-200 bg-indigo-950/40 hover:bg-indigo-900/50 border border-indigo-500/30 rounded-full transition-all flex items-center space-x-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-sm" aria-haspopup="true" aria-expanded="false" title="Change Reflection Mode">
+                <button type="button" id="mode-selector-pill" class="px-3 py-1 text-xs text-[#A9744F] hover:text-[#8C5635] bg-[#FAF6F0] hover:bg-[#F4EDE3] border border-[#D8CBBF] rounded-full transition-all flex items-center space-x-1.5 focus:outline-none shadow-xs" aria-haspopup="true" aria-expanded="false" title="Change Reflection Mode">
                   <span id="mode-pill-icon">✨</span>
                   <span id="active-style-label" class="font-medium">Auto-Detect</span>
-                  <span class="text-[10px] text-gray-400 ml-0.5">▾</span>
+                  <span class="text-[10px] text-[#A9744F] ml-0.5">▾</span>
                 </button>
-                <div id="mode-dropdown-menu" class="hidden absolute left-0 bottom-full mb-2 w-64 rounded-xl bg-[#161b22] border border-[#30363d] shadow-2xl z-30 py-1.5 backdrop-blur-md">
-                  <div class="px-3 py-1 border-b border-[#30363d]/60 text-[10px] uppercase font-semibold text-gray-400 tracking-wider flex items-center justify-between">
+                <div id="mode-dropdown-menu" class="hidden absolute left-0 bottom-full mb-2 w-64 rounded-2xl bg-white border border-[#D8CBBF] shadow-2xl z-30 py-1.5 backdrop-blur-md">
+                  <div class="px-3.5 py-1.5 border-b border-[#E5DBD0] text-[10px] uppercase font-bold text-[#A9744F] tracking-wider flex items-center justify-between">
                     <span>Reflection Mode</span>
-                    <span class="text-indigo-400 font-mono text-[9px]">@ /</span>
+                    <span class="text-[#A9744F] font-mono text-[9px]">@ /</span>
                   </div>
                   <div class="py-1 space-y-0.5" id="mode-dropdown-options">
-                    <button type="button" class="mode-dropdown-item reflection-style-card w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-indigo-600/20 hover:text-white flex items-start space-x-2.5 transition-colors rounded-lg mx-auto" data-mode="auto" data-style="auto">
+                    <button type="button" class="mode-dropdown-item reflection-style-card w-full text-left px-3 py-2 text-xs text-[#3A2618] hover:bg-[#FAF6F0] hover:text-[#A9744F] flex items-start space-x-2.5 transition-colors rounded-xl mx-auto" data-mode="auto" data-style="auto">
                       <span class="text-sm shrink-0 mt-0.5">✨</span>
                       <div>
-                        <div class="font-medium text-white flex items-center space-x-1.5">
+                        <div class="font-medium text-[#3A2618] flex items-center space-x-1.5">
                           <span>Auto-Detect</span>
-                          <span class="text-[9px] px-1 py-0.2 bg-indigo-500/20 text-indigo-300 rounded font-mono">Default</span>
+                          <span class="text-[9px] px-1.5 py-0.2 bg-[#FAF6F0] text-[#A9744F] border border-[#D8CBBF] rounded-md font-mono font-medium">Default</span>
                         </div>
-                        <div class="text-[10px] text-gray-400">Intelligently adapts to your reflection</div>
+                        <div class="text-[10px] text-[#7A6858]">Intelligently adapts to your reflection</div>
                       </div>
                     </button>
-                    <button type="button" class="mode-dropdown-item reflection-style-card w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-indigo-600/20 hover:text-white flex items-start space-x-2.5 transition-colors rounded-lg mx-auto" data-mode="balanced" data-style="balanced">
+                    <button type="button" class="mode-dropdown-item reflection-style-card w-full text-left px-3 py-2 text-xs text-[#3A2618] hover:bg-[#FAF6F0] hover:text-[#A9744F] flex items-start space-x-2.5 transition-colors rounded-xl mx-auto" data-mode="balanced" data-style="balanced">
                       <span class="text-sm shrink-0 mt-0.5">🧭</span>
                       <div>
-                        <div class="font-medium text-white">Balanced</div>
-                        <div class="text-[10px] text-gray-400">Holistic clarity & grounding</div>
+                        <div class="font-medium text-[#3A2618]">Balanced</div>
+                        <div class="text-[10px] text-[#7A6858]">Holistic clarity & grounding</div>
                       </div>
                     </button>
-                    <button type="button" class="mode-dropdown-item reflection-style-card w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-indigo-600/20 hover:text-white flex items-start space-x-2.5 transition-colors rounded-lg mx-auto" data-mode="actionable" data-style="actionable">
+                    <button type="button" class="mode-dropdown-item reflection-style-card w-full text-left px-3 py-2 text-xs text-[#3A2618] hover:bg-[#FAF6F0] hover:text-[#A9744F] flex items-start space-x-2.5 transition-colors rounded-xl mx-auto" data-mode="actionable" data-style="actionable">
                       <span class="text-sm shrink-0 mt-0.5">🎯</span>
                       <div>
-                        <div class="font-medium text-white">Actionable</div>
-                        <div class="text-[10px] text-gray-400">Next steps & Kanban tickets</div>
+                        <div class="font-medium text-[#3A2618]">Actionable</div>
+                        <div class="text-[10px] text-[#7A6858]">Next steps & Kanban tickets</div>
                       </div>
                     </button>
-                    <button type="button" class="mode-dropdown-item reflection-style-card w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-indigo-600/20 hover:text-white flex items-start space-x-2.5 transition-colors rounded-lg mx-auto" data-mode="philosophy" data-style="philosophy">
+                    <button type="button" class="mode-dropdown-item reflection-style-card w-full text-left px-3 py-2 text-xs text-[#3A2618] hover:bg-[#FAF6F0] hover:text-[#A9744F] flex items-start space-x-2.5 transition-colors rounded-xl mx-auto" data-mode="philosophy" data-style="philosophy">
                       <span class="text-sm shrink-0 mt-0.5">📜</span>
                       <div>
-                        <div class="font-medium text-white">Deep Philosophy</div>
-                        <div class="text-[10px] text-gray-400">Stoic reframing & resilience</div>
+                        <div class="font-medium text-[#3A2618]">Deep Philosophy</div>
+                        <div class="text-[10px] text-[#7A6858]">Stoic reframing & resilience</div>
                       </div>
                     </button>
-                    <button type="button" class="mode-dropdown-item reflection-style-card w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-indigo-600/20 hover:text-white flex items-start space-x-2.5 transition-colors rounded-lg mx-auto" data-mode="brainstorm" data-style="brainstorm">
+                    <button type="button" class="mode-dropdown-item reflection-style-card w-full text-left px-3 py-2 text-xs text-[#3A2618] hover:bg-[#FAF6F0] hover:text-[#A9744F] flex items-start space-x-2.5 transition-colors rounded-xl mx-auto" data-mode="brainstorm" data-style="brainstorm">
                       <span class="text-sm shrink-0 mt-0.5">💡</span>
                       <div>
-                        <div class="font-medium text-white">Brainstorm</div>
-                        <div class="text-[10px] text-gray-400">Lateral creative sparks</div>
+                        <div class="font-medium text-[#3A2618]">Brainstorm</div>
+                        <div class="text-[10px] text-[#7A6858]">Lateral creative sparks</div>
                       </div>
                     </button>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="flex items-center space-x-2">
-              <button id="send-reflection-btn" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 shrink-0" title="Reflect (Send)">
+            <div class="flex items-center space-x-2 shrink-0">
+              <!-- Live Voice Mode Button (ChatGPT / Antigravity Audio Chat Style) -->
+              <button id="live-voice-toggle-btn" type="button" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#FAF6F0] hover:bg-[#F0E6D8] border border-[#D8CBBF] text-[#3A2618] flex items-center justify-center shadow-xs transition-all hover:scale-105 active:scale-95" title="Start Live Voice Mode">
+                <span id="voice-icon" class="text-sm sm:text-base">🎙️</span>
+                <span id="voice-btn-text" class="hidden">Start Live Voice</span>
+              </button>
+              <div id="voice-breathing-orb" class="hidden w-2.5 h-2.5 rounded-full bg-[#A9744F] animate-ping" title="Voice Channel Active"></div>
+
+              <button id="send-reflection-btn" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#3A2618] hover:bg-[#28190E] text-[#FBF6EF] font-bold flex items-center justify-center shadow-md transition-transform hover:scale-105 active:scale-95 shrink-0 ring-1 ring-[#A9744F]/40" title="Reflect (Send)">
                 <span class="text-base sm:text-lg font-bold leading-none">↑</span>
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Emotional & Cognitive Arc Visualizer (Chart.js) -->
-        <div id="emotional-arc-card" class="bg-[#161b22] border border-[#30363d] rounded-xl p-4 shadow-sm transition-all">
+        <!-- Emotional & Cognitive Arc Visualizer (Chart.js - Subtle, Collapsible & Clean) -->
+        <div id="emotional-arc-card" class="bg-white border border-[#E5DBD0] rounded-2xl p-4 shadow-xs transition-all">
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center space-x-2">
               <span class="text-base">📈</span>
-              <h3 class="text-xs font-semibold text-[#f0f6fc] uppercase tracking-wider">Cognitive & Emotional Arc Progression</h3>
+              <h3 class="text-xs font-bold text-[#3A2618] uppercase tracking-wider">Cognitive & Emotional Arc Progression</h3>
             </div>
-            <span id="arc-status-badge" class="text-[11px] text-[#8b949e]">Real-Time Psychological Shift</span>
+            <span id="arc-status-badge" class="text-[11px] text-[#7A6858] font-mono bg-[#FAF6F0] px-2.5 py-0.5 rounded-full border border-[#D8CBBF]">Real-Time Psychological Shift</span>
           </div>
 
           <!-- Authentic Empty State (Zero Fake Lines) -->
-          <div id="emotional-arc-empty" class="h-32 flex flex-col items-center justify-center text-center p-4 border border-dashed border-[#30363d] rounded-lg bg-[#0e1117]/50">
-            <div class="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-2">
+          <div id="emotional-arc-empty" class="h-28 flex flex-col items-center justify-center text-center p-4 border border-dashed border-[#D8CBBF] rounded-xl bg-[#FAF6F0]/60">
+            <div class="w-8 h-8 rounded-full bg-[#A9744F]/10 border border-[#A9744F]/20 flex items-center justify-center text-[#A9744F] mb-1.5">
               📊
             </div>
-            <p class="text-xs text-[#c9d1d9] font-medium">Awaiting Reflection Dialogue</p>
-            <p class="text-[11px] text-[#8b949e] max-w-sm mt-0.5">Your emotional clarity and grounding trajectory will graph here automatically as you reflect with your Guardian.</p>
+            <p class="text-xs text-[#3A2618] font-medium">Awaiting Reflection Dialogue</p>
+            <p class="text-[11px] text-[#7A6858] max-w-sm mt-0.5">Your emotional clarity and grounding trajectory will graph here automatically as you reflect with your Guardian.</p>
           </div>
 
           <!-- Dynamic Canvas (Revealed only upon genuine reflection) -->
@@ -781,108 +813,144 @@
             <span class="bg-white/90 border border-[#D8CBBF] px-3 py-1 rounded-full text-[11px] text-[#3A2618] font-medium shadow-xs">5 Active Memory Locations</span>
           </div>
 
-          <!-- Interactive Graphic Map Area with Direct Location Name Badges on Point -->
-          <div id="interactive-places-map" class="relative w-full h-[280px] my-4 rounded-xl overflow-hidden bg-[#FAF6F0] border border-[#E5DBD0] shadow-inner flex items-center justify-center select-none">
-            <!-- Stylized Continental Matrix Dots (Southeast Asia & Asia Pacific Arc) -->
-            <svg class="absolute inset-0 w-full h-full opacity-35 pointer-events-none" viewBox="0 0 800 350" fill="none">
-              <!-- Asia continent outline sketch in soft terracotta dots -->
-              <circle cx="280" cy="90" r="3" fill="#A9744F" opacity="0.3"/>
-              <circle cx="310" cy="80" r="3.5" fill="#A9744F" opacity="0.3"/>
-              <circle cx="340" cy="75" r="3" fill="#A9744F" opacity="0.3"/>
-              <circle cx="380" cy="70" r="4" fill="#A9744F" opacity="0.35"/>
-              <circle cx="420" cy="80" r="4.5" fill="#A9744F" opacity="0.35"/>
-              <circle cx="460" cy="95" r="3.5" fill="#A9744F" opacity="0.3"/>
-              <circle cx="500" cy="110" r="4" fill="#A9744F" opacity="0.35"/>
-              <circle cx="540" cy="120" r="3" fill="#A9744F" opacity="0.3"/>
-              <!-- Southeast Asia Archipelago dots -->
-              <circle cx="360" cy="140" r="3.5" fill="#A9744F" opacity="0.4"/>
-              <circle cx="380" cy="160" r="4" fill="#A9744F" opacity="0.45"/>
-              <circle cx="395" cy="190" r="4.5" fill="#A9744F" opacity="0.5"/>
-              <circle cx="410" cy="220" r="4" fill="#A9744F" opacity="0.45"/>
-              <circle cx="430" cy="250" r="3.5" fill="#A9744F" opacity="0.4"/>
-              <!-- Japan Archipelago dots -->
-              <circle cx="620" cy="100" r="3" fill="#A9744F" opacity="0.35"/>
-              <circle cx="640" cy="115" r="3.5" fill="#A9744F" opacity="0.4"/>
-              <circle cx="660" cy="130" r="3" fill="#A9744F" opacity="0.35"/>
-              <!-- Connection Arc lines -->
-              <path d="M 320 160 Q 380 180 430 250" stroke="#A9744F" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.35" />
-              <path d="M 380 180 Q 500 130 640 115" stroke="#A9744F" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.35" />
-            </svg>
+          <!-- GPS Cartographic Navigator Interface (Real Map Engine + Tactical HUD) -->
+          <div id="interactive-places-map" class="gps-navigator-frame relative w-full h-[360px] my-3 rounded-2xl overflow-hidden border-2 border-[#D8CBBF] shadow-md flex items-center justify-center select-none bg-[#EFE9DF]">
+            
+            <!-- 1. Real Leaflet Cartographic Map Canvas -->
+            <div id="places-leaflet-map" class="absolute inset-0 w-full h-full z-0"></div>
 
-            <!-- Point 1: Bangkok (Center Anchor) -->
-            <div class="absolute cursor-pointer group" style="left: 48%; top: 52%;" data-loc="bangkok">
-              <div class="relative flex items-center justify-center">
-                <span class="absolute w-8 h-8 rounded-full bg-[#A9744F]/25 map-radar-pin"></span>
-                <span class="w-3.5 h-3.5 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
-                <!-- Location Name Label directly ON the Point -->
-                <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20">
-                  <span>🇹🇭</span>
-                  <span>Bangkok</span>
-                  <span class="text-[#DE9E74] font-mono">(<span id="places-count-bangkok">42</span>)</span>
+            <!-- 2. Rich Cartographic Vector Fallback (Pre-rendered Coastal Terrain & Coordinate Graticule) -->
+            <div id="places-svg-fallback" class="gps-map-fallback absolute inset-0 w-full h-full pointer-events-none z-1">
+              <svg class="w-full h-full" viewBox="0 0 1000 450" preserveAspectRatio="none" fill="none">
+                <!-- Ocean Bathymetric Water Depth -->
+                <rect width="1000" height="450" fill="#E8E2D5"/>
+                <!-- Coordinate Graticules (Lat/Long Lines) -->
+                <line x1="0" y1="100" x2="1000" y2="100" stroke="#D8CEBF" stroke-width="1" stroke-dasharray="4 4"/>
+                <line x1="0" y1="200" x2="1000" y2="200" stroke="#D8CEBF" stroke-width="1" stroke-dasharray="4 4"/>
+                <line x1="0" y1="300" x2="1000" y2="300" stroke="#D8CEBF" stroke-width="1" stroke-dasharray="4 4"/>
+                <line x1="250" y1="0" x2="250" y2="450" stroke="#D8CEBF" stroke-width="1" stroke-dasharray="4 4"/>
+                <line x1="500" y1="0" x2="500" y2="450" stroke="#D8CEBF" stroke-width="1" stroke-dasharray="4 4"/>
+                <line x1="750" y1="0" x2="750" y2="450" stroke="#D8CEBF" stroke-width="1" stroke-dasharray="4 4"/>
+                <!-- Continental Landmass Geometries in Warm Terrain Silk -->
+                <path d="M 180,40 Q 280,30 360,50 Q 420,70 480,60 Q 560,90 620,130 Q 640,180 580,240 Q 520,270 470,230 Q 440,190 380,220 Q 320,240 260,200 Q 200,160 170,100 Z" fill="#F5ECE0" stroke="#D4C4B2" stroke-width="1.5" opacity="0.9"/>
+                <!-- Indochina & Southeast Asia Peninsula -->
+                <path d="M 330,120 Q 380,140 430,160 Q 450,210 460,270 Q 470,330 480,380 Q 450,380 430,320 Q 400,260 360,230 Q 330,190 320,150 Z" fill="#F8EFE4" stroke="#D4C4B2" stroke-width="1.5" opacity="0.95"/>
+                <!-- Malay Peninsula & Singapore -->
+                <path d="M 460,320 Q 475,370 485,410 Q 475,415 465,370 Z" fill="#F5ECE0" stroke="#D4C4B2" stroke-width="1.5"/>
+                <!-- Japanese Archipelago -->
+                <path d="M 780,90 Q 820,110 850,150 Q 860,190 840,210 Q 820,180 800,140 Q 775,115 780,90 Z" fill="#F8EFE4" stroke="#D4C4B2" stroke-width="1.5"/>
+                <!-- Navigational Geodesic Flight Corridors -->
+                <path d="M 360,170 Q 440,200 480,400" stroke="#A9744F" stroke-width="2" stroke-dasharray="6 4" opacity="0.6"/>
+                <path d="M 440,200 Q 630,150 830,130" stroke="#A9744F" stroke-width="2" stroke-dasharray="6 4" opacity="0.6"/>
+              </svg>
+            </div>
+
+            <!-- 3. GPS HUD Top Telemetry Bar -->
+            <div class="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
+              <div class="gps-telemetry-badge pointer-events-auto flex items-center gap-2 px-3 py-1 rounded-lg bg-[#3A2618]/90 text-[#FBF6EF] text-[11px] font-mono shadow-md backdrop-blur-md border border-[#A9744F]/40">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>🛰️ GPS FIX 3D</span>
+                <span class="text-[#DE9E74]">|</span>
+                <span>9 SATS</span>
+                <span class="text-[#DE9E74]">|</span>
+                <span>ACCURACY ±2.4m</span>
+              </div>
+              <div class="gps-telemetry-badge pointer-events-auto hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-[#3A2618]/90 text-[#FBF6EF] text-[11px] font-mono shadow-md backdrop-blur-md border border-[#A9744F]/40">
+                <span class="text-[#DE9E74]">⌖</span>
+                <span>13.7563° N, 100.5018° E</span>
+                <span class="text-[#DE9E74]">|</span>
+                <span>HDG 342° NW</span>
+              </div>
+            </div>
+
+            <!-- 4. GPS Fallback Point Markers with Location Badges (Preserving test selectors) -->
+            <div class="gps-points-layer absolute inset-0 z-10 pointer-events-auto">
+              <!-- Point 1: Bangkok -->
+              <div class="absolute cursor-pointer group" style="left: 45%; top: 48%;" data-loc="bangkok">
+                <div class="relative flex items-center justify-center">
+                  <span class="absolute w-8 h-8 rounded-full bg-[#A9744F]/30 map-radar-pin"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
+                  <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20 shadow-md">
+                    <span>🇹🇭</span>
+                    <span>Bangkok</span>
+                    <span class="text-[#DE9E74] font-mono">(<span id="places-count-bangkok">42</span>)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Point 2: Yangon -->
+              <div class="absolute cursor-pointer group" style="left: 36%; top: 38%;" data-loc="yangon">
+                <div class="relative flex items-center justify-center">
+                  <span class="absolute w-8 h-8 rounded-full bg-[#A9744F]/30 map-radar-pin"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
+                  <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20 shadow-md">
+                    <span>🇲🇲</span>
+                    <span>Yangon</span>
+                    <span class="text-[#DE9E74] font-mono">(<span id="places-count-yangon">28</span>)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Point 3: Chiang Mai -->
+              <div class="absolute cursor-pointer group" style="left: 43%; top: 25%;" data-loc="chiangmai">
+                <div class="relative flex items-center justify-center">
+                  <span class="absolute w-8 h-8 rounded-full bg-[#A9744F]/30 map-radar-pin"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
+                  <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20 shadow-md">
+                    <span>🇹🇭</span>
+                    <span>Chiang Mai</span>
+                    <span class="text-[#DE9E74] font-mono">(<span id="places-count-chiangmai">14</span>)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Point 4: Singapore -->
+              <div class="absolute cursor-pointer group" style="left: 48%; top: 82%;" data-loc="singapore">
+                <div class="relative flex items-center justify-center">
+                  <span class="absolute w-8 h-8 rounded-full bg-[#A9744F]/30 map-radar-pin"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
+                  <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20 shadow-md">
+                    <span>🇸🇬</span>
+                    <span>Singapore</span>
+                    <span class="text-[#DE9E74] font-mono">(<span id="places-count-singapore">19</span>)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Point 5: Tokyo -->
+              <div class="absolute cursor-pointer group" style="left: 83%; top: 28%;" data-loc="tokyo">
+                <div class="relative flex items-center justify-center">
+                  <span class="absolute w-8 h-8 rounded-full bg-[#A9744F]/30 map-radar-pin"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
+                  <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20 shadow-md">
+                    <span>🇯🇵</span>
+                    <span>Tokyo</span>
+                    <span class="text-[#DE9E74] font-mono">(<span id="places-count-tokyo">8</span>)</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Point 2: Yangon -->
-            <div class="absolute cursor-pointer group" style="left: 35%; top: 44%;" data-loc="yangon">
-              <div class="relative flex items-center justify-center">
-                <span class="absolute w-7 h-7 rounded-full bg-[#A9744F]/25 map-radar-pin"></span>
-                <span class="w-3 h-3 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
-                <!-- Location Name Label directly ON the Point -->
-                <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20">
-                  <span>🇲🇲</span>
-                  <span>Yangon</span>
-                  <span class="text-[#DE9E74] font-mono">(<span id="places-count-yangon">28</span>)</span>
-                </div>
+            <!-- 5. GPS HUD Bottom Telemetry & Navigation Controls -->
+            <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
+              <div class="gps-telemetry-badge pointer-events-auto flex items-center gap-2 px-3 py-1 rounded-lg bg-[#3A2618]/90 text-[#FBF6EF] text-[10px] font-mono shadow-md backdrop-blur-md border border-[#A9744F]/40">
+                <span>|── 500 KM ──|</span>
+                <span class="hidden sm:inline text-[#DE9E74]">WGS-84 CARTOGRAPHIC PROJECTION</span>
+              </div>
+              <div class="pointer-events-auto flex items-center gap-1.5">
+                <button id="gps-btn-zoom-in" class="w-7 h-7 rounded-lg bg-[#3A2618] hover:bg-[#A9744F] text-[#FBF6EF] flex items-center justify-center font-bold text-sm shadow-md transition-colors" title="Zoom In">+</button>
+                <button id="gps-btn-zoom-out" class="w-7 h-7 rounded-lg bg-[#3A2618] hover:bg-[#A9744F] text-[#FBF6EF] flex items-center justify-center font-bold text-sm shadow-md transition-colors" title="Zoom Out">−</button>
+                <button id="gps-btn-recenter" class="h-7 px-2.5 rounded-lg bg-[#3A2618] hover:bg-[#A9744F] text-[#FBF6EF] flex items-center gap-1 font-medium text-[10px] shadow-md transition-colors" title="Recenter GPS">
+                  <span>⌖</span>
+                  <span class="hidden sm:inline">Recenter</span>
+                </button>
               </div>
             </div>
 
-            <!-- Point 3: Chiang Mai -->
-            <div class="absolute cursor-pointer group" style="left: 45%; top: 28%;" data-loc="chiangmai">
-              <div class="relative flex items-center justify-center">
-                <span class="absolute w-7 h-7 rounded-full bg-[#A9744F]/25 map-radar-pin"></span>
-                <span class="w-3 h-3 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
-                <!-- Location Name Label directly ON the Point -->
-                <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20">
-                  <span>🇹🇭</span>
-                  <span>Chiang Mai</span>
-                  <span class="text-[#DE9E74] font-mono">(<span id="places-count-chiangmai">14</span>)</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Point 4: Singapore -->
-            <div class="absolute cursor-pointer group" style="left: 54%; top: 76%;" data-loc="singapore">
-              <div class="relative flex items-center justify-center">
-                <span class="absolute w-7 h-7 rounded-full bg-[#A9744F]/25 map-radar-pin"></span>
-                <span class="w-3 h-3 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
-                <!-- Location Name Label directly ON the Point -->
-                <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20">
-                  <span>🇸🇬</span>
-                  <span>Singapore</span>
-                  <span class="text-[#DE9E74] font-mono">(<span id="places-count-singapore">19</span>)</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Point 5: Tokyo -->
-            <div class="absolute cursor-pointer group" style="left: 80%; top: 32%;" data-loc="tokyo">
-              <div class="relative flex items-center justify-center">
-                <span class="absolute w-7 h-7 rounded-full bg-[#A9744F]/25 map-radar-pin"></span>
-                <span class="w-3 h-3 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
-                <!-- Location Name Label directly ON the Point -->
-                <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20">
-                  <span>🇯🇵</span>
-                  <span>Tokyo</span>
-                  <span class="text-[#DE9E74] font-mono">(<span id="places-count-tokyo">8</span>)</span>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- Location Breakdown Cards (Authentic Human Memories) -->
           <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 my-2 z-10">
-            <!-- Bangkok Card -->
             <div class="location-summary-card bg-white border border-[#E5DBD0] hover:border-[#A9744F] rounded-xl p-3 relative shadow-xs transition-all cursor-pointer" data-loc="bangkok">
               <div class="flex items-center justify-between">
                 <span class="text-base">🇹🇭</span>
@@ -1132,28 +1200,28 @@
   <!-- ===================================================================== -->
   <!-- Evening Shutdown Ritual Overlay (Zen Night Mode) -->
   <!-- ===================================================================== -->
-  <div id="shutdown-modal" class="hidden fixed inset-0 bg-[#080a0f]/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
-    <div class="max-w-md w-full text-center space-y-5">
-      <span class="text-5xl animate-bounce">🌙</span>
-      <h3 class="text-xl font-bold text-amber-200">Evening Shutdown Sanctuary</h3>
-      <p class="text-xs text-amber-100/80 leading-relaxed" id="shutdown-gratitude-prompt">
-        "ဒီနေ့ တစ်နေကုန် အကောင်းဆုံး ကြိုးစားခဲ့ပါတယ်။ အလုပ်တွေ အကုန်လုံး မနက်ဖြန်အတွက် စနစ်တကျ သိမ်းပြီးပါပြီ။ အိပ်ရာမဝင်ခင်လေး... 'ဒီနေ့မှာ ကိုယ်တိုင်အတွက် စိတ်အကျေနပ်ဆုံး ဖြစ်ခဲ့တဲ့ အရာ ၁ ခု' က ဘာဖြစ်မလဲခင်ဗျာ?"
+  <div id="shutdown-modal" class="hidden fixed inset-0 bg-[#3A2618]/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="max-w-md w-full text-center space-y-5 bg-[#FFFDFB] border border-[#D8CBBF] rounded-2xl p-6 sm:p-8 shadow-2xl">
+      <h3 class="text-xl font-bold text-[#3A2618]">Evening Shutdown Sanctuary</h3>
+      <p class="text-xs text-[#564538] leading-relaxed font-normal" id="shutdown-gratitude-prompt">
+        You achieved deliberate focus today. All sessions and actions are safely secured in Cloud Firestore. Before resting... <span class="font-medium text-[#3A2618]">"What is one meaningful win or grateful moment from today?"</span>
+        <span class="text-[11px] text-[#7A6858] block mt-1 italic">"ဒီနေ့မှာ ကိုယ်တိုင်အတွက် စိတ်အကျေနပ်ဆုံး ဖြစ်ခဲ့တဲ့ အရာ ၁ ခုက ဘာဖြစ်မလဲခင်ဗျာ?"</span>
       </p>
 
-      <div class="bg-[#161b22] border border-amber-500/30 rounded-xl p-3 text-left">
-        <textarea id="shutdown-gratitude-input" rows="2" class="w-full bg-transparent border-none text-xs text-white focus:outline-none resize-none placeholder-gray-500" placeholder="One win or grateful moment from today..."></textarea>
+      <div class="bg-[#FAF6F0] border border-[#D8CBBF] rounded-xl p-3 text-left">
+        <textarea id="shutdown-gratitude-input" rows="2" class="w-full bg-transparent border-none text-xs text-[#3A2618] focus:outline-none resize-none placeholder-[#9E8C7E]" placeholder="One win or grateful moment from today..."></textarea>
       </div>
 
       <div class="flex items-center justify-center space-x-3">
-        <button id="confirm-shutdown-btn" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-5 py-2.5 rounded-full shadow-lg transition-all flex items-center space-x-1.5">
+        <button id="confirm-shutdown-btn" class="bg-[#3A2618] hover:bg-[#28190E] text-[#FBF6EF] text-xs font-semibold px-5 py-2.5 rounded-full shadow-lg transition-all flex items-center space-x-1.5 border border-[#3A2618]">
           <span>🔔 Conclude Work & Rest</span>
         </button>
-        <button id="cancel-shutdown-btn" class="text-xs text-gray-400 hover:text-white px-3 py-1">Cancel</button>
+        <button id="cancel-shutdown-btn" class="text-xs text-[#635345] hover:text-[#3A2618] bg-[#FAF6F0] hover:bg-[#EFE6DC] border border-[#D8CBBF] px-4 py-2 rounded-full font-medium transition-all">Cancel</button>
       </div>
 
-      <div id="shutdown-zen-confirmed" class="hidden space-y-3 pt-4">
-        <p class="text-sm font-medium text-emerald-300">✨ Work is officially closed. Rest well.</p>
-        <button id="wake-workspace-btn" class="bg-[#21262d] hover:bg-[#30363d] text-xs text-white px-4 py-1.5 rounded-full border border-[#30363d]">
+      <div id="shutdown-zen-confirmed" class="hidden space-y-3 pt-4 border-t border-[#E5DBD0]">
+        <p class="text-sm font-semibold text-emerald-800">✨ Work is officially closed. Rest well.</p>
+        <button id="wake-workspace-btn" class="bg-[#3A2618] hover:bg-[#28190E] text-xs text-[#FBF6EF] font-medium px-5 py-2 rounded-full shadow-md transition-all">
           Wake Workspace 🌅
         </button>
       </div>

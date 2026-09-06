@@ -606,7 +606,12 @@ function initNavigation() {
     if (viewKey === "calendar") loadCalendarEvents();
     if (viewKey === "rewind") loadRewindMetrics();
     if (viewKey === "archive") loadMemoryArchive();
-    if (viewKey === "places") loadPlacesMap();
+    if (viewKey === "places") {
+      loadPlacesMap();
+      setTimeout(() => {
+        if (placesLeafletMap) placesLeafletMap.invalidateSize();
+      }, 200);
+    }
     trackEvent("view_switched", { view: viewKey });
   }
 
@@ -1580,28 +1585,28 @@ function appendChatMessage(role, text) {
   if (role === "user") {
     const senderName = (state.user && state.user.name) ? state.user.name : "You";
     msgDiv.innerHTML = `
-      <div class="bg-indigo-600/30 border border-indigo-500/40 text-[#f0f6fc] p-3.5 rounded-2xl max-w-lg shadow-sm">
-        <div class="flex items-center justify-between space-x-3 mb-1">
-          <span class="font-semibold text-[10px] text-indigo-300">${escapeHtml(senderName)}</span>
-          <span class="text-[9px] text-indigo-300/70 font-mono">${timeStr}</span>
+      <div class="bg-[#F4EDE3] bg-indigo-600/30 border border-[#D8CBBF] text-[#3A2618] p-3.5 sm:p-4 rounded-2xl rounded-tr-sm max-w-lg shadow-xs">
+        <div class="flex items-center justify-between space-x-3 mb-1.5 pb-1 border-b border-[#E5DBD0]/70">
+          <span class="font-semibold text-[11px] text-[#A9744F]">${escapeHtml(senderName)}</span>
+          <span class="text-[9px] text-[#7A6858] font-mono">${timeStr}</span>
         </div>
-        <p class="whitespace-pre-wrap">${formatChatMessageText(text)}</p>
+        <p class="whitespace-pre-wrap leading-relaxed text-xs sm:text-[13px]">${formatChatMessageText(text)}</p>
       </div>
     `;
   } else {
     msgDiv.innerHTML = `
-      <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0 mt-0.5 shadow-sm">
+      <div class="w-8 h-8 rounded-full bg-[#3A2618] border border-[#A9744F]/40 flex items-center justify-center font-bold text-xs text-[#FBF6EF] shrink-0 mt-0.5 shadow-xs">
         🌿
       </div>
-      <div class="bg-[#161b22] border border-[#30363d] text-[#c9d1d9] p-3.5 rounded-2xl max-w-xl shadow-sm space-y-1.5 flex-1">
-        <div class="flex items-center justify-between flex-wrap gap-1">
-          <div class="flex items-center space-x-1.5">
-            <span class="font-semibold text-[10px] text-purple-300">Personal Gemini Guardian</span>
-            <span class="model-badge inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-indigo-950/60 text-indigo-300 border border-indigo-500/30">gemini-2.5-flash · gemini-3.7-flash</span>
+      <div class="bg-[#161b22] bg-white border border-[#E5DBD0] text-[#3A2618] p-4 sm:p-5 rounded-2xl rounded-tl-sm max-w-2xl shadow-xs space-y-2 flex-1">
+        <div class="flex items-center justify-between flex-wrap gap-1.5 pb-1.5 border-b border-[#F0E6D8]">
+          <div class="flex items-center space-x-2">
+            <span class="font-semibold text-xs text-[#3A2618]">Personal Gemini Guardian</span>
+            <span class="model-badge inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-mono font-medium bg-[#FAF6F0] text-[#A9744F] border border-[#A9744F]/30">gemini-2.5-flash · gemini-3.7-flash</span>
           </div>
-          <span class="text-[9px] text-gray-500 font-mono">${timeStr}</span>
+          <span class="text-[9px] text-[#7A6858] font-mono">${timeStr}</span>
         </div>
-        <div class="text-[#f0f6fc] leading-relaxed whitespace-pre-wrap">${formatChatMessageText(text)}</div>
+        <div class="text-[#3A2618] leading-relaxed whitespace-pre-wrap text-xs sm:text-[13px] font-sans">${formatChatMessageText(text)}</div>
       </div>
     `;
   }
@@ -1743,7 +1748,7 @@ function renderDistilledSummaryCard(data) {
   if (!stream) return;
 
   const card = document.createElement("div");
-  card.className = "summary-card p-4 rounded-xl border border-amber-500/40 bg-gradient-to-br from-amber-950/40 via-[#161b22] to-indigo-950/40 shadow-lg space-y-2 animate-fadeIn my-3";
+  card.className = "summary-card p-5 rounded-2xl border-2 border-[#A9744F]/40 bg-[#FAF6F0] shadow-md space-y-2.5 animate-fadeIn my-3 text-[#3A2618]";
 
   const title = data.title || "Reflective Synthesis";
   const summary = data.summary || "Conversation distilled into core insights.";
@@ -1754,15 +1759,15 @@ function renderDistilledSummaryCard(data) {
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-2">
         <span class="text-base">✨</span>
-        <h4 class="text-xs font-semibold text-amber-300 uppercase tracking-wider">Distilled Reflection Summary</h4>
+        <h4 class="text-xs font-bold text-[#A9744F] uppercase tracking-wider">Distilled Reflection Summary</h4>
       </div>
-      <span class="text-[9px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-500/30">Auto-Synthesized</span>
+      <span class="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-white text-[#A9744F] border border-[#D8CBBF] font-semibold">Auto-Synthesized</span>
     </div>
-    <div class="text-sm font-semibold text-white">${escapeHtml(title)}</div>
-    <p class="text-xs text-gray-300 leading-relaxed">${escapeHtml(summary)}</p>
-    ${realization ? `<div class="p-2 rounded bg-[#0e1117]/80 border border-amber-500/20 text-[11px] text-amber-200"><strong class="text-amber-400 font-medium">Realization:</strong> ${escapeHtml(realization)}</div>` : ""}
-    <div class="flex flex-wrap gap-1 pt-1">
-      ${tags.map(t => `<span class="text-[10px] px-2 py-0.5 rounded-full bg-[#21262d] text-gray-300 border border-[#30363d]">#${escapeHtml(t)}</span>`).join("")}
+    <div class="text-base font-serif font-semibold text-[#3A2618]">${escapeHtml(title)}</div>
+    <p class="text-xs text-[#635345] leading-relaxed">${escapeHtml(summary)}</p>
+    ${realization ? `<div class="p-2.5 rounded-xl bg-white border border-[#E5DBD0] text-xs text-[#3A2618]"><strong class="text-[#A9744F] font-semibold">Realization:</strong> ${escapeHtml(realization)}</div>` : ""}
+    <div class="flex flex-wrap gap-1.5 pt-1">
+      ${tags.map(t => `<span class="text-[10px] px-2.5 py-0.5 rounded-md bg-white text-[#7A6858] border border-[#D8CBBF]">#${escapeHtml(t)}</span>`).join("")}
     </div>
   `;
 
@@ -3181,16 +3186,123 @@ function filterMemoryArchive(query) {
 }
 
 // ============================================================================
-// 22. Places & Global Memory Canvas (Spatial Intelligence)
+// 22. Places & Global Memory Canvas (Spatial Intelligence & GPS Cartography)
 // ============================================================================
 let activePlaceFilter = null;
+let placesLeafletMap = null;
+let placesLeafletMarkers = {};
+let placesPolyline = null;
+
+const SANCTUARY_COORDINATES = {
+  bangkok: { name: "Bangkok", flag: "🇹🇭", lat: 13.7563, lng: 100.5018, zoom: 6, defaultCount: 42 },
+  yangon: { name: "Yangon", flag: "🇲🇲", lat: 16.8409, lng: 96.1735, zoom: 6, defaultCount: 28 },
+  chiangmai: { name: "Chiang Mai", flag: "🇹🇭", lat: 18.7883, lng: 98.9853, zoom: 6, defaultCount: 14 },
+  singapore: { name: "Singapore", flag: "🇸🇬", lat: 1.3521, lng: 103.8198, zoom: 6, defaultCount: 19 },
+  tokyo: { name: "Tokyo", flag: "🇯🇵", lat: 35.6762, lng: 139.6503, zoom: 6, defaultCount: 8 }
+};
+
+const SANCTUARY_MEMORY_SAMPLES = [
+  { id: "bangkok", flag: "🇹🇭", loc: "Bangkok Creative Sanctuary", title: "Morning Architecture & Multi-Agent Planning", date: "Today", mood: "Gently Focused" },
+  { id: "yangon", flag: "🇲🇲", loc: "Yangon Cultural Roots", title: "Burmese Bilingual Linguistic Adaptation", date: "Sep 05", mood: "Deep Introspection" },
+  { id: "chiangmai", flag: "🇹🇭", loc: "Chiang Mai Mountain Sanctuary", title: "Mountain Reflection & Deep Focus Retreat", date: "Sep 04", mood: "Mindful Serenity" },
+  { id: "singapore", flag: "🇸🇬", loc: "Singapore Tech Hub", title: "APAC GenAI Academy Zero-Trust Presentation", date: "Sep 02", mood: "Expansive" },
+  { id: "tokyo", flag: "🇯🇵", loc: "Tokyo Zen Sanctuary", title: "Minimalist Design & Spatial Stillness", date: "Aug 29", mood: "Quiet Clarity" }
+];
 
 function initPlacesMap() {
-  // Places map interactivity initialized
+  const mapEl = document.getElementById("places-leaflet-map");
+  if (!mapEl || placesLeafletMap || typeof window.L === "undefined") {
+    return;
+  }
+
+  try {
+    placesLeafletMap = L.map("places-leaflet-map", {
+      center: [16.5, 106.0],
+      zoom: 4,
+      minZoom: 3,
+      maxZoom: 10,
+      zoomControl: false,
+      attributionControl: false
+    });
+
+    // CartoDB Voyager tiles - authentic luxury cartography with coastlines and geography
+    const tiles = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      maxZoom: 19,
+      subdomains: "abcd"
+    }).addTo(placesLeafletMap);
+
+    tiles.on("load", () => {
+      const fallback = document.getElementById("places-svg-fallback");
+      if (fallback) fallback.classList.add("opacity-10");
+    });
+
+    // Create custom GPS radar pins with location names directly on the points
+    Object.entries(SANCTUARY_COORDINATES).forEach(([id, loc]) => {
+      const pinHtml = `
+        <div class="custom-gps-pin group cursor-pointer" data-loc="${id}">
+          <div class="relative flex items-center justify-center">
+            <span class="gps-radar-wave"></span>
+            <span class="w-3.5 h-3.5 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
+            <div class="map-point-badge custom-gps-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20 shadow-md">
+              <span>${loc.flag}</span>
+              <span>${loc.name}</span>
+              <span class="text-[#DE9E74] font-mono">(<span id="leaflet-count-${id}">${loc.defaultCount}</span>)</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const customIcon = L.divIcon({
+        className: "gps-marker-wrapper",
+        html: pinHtml,
+        iconSize: [120, 40],
+        iconAnchor: [60, 20]
+      });
+
+      const marker = L.marker([loc.lat, loc.lng], { icon: customIcon }).addTo(placesLeafletMap);
+      marker.on("click", () => {
+        selectSanctuaryPlace(id);
+      });
+      placesLeafletMarkers[id] = marker;
+    });
+
+    // Connecting dashed route polyline across personal sanctuaries
+    const routeCoords = [
+      [16.8409, 96.1735],  // Yangon
+      [18.7883, 98.9853],  // Chiang Mai
+      [13.7563, 100.5018], // Bangkok
+      [1.3521, 103.8198],  // Singapore
+      [35.6762, 139.6503]  // Tokyo
+    ];
+
+    placesPolyline = L.polyline(routeCoords, {
+      color: "#A9744F",
+      weight: 2,
+      opacity: 0.75,
+      dashArray: "6, 8",
+      lineCap: "round"
+    }).addTo(placesLeafletMap);
+
+    // Bind GPS HUD Telemetry & Navigation Buttons
+    const btnZoomIn = document.getElementById("gps-btn-zoom-in");
+    const btnZoomOut = document.getElementById("gps-btn-zoom-out");
+    const btnRecenter = document.getElementById("gps-btn-recenter");
+
+    if (btnZoomIn) btnZoomIn.addEventListener("click", () => placesLeafletMap.zoomIn());
+    if (btnZoomOut) btnZoomOut.addEventListener("click", () => placesLeafletMap.zoomOut());
+    if (btnRecenter) btnRecenter.addEventListener("click", () => {
+      placesLeafletMap.flyTo([16.5, 106.0], 4, { duration: 1.0 });
+      selectSanctuaryPlace(null);
+    });
+  } catch (err) {
+    console.warn("Leaflet GPS map engine initialization note:", err);
+  }
 }
 
 async function loadPlacesMap() {
   try {
+    initPlacesMap();
+
     const res = await apiFetch("/api/history");
     let entries = [];
     if (res.ok) {
@@ -3198,42 +3310,55 @@ async function loadPlacesMap() {
       entries = data.history || [];
     }
 
-    // Dynamic counts
-    const bkkCount = Math.max(42, entries.length * 3);
-    const ygnCount = Math.max(28, Math.floor(entries.length * 1.8));
-    const cmCount = Math.max(14, Math.floor(entries.length * 1.1));
-    const sgCount = Math.max(19, Math.floor(entries.length * 1.3));
-    const tyoCount = Math.max(8, Math.floor(entries.length * 0.7));
+    // Dynamic memory counts for personal sanctuaries
+    const counts = {
+      bangkok: Math.max(42, entries.length * 3),
+      yangon: Math.max(28, Math.floor(entries.length * 1.8)),
+      chiangmai: Math.max(14, Math.floor(entries.length * 1.1)),
+      singapore: Math.max(19, Math.floor(entries.length * 1.3)),
+      tokyo: Math.max(8, Math.floor(entries.length * 0.7))
+    };
 
-    const bkkEl = document.getElementById("places-count-bangkok");
-    if (bkkEl) bkkEl.textContent = bkkCount;
+    // Update both fallback HTML elements and Leaflet badge counts
+    Object.entries(counts).forEach(([id, count]) => {
+      const fallbackEl = document.getElementById(`places-count-${id}`);
+      if (fallbackEl) fallbackEl.textContent = count;
+      const leafletEl = document.getElementById(`leaflet-count-${id}`);
+      if (leafletEl) leafletEl.textContent = count;
+    });
 
-    const ygnEl = document.getElementById("places-count-yangon");
-    if (ygnEl) ygnEl.textContent = ygnCount;
-
-    const cmEl = document.getElementById("places-count-chiangmai");
-    if (cmEl) cmEl.textContent = cmCount;
-
-    const sgEl = document.getElementById("places-count-singapore");
-    if (sgEl) sgEl.textContent = sgCount;
-
-    const tyoEl = document.getElementById("places-count-tokyo");
-    if (tyoEl) tyoEl.textContent = tyoCount;
-
-    // Populated located reflections list (Real human personal sanctuaries)
-    const samples = [
-      { id: "bangkok", flag: "🇹🇭", loc: "Bangkok Creative Sanctuary", title: "Morning Architecture & Multi-Agent Planning", date: "Today", mood: "Gently Focused" },
-      { id: "yangon", flag: "🇲🇲", loc: "Yangon Cultural Roots", title: "Burmese Bilingual Linguistic Adaptation", date: "Sep 05", mood: "Deep Introspection" },
-      { id: "chiangmai", flag: "🇹🇭", loc: "Chiang Mai Mountain Sanctuary", title: "Mountain Reflection & Deep Focus Retreat", date: "Sep 04", mood: "Mindful Serenity" },
-      { id: "singapore", flag: "🇸🇬", loc: "Singapore Tech Hub", title: "APAC GenAI Academy Zero-Trust Presentation", date: "Sep 02", mood: "Expansive" },
-      { id: "tokyo", flag: "🇯🇵", loc: "Tokyo Zen Sanctuary", title: "Minimalist Design & Spatial Stillness", date: "Aug 29", mood: "Quiet Clarity" }
-    ];
-
-    renderPlacesMemoriesList(samples, activePlaceFilter);
-    initPlacesInteractivity(samples);
+    renderPlacesMemoriesList(SANCTUARY_MEMORY_SAMPLES, activePlaceFilter);
+    initPlacesInteractivity();
   } catch (err) {
     console.warn("Could not load places map:", err);
   }
+}
+
+function selectSanctuaryPlace(locId) {
+  if (activePlaceFilter === locId) {
+    activePlaceFilter = null; // Toggle off
+    document.querySelectorAll(".map-point-badge").forEach(b => b.classList.remove("active-loc"));
+    showToast("Showing reflections from all sanctuaries");
+    if (placesLeafletMap) placesLeafletMap.flyTo([16.5, 106.0], 4, { duration: 1.0 });
+  } else {
+    activePlaceFilter = locId;
+    document.querySelectorAll(".map-point-badge").forEach(b => {
+      const parent = b.closest("[data-loc]");
+      if (parent && parent.dataset.loc === locId) {
+        b.classList.add("active-loc");
+      } else {
+        b.classList.remove("active-loc");
+      }
+    });
+
+    if (locId && SANCTUARY_COORDINATES[locId]) {
+      const loc = SANCTUARY_COORDINATES[locId];
+      if (placesLeafletMap) placesLeafletMap.flyTo([loc.lat, loc.lng], 6, { duration: 1.2 });
+      showToast(`GPS Track: 📍 ${loc.name} Sanctuary`);
+    }
+  }
+
+  renderPlacesMemoriesList(SANCTUARY_MEMORY_SAMPLES, activePlaceFilter);
 }
 
 function renderPlacesMemoriesList(samples, filterLoc = null) {
@@ -3256,30 +3381,16 @@ function renderPlacesMemoriesList(samples, filterLoc = null) {
   `).join("");
 }
 
-function initPlacesInteractivity(samples) {
-  // Point pins and location cards click handlers
+function initPlacesInteractivity() {
   const locTriggers = document.querySelectorAll("[data-loc]");
   locTriggers.forEach(el => {
-    el.addEventListener("click", () => {
+    // Avoid double binding
+    if (el._placesBound) return;
+    el._placesBound = true;
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
       const locId = el.dataset.loc;
-      if (activePlaceFilter === locId) {
-        activePlaceFilter = null; // Toggle off
-        document.querySelectorAll(".map-point-badge").forEach(b => b.classList.remove("active-loc"));
-        showToast("Showing reflections from all sanctuaries");
-      } else {
-        activePlaceFilter = locId;
-        document.querySelectorAll(".map-point-badge").forEach(b => {
-          const parent = b.closest("[data-loc]");
-          if (parent && parent.dataset.loc === locId) {
-            b.classList.add("active-loc");
-          } else {
-            b.classList.remove("active-loc");
-          }
-        });
-        const locName = locId.charAt(0).toUpperCase() + locId.slice(1);
-        showToast(`Filtered memories for 📍 ${locName}`);
-      }
-      renderPlacesMemoriesList(samples, activePlaceFilter);
+      if (locId) selectSanctuaryPlace(locId);
     });
   });
 }

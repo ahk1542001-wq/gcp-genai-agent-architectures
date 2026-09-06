@@ -6,5 +6,6 @@ venv/
 .venv/
 .agents/
 tests/screenshots/real_user_verification/
+screenshots/
 tests/walkthrough_recordings/
 tests/walkthrough_audio/
