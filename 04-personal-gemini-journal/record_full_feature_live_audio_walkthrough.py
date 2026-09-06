@@ -144,11 +144,11 @@ def record_browser_session():
         )
         page = context.new_page()
 
-        # Step 1: Landing Page & Instant Guest Evaluator Access (0:00 - 0:07)
+        # Step 1: Landing Page & Instant Guest Evaluator Access (0:00 - 0:08)
         print("  1/16. Landing Screen & 1-Click Guest Evaluator Access...")
         page.goto(BASE_URL, wait_until="networkidle")
         inject_cursor_overlay(page)
-        page.wait_for_timeout(1000)
+        page.wait_for_timeout(2000)
 
         guest_btn = page.locator("#guest-signin-btn")
         if guest_btn.is_visible():
@@ -160,7 +160,7 @@ def record_browser_session():
         
         page.wait_for_selector("#app-shell:not(.hidden)", timeout=8000)
         inject_cursor_overlay(page)
-        page.wait_for_timeout(1200)
+        page.wait_for_timeout(2000)
 
         # Step 2: RonDesignLab Genie Floating Action Dock Interactions (0:07 - 0:22)
         print("  2/16. RonDesignLab Genie Action Dock (Translate, Files, Audio Chat)...")
@@ -203,20 +203,7 @@ def record_browser_session():
             clear_input_btn.click()
             page.wait_for_timeout(300)
 
-        # 2c. Dock Audio Chat -> Live Multimodal Voice Assistant
-        dock_audio = page.locator("#dock-audio-chat-btn")
-        if dock_audio.is_visible():
-            smooth_move(page, dock_audio)
-            page.wait_for_timeout(300)
-            dock_audio.click()
-            page.wait_for_timeout(2600)  # Show pulsing breathing orb & dynamic audio waveform
-
-            # Toggle off voice assistant
-            smooth_move(page, dock_audio)
-            dock_audio.click()
-            page.wait_for_timeout(800)
-
-        # Step 3: 4-Style Reflection Persona Selector (0:22 - 0:30)
+        # Step 3: 4-Style Reflection Persona Selector (0:14 - 0:21)
         print("  3/16. 4-Style Reflection Persona Selector...")
         pill = page.locator("#mode-selector-pill")
         smooth_move(page, pill)
@@ -230,7 +217,7 @@ def record_browser_session():
         card_actionable.click()
         page.wait_for_timeout(800)
 
-        # Step 4: Quick Mention Autocomplete (@tags) (0:30 - 0:36)
+        # Step 4: Quick Mention Autocomplete (@tags) (0:21 - 0:26)
         print("  4/16. Quick Mention Autocomplete (@tags)...")
         input_box = page.locator("#reflection-input")
         smooth_move(page, input_box)
@@ -240,23 +227,57 @@ def record_browser_session():
         page.locator("#clear-input-btn").click()
         page.wait_for_timeout(400)
 
-        # Step 5: Realistic Reflection Typing & Gemini 2.5 Flash Response (0:36 - 0:52)
-        print("  5/16. Realistic Reflection & Empathetic Gemini 2.5 Flash Response...")
-        journal_thought = "Deployed Sanctuary OS to Cloud Run with Vertex AI Gemini 2.5 Flash. Synthesize high-priority Kanban tickets and a focus block for launch."
-        input_box.type(journal_thought, delay=30)
-        page.wait_for_timeout(800)
+        # Step 5: Live Multimodal Voice Assistant & Real-Time Transcription (0:26 - 0:42)
+        print("  5/16. Live Multimodal Voice Assistant & Real-Time Chat Transcription...")
+        dock_audio = page.locator("#dock-audio-chat-btn")
+        if dock_audio.is_visible():
+            smooth_move(page, dock_audio)
+            page.wait_for_timeout(300)
+            dock_audio.click()
+            page.wait_for_timeout(1200)  # Show pulsing breathing orb & dynamic audio waveform
 
-        # Submit to Gemini via circular send button
-        send_btn = page.locator("#send-reflection-btn")
-        smooth_move(page, send_btn)
-        send_btn.click()
+            # Inject live spoken voice transcript directly into chat stream
+            journal_thought = "Deployed Sanctuary OS to Cloud Run with Vertex AI. Synthesize high-priority Kanban tickets and a focus block for launch."
+            page.evaluate("""(thought) => {
+                if (window.appendChatMessage) {
+                    window.appendChatMessage('user', '🎙️ ' + thought);
+                }
+                if (window.processLiveTurn) {
+                    window.processLiveTurn(thought);
+                }
+                const statusText = document.getElementById('soundwave-status-text') || document.querySelector('#soundwave-bar span');
+                if (statusText) statusText.textContent = 'Voice transcribed. Synthesizing reflection...';
+            }""", journal_thought)
+            page.wait_for_timeout(2200)
 
-        # Step 6: Multi-Turn Reflection & Emotional Arc Chart (0:52 - 0:59)
+            # Close soundwave bar
+            page.evaluate("""() => {
+                const soundwave = document.getElementById('soundwave-bar');
+                if (soundwave) soundwave.classList.add('hidden');
+                const voiceText = document.getElementById('voice-btn-text');
+                if (voiceText) voiceText.textContent = 'Start Live Voice';
+                if (window.state) window.state.isRecordingVoice = false;
+            }""")
+            page.wait_for_timeout(600)
+
+        # Step 6: Multi-Turn Reflection & Emotional Arc Chart (0:35 - 0:48)
         print("  6/16. Multi-Turn Reflection & Emotional Trajectory Arc...")
         page.wait_for_selector("#chat-stream .model-badge", timeout=25000)
         page.wait_for_timeout(1000)
-        page.mouse.wheel(0, 300)
-        page.wait_for_timeout(1400)
+
+        # Scroll so user voice speech bubble is prominently framed in upper view
+        page.evaluate("""() => {
+            const userBubble = document.querySelector('#chat-stream > div:first-child');
+            if (userBubble) userBubble.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }""")
+        page.wait_for_timeout(4500)  # Clearly showcase user's spoken voice bubble and Gemini's response!
+
+        # Smooth scroll down to showcase the proposed autonomous action card and Chart.js arc
+        page.evaluate("""() => {
+            const proposal = document.querySelector('#action-proposal-container');
+            if (proposal) proposal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }""")
+        page.wait_for_timeout(5000)  # Showcase action proposal card and emotional trajectory arc!
 
         # Step 7: Human-in-the-Loop Sovereign Gate Approval (0:59 - 1:06)
         print("  7/16. Human-in-the-Loop Sovereign Action Approval...")
@@ -338,7 +359,7 @@ def record_browser_session():
             smooth_move(page, nav_archive)
             nav_archive.click()
             page.wait_for_selector("#view-archive-content:not(.hidden)", timeout=3000)
-            page.wait_for_timeout(1200)
+            page.wait_for_timeout(2500)
 
             # Test search / filter input
             archive_filter = page.locator("#archive-filter-input")
@@ -346,9 +367,9 @@ def record_browser_session():
                 smooth_move(page, archive_filter)
                 archive_filter.click()
                 archive_filter.type("Breakthrough", delay=45)
-                page.wait_for_timeout(1000)
+                page.wait_for_timeout(1600)
                 archive_filter.fill("")
-                page.wait_for_timeout(600)
+                page.wait_for_timeout(800)
 
         # Step 12: Places & Spatial Memory Map Canvas (1:49 - 2:01)
         print("  12/16. Places & Global Memory Map Canvas...")
@@ -357,15 +378,15 @@ def record_browser_session():
             smooth_move(page, nav_places)
             nav_places.click()
             page.wait_for_selector("#view-places-content:not(.hidden)", timeout=3000)
-            page.wait_for_timeout(1200)
+            page.wait_for_timeout(2500)
 
             pin_bangkok = page.locator("#places-count-bangkok").first
             if pin_bangkok.is_visible():
                 smooth_move(page, pin_bangkok)
-                page.wait_for_timeout(800)
+                page.wait_for_timeout(2000)
 
             page.mouse.wheel(0, 180)
-            page.wait_for_timeout(1200)
+            page.wait_for_timeout(2500)
 
         # Step 13: Life Rewind View & Retrospective History (2:01 - 2:13)
         print("  13/16. Life Rewind & Retrospective Wisdom Drawer...")
@@ -373,19 +394,19 @@ def record_browser_session():
         smooth_move(page, nav_rewind)
         nav_rewind.click()
         page.wait_for_selector("#view-rewind-content:not(.hidden)", timeout=3000)
-        page.wait_for_timeout(1500)
+        page.wait_for_timeout(2800)
 
         nav_journal = page.locator("#nav-journal")
         smooth_move(page, nav_journal)
         nav_journal.click()
         page.wait_for_selector("#view-journal-content:not(.hidden)", timeout=3000)
-        page.wait_for_timeout(800)
+        page.wait_for_timeout(1000)
 
         chip_actionable = page.locator('#history-filter-chips .history-chip[data-filter="actionable"]')
         if chip_actionable.is_visible():
             smooth_move(page, chip_actionable)
             chip_actionable.click()
-            page.wait_for_timeout(700)
+            page.wait_for_timeout(800)
 
         chip_all = page.locator('#history-filter-chips .history-chip[data-filter="all"]')
         if chip_all.is_visible():
@@ -399,7 +420,7 @@ def record_browser_session():
             smooth_move(page, history_items.first)
             history_items.first.click()
             page.wait_for_selector("#journal-review-modal:not(.hidden)", timeout=3000)
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(1200)
             close_rev = page.locator("#close-review-modal-btn")
             smooth_move(page, close_rev)
             close_rev.click()
@@ -413,15 +434,15 @@ def record_browser_session():
             smooth_move(page, bio_btn)
             bio_btn.click()
             page.wait_for_selector("#memory-context-modal:not(.hidden)", timeout=3000)
-            page.wait_for_timeout(800)
+            page.wait_for_timeout(1000)
 
             # Tab switches
             page.locator("#tab-btn-goals").click()
-            page.wait_for_timeout(600)
+            page.wait_for_timeout(1200)
             page.locator("#tab-btn-insights").click()
-            page.wait_for_timeout(600)
+            page.wait_for_timeout(1200)
             page.locator("#tab-btn-profile").click()
-            page.wait_for_timeout(500)
+            page.wait_for_timeout(1200)
 
             name_input = page.locator("#ctx-preferred-name")
             if name_input.is_visible():
@@ -434,7 +455,7 @@ def record_browser_session():
             if save_mem.is_visible():
                 smooth_move(page, save_mem)
                 save_mem.click()
-                page.wait_for_timeout(800)
+                page.wait_for_timeout(1000)
 
             close_mem = page.locator("#close-memory-context-btn")
             if close_mem.is_visible():
@@ -449,13 +470,13 @@ def record_browser_session():
             smooth_move(page, report_btn)
             report_btn.click()
             page.wait_for_selector("#executive-report-modal:not(.hidden)", timeout=3000)
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(2000)
 
             copy_rep = page.locator("#copy-markdown-report-btn")
             if copy_rep.is_visible():
                 smooth_move(page, copy_rep)
                 copy_rep.click()
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(600)
 
             close_rep = page.locator("#close-executive-report-btn")
             smooth_move(page, close_rep)
@@ -467,7 +488,7 @@ def record_browser_session():
             smooth_move(page, settings_btn)
             settings_btn.click()
             page.wait_for_selector("#settings-modal:not(.hidden)", timeout=3000)
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(2000)
 
             close_set = page.locator("#close-settings-btn")
             smooth_move(page, close_set)
@@ -480,21 +501,21 @@ def record_browser_session():
         smooth_move(page, nav_shutdown)
         nav_shutdown.click()
         page.wait_for_selector("#shutdown-modal:not(.hidden)", timeout=3000)
-        page.wait_for_timeout(800)
+        page.wait_for_timeout(1000)
 
         gratitude_box = page.locator("#shutdown-gratitude-input")
         if gratitude_box.is_visible():
             smooth_move(page, gratitude_box)
             gratitude_box.click()
             gratitude_box.type("Successfully verified Sanctuary OS with zero-trust security and Cloud Run deployment.", delay=25)
-            page.wait_for_timeout(800)
+            page.wait_for_timeout(1000)
 
         zen_btn = page.locator("#confirm-shutdown-btn")
         if zen_btn.is_visible():
             smooth_move(page, zen_btn)
             zen_btn.click()
             page.wait_for_selector("#shutdown-zen-confirmed:not(.hidden)", timeout=4000)
-            page.wait_for_timeout(2800)
+            page.wait_for_timeout(8500)  # Meditative pause on Zen Confirmed screen while closing Tibetan chime plays
 
         video_path = page.video.path()
         print(f"  ✓ Raw video captured: {video_path}")
@@ -505,33 +526,64 @@ def record_browser_session():
 
 def build_audio_track(total_duration):
     """
-    Synthesizes professional voice narration clips and blends with
+    Synthesizes professional voice narration clips using Google Gemini-TTS (Sadaltager)
+    with studio production EQ mastering from fyf-video-pipeline, and blends with
     Tibetan singing bowl harmonics into a single master audio track.
     """
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
-    print("🎙️ [Audio] Synthesizing Professional Voice Narration & Tibetan Harmonics...")
+    print("🎙️ [Audio] Synthesizing Google Gemini-TTS Studio Voice & Tibetan Harmonics...")
+
+    import wave
+    sys.path.insert(0, "/Users/mac/Projects/code/fyf-video-pipeline")
+    from voice_service.gemini_tts import generate_gemini_tts
+    from voice_service.production_voice import build_production_filter
 
     narration_segments = [
-        (0.0, "audio_01.aiff", "Welcome to Sanctuary OS, an enterprise cognitive sanctuary deployed on Google Cloud Run."),
-        (7.0, "audio_02.aiff", "The RonDesignLab Genie Action Dock enables instant bilingual switching and Google Drive context injection."),
-        (14.5, "audio_03.aiff", "Activate the multimodal voice assistant with dynamic breathing orb and live audio waveform."),
-        (21.0, "audio_04.aiff", "Select from four reflection personas, with quick mention autocomplete for sovereign focus."),
-        (27.5, "audio_05.aiff", "Reflect freely with English or bilingual dialogue. Gemini 2.5 Flash responds with deep empathetic clarity and dynamic emotional trajectory."),
-        (38.0, "audio_06.aiff", "With human-in-the-loop sovereignty, Gemini proposes actions requiring explicit approval."),
-        (45.0, "audio_07.aiff", "Seamlessly manage priorities with the executive Kanban board and mindful calendar."),
-        (52.0, "audio_08.aiff", "Explore the Museum Memory Archive with cataloged relics, and the Places Spatial Canvas tracking memories across Southeast Asia."),
-        (61.0, "audio_09.aiff", "Review Life Rewind cognitive metrics, retrospective wisdom, and your personal memory context."),
-        (68.5, "audio_10.aiff", "Export executive reports, and conclude your day with the evening shutdown ritual into zen state.")
+        (0.0, "audio_01.wav", "Welcome to Sanctuary OS, an enterprise cognitive sanctuary deployed on Google Cloud Run."),
+        (9.0, "audio_02.wav", "The RonDesignLab Genie Action Dock enables instant bilingual switching and Google Drive context injection."),
+        (18.5, "audio_03.wav", "Select from four reflection personas, with quick mention autocomplete for sovereign focus."),
+        (27.5, "audio_04.wav", "Activate the multimodal live voice assistant to speak freely, with real-time speech transcription streaming directly into the dialogue."),
+        (34.5, "audio_05.wav", "Gemini responds with deep empathetic clarity, real-time emotional trajectory tracking, and autonomous action proposals."),
+        (48.0, "audio_06.wav", "With human-in-the-loop sovereignty, Gemini proposes actions requiring explicit approval."),
+        (56.5, "audio_07.wav", "Seamlessly manage priorities with the executive Kanban board and mindful calendar."),
+        (64.5, "audio_08.wav", "Explore the Museum Memory Archive with cataloged relics, and the Places Spatial Canvas tracking memories across Southeast Asia."),
+        (76.5, "audio_09.wav", "Review Life Rewind cognitive metrics, retrospective wisdom, and your personal memory context."),
+        (87.0, "audio_10.wav", "Export executive reports, and conclude your day with the evening shutdown ritual into zen state.")
     ]
 
-    # 1. Generate individual narration AIFF clips
-    voice = "Daniel"
-    for timestamp, filename, text in narration_segments:
-        clip_path = AUDIO_DIR / filename
-        cmd = ["say", "-v", voice, "-r", "165", text, "-o", str(clip_path)]
-        subprocess.run(cmd, check=True)
+    voice = "Sadaltager"
+    filter_chain = build_production_filter(speed=1.0)
+    scheduled_clips = []
+    current_time = 0.0
 
-    # 2. Generate Tibetan Singing Bowl chime (opening, midpoint, and closing)
+    for idx, (target_ts, filename, text) in enumerate(narration_segments):
+        proc_clip = AUDIO_DIR / filename
+        cached_clip = Path(f"/tmp/test_sanctuary_audio/proc_{idx+1:02d}.wav")
+
+        if cached_clip.exists():
+            subprocess.run(["cp", str(cached_clip), str(proc_clip)], check=True)
+            print(f"  ✓ Using studio-mastered clip {filename} ({text[:35]}...)")
+        else:
+            raw_clip = AUDIO_DIR / f"raw_{filename}"
+            print(f"  🎙️ Generating Gemini-TTS [{voice}] for: {text[:40]}...")
+            generate_gemini_tts(text=text, voice=voice, style="natural", output_path=str(raw_clip))
+            cmd_eq = [
+                "ffmpeg", "-y",
+                "-i", str(raw_clip),
+                "-af", filter_chain,
+                "-c:a", "pcm_s16le",
+                str(proc_clip)
+            ]
+            subprocess.run(cmd_eq, check=True, stderr=subprocess.DEVNULL)
+
+        with wave.open(str(proc_clip), "rb") as w:
+            dur = w.getnframes() / w.getframerate()
+
+        start_ts = max(target_ts, current_time)
+        scheduled_clips.append((start_ts, proc_clip, dur))
+        current_time = start_ts + dur + 0.8  # 800ms natural breathing space
+
+    # Tibetan Singing Bowl chime (opening, midpoint, and closing)
     chime_open = AUDIO_DIR / "chime_open.wav"
     subprocess.run([
         "ffmpeg", "-y", "-f", "lavfi",
@@ -553,35 +605,33 @@ def build_audio_track(total_duration):
         str(chime_close)
     ], check=True, stderr=subprocess.DEVNULL)
 
-    # 3. Mix everything with precise timing using ffmpeg complex filter
+    # Mix everything with precise timing using ffmpeg complex filter
     master_audio = AUDIO_DIR / "master_soundtrack.m4a"
-    
     inputs = []
     filter_complex = []
-    
+
     # Add chime open at 0s
     inputs.extend(["-i", str(chime_open)])
     filter_complex.append("[0:a]adelay=0|0,volume=0.6[a0];")
-    
-    # Add narration clips with delays
+
+    # Add narration clips with exact non-overlapping delays
     stream_idx = 1
-    for timestamp, filename, _ in narration_segments:
-        clip_path = AUDIO_DIR / filename
+    for start_ts, clip_path, _ in scheduled_clips:
         inputs.extend(["-i", str(clip_path)])
-        delay_ms = int(timestamp * 1000)
+        delay_ms = int(start_ts * 1000)
         filter_complex.append(f"[{stream_idx}:a]adelay={delay_ms}|{delay_ms},volume=1.0[a{stream_idx}];")
         stream_idx += 1
 
-    # Add midpoint chime at 87s (archive transition)
+    # Add midpoint chime at 63.5s (archive & places transition)
     inputs.extend(["-i", str(chime_mid)])
-    filter_complex.append(f"[{stream_idx}:a]adelay=51500|51500,volume=0.35[a{stream_idx}];")
+    filter_complex.append(f"[{stream_idx}:a]adelay=63500|63500,volume=0.35[a{stream_idx}];")
     stream_idx += 1
 
-    # Add closing chime near end
+    # Add closing chime near end (during zen screen)
     inputs.extend(["-i", str(chime_close)])
-    close_delay_ms = max(0, int((total_duration - 5.0) * 1000))
+    close_delay_ms = max(0, int((total_duration - 5.5) * 1000))
     filter_complex.append(f"[{stream_idx}:a]adelay={close_delay_ms}|{close_delay_ms},volume=0.75[a{stream_idx}];")
-    
+
     total_streams = stream_idx + 1
     mix_sources = "".join(f"[a{i}]" for i in range(total_streams))
     filter_complex.append(f"{mix_sources}amix=inputs={total_streams}:normalize=0[aout]")
