@@ -539,7 +539,7 @@ def build_audio_track(total_duration):
     from voice_service.production_voice import build_production_filter
 
     narration_segments = [
-        (0.0, "audio_01.wav", "Welcome to Sanctuary OS, an enterprise cognitive sanctuary deployed on Google Cloud Run."),
+        (0.0, "audio_01.wav", "Welcome to Sanctuary OS, a private cognitive sanctuary deployed on Google Cloud Run."),
         (9.0, "audio_02.wav", "The RonDesignLab Genie Action Dock enables instant bilingual switching and Google Drive context injection."),
         (18.5, "audio_03.wav", "Select from four reflection personas, with quick mention autocomplete for sovereign focus."),
         (27.5, "audio_04.wav", "Activate the multimodal live voice assistant to speak freely, with real-time speech transcription streaming directly into the dialogue."),

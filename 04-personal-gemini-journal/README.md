@@ -20,7 +20,7 @@
 
 ![Sanctuary OS Walkthrough](./sanctuary_os_demo_walkthrough.gif)
 
-- 📺 **YouTube Video Walkthrough:** [https://youtu.be/boDhNKUwZyE](https://youtu.be/boDhNKUwZyE)
+- 📺 **YouTube Video Walkthrough:** [https://youtu.be/F0tSjR6LyKk](https://youtu.be/F0tSjR6LyKk)
 - 📹 **Full Demo Video File:** [`sanctuary_os_demo_walkthrough.mp4`](./sanctuary_os_demo_walkthrough.mp4) (98.4s, 1080p, full 16-feature live audio walkthrough with Google Gemini-TTS voice, studio EQ mastering & Tibetan singing bowl harmonics)
 - 🌐 **Live Cloud Run Deployment:** [https://personal-gemini-journal-ypp4pspywq-uc.a.run.app](https://personal-gemini-journal-ypp4pspywq-uc.a.run.app)
 - 👤 **Instant Evaluator Access:** Click **"Continue as Guest Evaluator"** on the landing page for immediate instant-access testing with zero login credentials required.
@@ -34,7 +34,7 @@ Modern leaders, founders, and engineers operate under relentless cognitive overl
 2. **The "AI Slop" Trap:** Consumer wellness apps rely on superficial "AI chat" gimmicks—fake meditation bubbles, canned affirmations, and synthetic sentiment curves that exist before a user even writes.
 3. **The Production Security Deficit:** Typical AI hackathon prototypes collapse in production—exposing hardcoded API keys, leaking multi-tenant data in unpartitioned databases, accepting unvalidated mock tokens, or giving LLMs unconstrained autonomous write privileges.
 
-**Sanctuary OS** redefines executive journaling as an **Enterprise-Grade Cognitive Sanctuary**:
+**Sanctuary OS** redefines executive journaling as a **Privacy-First Cognitive Sanctuary**:
 - **Zero-Trust Multi-Tenancy:** 100% data isolation on Cloud Firestore (`/users/{uid}/*`) backed by Google AI Studio's pre-configured Security Constitution.
 - **Human-in-the-Loop Sovereignty:** Gemini proposes structured action items (Kanban cards, calendar blocks), but NEVER mutates persistent databases without explicit human approval.
 - **Serene Human Craftsmanship:** Replaces toxic gamification with authentic computed metrics (zero fake streaks, real word counts, real turn-by-turn emotional trajectories).
@@ -50,7 +50,7 @@ Sanctuary OS was architected specifically to maximize scoring across the four co
 | **1. Innovation** | Novel AI capabilities, creative GenAI patterns, multimodal interaction | • **4-Style Persona Engine** (`balanced`, `actionable`, `philosophy`, `brainstorm`)<br>• **7 Google ADK Function Tools** (`adk_create_ticket`, `adk_move_ticket`, `adk_schedule_calendar`, `adk_save_memory`, etc.)<br>• **Dynamic Emotional Arc Visualizer** with Authentic Zero-State<br>• **Multimodal Neural Voice Synthesis** (`/api/voice/synthesize`)<br>• **Burmese Multilingual Reflection** with cultural nuance & dialect grounding<br>• **Continuous Self-Evolution** via 3-Tier Living Memory | [gemini_service.py](gemini_service.py#L93-L148)<br>[main.py](main.py#L650-L685)<br>[simulate_real_user.py](tests/simulate_real_user.py)<br>22 Screenshots in `real_user_verification/` |
 | **2. Technical Architecture** | Scalable GCP serverless design, clean code, ADC integration | • **Google Cloud Run** containerized FastAPI backend (scale-to-zero, 512Mi/1CPU)<br>• **Cloud Firestore** partitioned at `/users/{uid}/*` (zero cross-user leakage)<br>• **Keyless Secret Management** via Vertex AI ADC & Secret Manager<br>• **Non-root Container** execution (`USER appuser`, UID 1000)<br>• **Offline & 401 Draft Resilience** in vanilla JS SPA | [Dockerfile](Dockerfile#L20-L21)<br>[database.py](database.py#L45-L210)<br>[auth.py](auth.py#L20-L65)<br>[static/app.js](static/app.js#L140-L180)<br>[deploy.sh](deploy.sh#L34-L45) |
 | **3. Real-World Impact** | Solves practical problems, authentic user value, high UX craft | • **4-Step Focused Sanctuary Loop** (`Reflect ➔ Approve ➔ Act ➔ Rewind`)<br>• **Human-in-the-Loop Action Confirmation Gate** (0 unconfirmed DB writes)<br>• **Grounded Life Rewind** (100% genuine computed stats; zero fake metrics)<br>• **Data Portability** (1-click Markdown export `sanctuary-executive-report.md`)<br>• **Mobile-First Accessibility** (390×844 responsive shell, ≥44px touch targets) | [ARCHITECTURE.md](ARCHITECTURE.md#L53-L77)<br>[DESIGN_AND_DECISION_LOG.md](DESIGN_AND_DECISION_LOG.md#L65-L92)<br>[static/style.css](static/style.css#L180-L240)<br>12 E2E Checkpoint Screenshots |
-| **4. Enterprise Security** | Pre-scaffolding security prompt, fail-closed auth, prompt defense | • **Google AI Studio Security Constitution** (Phase 1 deliverable)<br>• **Fail-Closed Auth Matrix** (`ENVIRONMENT=production` forbids all test tokens with HTTP 401)<br>• **Delimiter Prompt Injection Defense** (`<user_journal_reflection>` boundaries)<br>• **Client-Side Secret Redactor** (`redactSecrets()`) scrubbing keys before send | [AI_STUDIO_SECURITY_CONSTITUTION.md](AI_STUDIO_SECURITY_CONSTITUTION.md)<br>[SECURITY_REVIEW.md](SECURITY_REVIEW.md)<br>[auth.py](auth.py#L40-L60)<br>33/33 Pytest Security Tests Pass |
+| **4. Production Security** | Pre-scaffolding security prompt, fail-closed auth, prompt defense | • **Google AI Studio Security Constitution** (Phase 1 deliverable)<br>• **Fail-Closed Auth Matrix** (`ENVIRONMENT=production` forbids all test tokens with HTTP 401)<br>• **Delimiter Prompt Injection Defense** (`<user_journal_reflection>` boundaries)<br>• **Client-Side Secret Redactor** (`redactSecrets()`) scrubbing keys before send | [AI_STUDIO_SECURITY_CONSTITUTION.md](AI_STUDIO_SECURITY_CONSTITUTION.md)<br>[SECURITY_REVIEW.md](SECURITY_REVIEW.md)<br>[auth.py](auth.py#L40-L60)<br>33/33 Pytest Security Tests Pass |
 
 ---
 
@@ -305,7 +305,7 @@ Sovereign user profile and long-term agent memory management accessible from hea
 - **Tenant-Isolated Persistence:** Backed by Firestore path `/users/{uid}/profile`.
 
 ### 13. ☁️ Google Drive Document Context Integration (`#gdrive-modal`)
-Client-side scoped document integration for enterprise workflows:
+Client-side scoped document integration for personal workflows:
 - Scoped access to read and export reflections to user's Google Workspace (`sanctuary_reflections` folder).
 - 1-click **Insert Context** from recent scoped documents (`Brain_Dump_Sprint_2026.md`, `APAC_GenAI_Project_Architecture.pdf`).
 - 1-click **Sync Session to Drive** for cloud backup.
@@ -450,7 +450,7 @@ playwright install chromium
 
 | Variable | Development / Test Value | Production Cloud Run Value | Purpose |
 | :--- | :--- | :--- | :--- |
-| `USE_VERTEX_AI` | `true` (or `false` for AI Studio) | `true` (Enterprise IAM) | Force Vertex AI (`true`) or Google AI Studio (`false`). If unset, auto-detects. |
+| `USE_VERTEX_AI` | `true` (or `false` for AI Studio) | `true` (Vertex AI IAM) | Force Vertex AI (`true`) or Google AI Studio (`false`). If unset, auto-detects. |
 | `GOOGLE_CLOUD_LOCATION` | `us-central1` | `us-central1` | Vertex AI regional endpoint location |
 | `GEMINI_API_KEY` | `AIzaSy...` (Optional) | Secret Manager or unset | Google AI Studio API key (optional when Vertex AI IAM is used) |
 | `ENVIRONMENT` | `development` or `test` | `production` | Enables fail-closed auth; disables all test tokens in production |
