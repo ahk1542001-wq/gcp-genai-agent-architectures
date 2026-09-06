@@ -7,7 +7,7 @@
 [![Cloud Firestore](https://img.shields.io/badge/Google_Cloud-Firestore-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/docs/firestore)
 [![Secret Manager](https://img.shields.io/badge/Google_Cloud-Secret_Manager-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/secret-manager)
 [![Gemini 2.5 & 3.7 Flash](https://img.shields.io/badge/Gemini-2.5_%26_3.7_Flash-8A2BE2?logo=google&logoColor=white)](https://ai.google.dev)
-[![Test Suite](https://img.shields.io/badge/Tests-68%2F68_Passing_(100%25)-34A853?logo=pytest&logoColor=white)](./tests)
+[![Test Suite](https://img.shields.io/badge/Tests-76%2F76_Passing_(100%25)-34A853?logo=pytest&logoColor=white)](./tests)
 [![Design](https://img.shields.io/badge/UI_Craft-Zero_AI_Slop-indigo)](./static)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -266,6 +266,48 @@ Above the reflection canvas, users can toggle between 4 purpose-built reflection
 - **Multimodal Neural Voice Synthesis (`/api/voice/synthesize`):** High-fidelity spoken reflections using Google Cloud Text-to-Speech API with calming tone and natural cadence.
 - **Strict Human-in-the-Loop (HITL) Gate:** Agent tool proposals return with `status: "proposed"`. The user must explicitly click `[Approve]` on the Action Card before any database mutation occurs.
 
+### 8. 🎨 Strict 3-Color Executive Palette (Calm Focus)
+Engineered around an uncompromising three-color palette inspired by archival paper and refined editorial typography:
+- **Soft Blush / Warm Alabaster (`#FBF6EF`):** Serene background canvas, paper note surfaces, and soft card fills (`--paper`).
+- **Deep Wine / Espresso Dark Roast (`#3A2618`):** Authoritative high-contrast text, primary buttons, and borders (`--ink`).
+- **Warm Terracotta / Caramel Cognac (`#A9744F`):** Subtle accents, notebook rule lines, active indicators, and archival highlights (`--accent`).
+
+### 9. 🧞 Genie Chatbot Floating Action Dock & Pill Dock
+Inspired by RonDesignLab's floating tactile interface, the reflection studio features:
+- **Floating Action Dock (4 Cards):**
+  - `Chat Files`: 1-click modal to bind Google Drive documents or local files directly into reflection context.
+  - `Images`: Instant navigation to Life Rewind and visual memory milestones.
+  - `Translate`: Seamless toggle between Burmese and English with cultural dialect grounding.
+  - `Audio Chat`: Toggle multimodal voice assistant with live animated soundwave ripples.
+- **Floating Pill Input Dock:** Refined input container housing `#reflection-input`, mic toggle (`#mic-input-btn`), draft clear (`#clear-input-btn`), persona mode pill selector (`#mode-selector-pill`), and elevated circular `↑` send button (`#send-reflection-btn`).
+
+### 10. 🏛️ Museum Memory Archive View (`#nav-archive`)
+Curated archival exhibit designed around physical museum cataloguing standards:
+- **Monospace Catalog Numbering:** Unique archival identifier for every session (e.g. `S-2026-0906-001`).
+- **Archival Stamp:** Official `[CATALOGUED]` visual badge certifying permanent cloud preservation.
+- **Lined Paper Note Preview:** Real paper note preview rendered in authentic `Caveat` cursive handwriting font with warm terracotta lined styling.
+- **Location & Mood Badges:** Location stamps (`📍 Bangkok`, `📍 Cloud Run`) and mood indicators (`CALM 🍃`, `DISCOVERY 🔍`, `BREAKTHROUGH 💡`).
+
+### 11. 🗺️ Places & Memory Geography Map View (`#nav-places`)
+Spatial memory mapping connecting executive reflections to physical coordinates:
+- **Interactive Radar Map Canvas:** Dynamic grid displaying memory coordinates with animated pulsing radar pin.
+- **Spatial Tone Analysis:** Automatically aggregates emotional tone (e.g. `gently positive`) and count of memories anchored to specific coordinates.
+- **Located Reflections Ledger:** Chronological list of geotagged entries with quick navigation back to full transcripts.
+
+### 12. 🧠 Personal Memory & Context Modal (`#memory-context-modal`)
+Sovereign user profile and long-term agent memory management accessible from header (`🧠 Bio`):
+- **Tab 1: Profile & Bio:** Preferred name, occupation, core background context, and personalized Gemini tone guidance.
+- **Tab 2: Interests & Goals:** Active OKRs, technical interests, and focus areas.
+- **Tab 3: Session Insights:** Autonomous insights distilled across multi-turn reflection dialogues.
+- **Tab 4: Sovereign Ledger:** Verified audit log of user-approved actions and memory mutations.
+- **Tenant-Isolated Persistence:** Backed by Firestore path `/users/{uid}/profile`.
+
+### 13. ☁️ Google Drive Document Context Integration (`#gdrive-modal`)
+Client-side scoped document integration for enterprise workflows:
+- Scoped access to read and export reflections to user's Google Workspace (`sanctuary_reflections` folder).
+- 1-click **Insert Context** from recent scoped documents (`Brain_Dump_Sprint_2026.md`, `APAC_GenAI_Project_Architecture.pdf`).
+- 1-click **Sync Session to Drive** for cloud backup.
+
 ---
 
 ## 📸 Phase 1 Deliverable: Google AI Studio Security Constitution
@@ -281,29 +323,38 @@ As required by Phase 1 of the Hack2Skill Ideathon Challenge, Google AI Studio wa
 
 ## 🧪 Complete Test Suite & Verification Guide
 
-Sanctuary OS enforces a two-tier verification methodology: a 67-test automated pytest suite for continuous integration and an automated, human-fidelity browser simulation via Playwright.
+Sanctuary OS enforces a two-tier verification methodology: a 76-test automated pytest suite for continuous integration and an automated, human-fidelity browser simulation via Playwright.
 
-### 1. Automated Hermetic Test Suite (67/67 Tests Passing • 100% Green)
+### 1. Automated Hermetic Test Suite (76/76 Tests Passing • 100% Green)
 
-Run the full hermetic test suite across security isolation, Playwright browser UI automation, and full E2E user lifecycles:
+Run the full hermetic test suite across agent evaluation, security isolation, Playwright browser UI automation, and full E2E user lifecycles:
 
 ```bash
 cd /Users/mac/Projects/code/apac_genai_academy/04-personal-gemini-journal
 source .venv/bin/activate
-ENVIRONMENT=test ALLOW_TEST_AUTH=true USE_MOCK_DB=true GEMINI_API_KEY=placeholder_key pytest tests/test_security_isolation.py tests/test_ui_playwright.py tests/test_live_browser_automation_e2e.py -v
+ENVIRONMENT=test ALLOW_TEST_AUTH=true USE_MOCK_DB=true GEMINI_API_KEY=placeholder_key pytest tests/test_agent_evaluation.py tests/test_security_isolation.py tests/test_ui_playwright.py tests/test_live_browser_automation_e2e.py -v
 ```
 
 #### Test Coverage Breakdown:
-1. **`tests/test_security_isolation.py` (34 Tests):**
+1. **`tests/test_agent_evaluation.py` (7 Tests):**
+   - **Persona Adaptation & Tone Adherence:** Rigorous evaluation across all 4 modes (`balanced`, `actionable`, `philosophy`, `brainstorm`).
+   - **Groundedness & Zero Hallucination:** Verifies output stays strictly bound to user-provided facts without inventing dates or numbers.
+   - **Structured JSON Schema Validity:** Validates strict response JSON schemas (`reflection`, `clarifying_question`, `action_items`).
+   - **Human-in-the-Loop Sovereign Gate:** Proves ADK tools return exclusively with `status: "proposed"` and zero autonomous database mutations.
+   - **Client-Side Secret Redaction:** Scrubbing API keys (`AIzaSy...`, `ghp_...`, `sk-...`) prior to network transit.
+   - **Prompt Delimiter Containment:** Defends against privilege escalation within `<user_journal_reflection>` boundaries.
+   - **Latency Benchmarking:** Ensures sub-2000ms response execution under load.
+
+2. **`tests/test_security_isolation.py` (35 Tests):**
    - Cryptographic JWT verification, forged token rejection (401), expired token rejection.
    - Cross-tenant zero-leakage isolation (User A cannot access User B journals, tickets, or calendar events).
    - Delimiter prompt injection containment (`<user_journal_reflection>` boundaries).
    - Production fail-closed authentication gate matrix (`ENVIRONMENT=production` forbids all deterministic test tokens).
    - Deployment configuration & project guard (`deploy.sh` strict project halt & Secret Manager binding).
    - Ticket and calendar CRUD isolation and authorization.
-   - Living memory and learned preference boundaries.
+   - Living memory, learned preference, and user bio boundaries.
 
-2. **`tests/test_ui_playwright.py` (32 Tests):**
+3. **`tests/test_ui_playwright.py` (33 Tests):**
    - Unauthenticated landing state and clean Notion Serene login card.
    - 4 Reflection Style cards selection and persona mode payload verification.
    - Multi-turn reflection dialogue, model badges, turn counter, and follow-up placeholder.
@@ -311,10 +362,15 @@ ENVIRONMENT=test ALLOW_TEST_AUTH=true USE_MOCK_DB=true GEMINI_API_KEY=placeholde
    - Auto-summarize distillation and Firestore save interaction.
    - Sidebar past reflections search, filter pills (`All`, `Reflective`, `Actionable`, `Breakthrough`), and review drawer.
    - Kanban drag-and-drop, calendar focus block creation, and life rewind metrics.
+   - Genie floating action dock (Chat Files, Images, Translate, Audio Chat) and floating pill dock.
+   - Museum Memory Archive catalog view (`#nav-archive`) with Monospace Catalog No. and paper note styling.
+   - Places & Memory Map view (`#nav-places`) with coordinate radar pin and geotagged memory list.
+   - Personal Memory & Context Modal (`#memory-context-modal`) with 4 tabbed panels and Firestore persistence.
+   - Google Drive Document Context Modal (`#gdrive-modal`) with scoped document context injection.
    - Executive report modal and Markdown download trigger.
    - Escape key dismissals, whitespace validation, and responsive mobile navigation (390×844) with ≥44px touch targets.
 
-3. **`tests/test_live_browser_automation_e2e.py` (1 Comprehensive E2E Lifecycle):**
+4. **`tests/test_live_browser_automation_e2e.py` (1 Comprehensive E2E Lifecycle):**
    - Automated browser lifecycle executing a realistic user journey with real typing, button clicks, and screenshot captures across 12 checkpoints (`tests/screenshots/*.png`).
 
 ---

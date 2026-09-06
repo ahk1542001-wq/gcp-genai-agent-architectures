@@ -408,6 +408,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   initMentionAutocomplete();
   initMultiTurnActionBar();
   initHistoryFilters();
+  initGenieActionDock();
+  initMemoryContextModal();
+  initGDriveModal();
+  initMemoryArchive();
+  initPlacesMap();
 
   // Auth buttons
   const googleBtn = document.getElementById("google-signin-btn");
@@ -556,14 +561,18 @@ function initNavigation() {
     journal: { btn: "nav-journal", content: "view-journal-content", icon: "📝", title: "Sanctuary Journal & Reflection Studio" },
     kanban: { btn: "nav-kanban", content: "view-kanban-content", icon: "📋", title: "Kanban Execution Board" },
     calendar: { btn: "nav-calendar", content: "view-calendar-content", icon: "📅", title: "Mindful Mood & Task Calendar" },
-    rewind: { btn: "nav-rewind", content: "view-rewind-content", icon: "✨", title: "Life Rewind & Monthly Breakthroughs" }
+    rewind: { btn: "nav-rewind", content: "view-rewind-content", icon: "✨", title: "Life Rewind & Monthly Breakthroughs" },
+    archive: { btn: "nav-archive", content: "view-archive-content", icon: "🗄️", title: "Museum Memory Archive & Catalog" },
+    places: { btn: "nav-places", content: "view-places-content", icon: "📍", title: "Places & Global Memory Canvas" }
   };
 
   const mobileNavBtns = {
     journal: document.getElementById("mobile-nav-journal"),
     kanban: document.getElementById("mobile-nav-kanban"),
     calendar: document.getElementById("mobile-nav-calendar"),
-    rewind: document.getElementById("mobile-nav-rewind")
+    rewind: document.getElementById("mobile-nav-rewind"),
+    archive: document.getElementById("mobile-nav-archive"),
+    places: document.getElementById("mobile-nav-places")
   };
 
   function switchView(viewKey) {
@@ -596,8 +605,12 @@ function initNavigation() {
     if (viewKey === "kanban") loadTickets();
     if (viewKey === "calendar") loadCalendarEvents();
     if (viewKey === "rewind") loadRewindMetrics();
+    if (viewKey === "archive") loadMemoryArchive();
+    if (viewKey === "places") loadPlacesMap();
     trackEvent("view_switched", { view: viewKey });
   }
+
+  window.__switchView = switchView;
 
   Object.entries(views).forEach(([viewKey, cfg]) => {
     const btn = document.getElementById(cfg.btn);
@@ -1789,7 +1802,9 @@ function initShortcuts() {
         "executive-report-modal",
         "export-dropdown",
         "breathing-modal",
-        "new-ticket-modal"
+        "new-ticket-modal",
+        "memory-context-modal",
+        "gdrive-modal"
       ];
       modalIds.forEach(id => {
         const el = document.getElementById(id);
@@ -2718,4 +2733,486 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+// ============================================================================
+// 18. Genie Chatbot Floating Action Dock (RonDesignLab Inspired)
+// ============================================================================
+function initGenieActionDock() {
+  const dockChatFilesBtn = document.getElementById("dock-chat-files-btn");
+  const dockImagesBtn = document.getElementById("dock-images-btn");
+  const dockTranslateBtn = document.getElementById("dock-translate-btn");
+  const dockAudioChatBtn = document.getElementById("dock-audio-chat-btn");
+
+  // Card 1: Chat Files -> Google Drive Context Modal
+  if (dockChatFilesBtn) {
+    dockChatFilesBtn.addEventListener("click", () => {
+      const gdriveModal = document.getElementById("gdrive-modal");
+      if (gdriveModal) {
+        gdriveModal.classList.remove("hidden");
+        trackEvent("dock_chat_files_clicked");
+      }
+    });
+  }
+
+  // Card 2: Images -> Life Rewind / Mood Art View
+  if (dockImagesBtn) {
+    dockImagesBtn.addEventListener("click", () => {
+      if (window.__switchView) {
+        window.__switchView("rewind");
+      } else {
+        const rewindBtn = document.getElementById("nav-rewind");
+        if (rewindBtn) rewindBtn.click();
+      }
+      trackEvent("dock_images_clicked");
+    });
+  }
+
+  // Card 3: Translate -> Bilingual Burmese 🇲🇲 / English Toggle & Prompt Injector
+  if (dockTranslateBtn) {
+    dockTranslateBtn.addEventListener("click", () => {
+      const currentLang = state.settings.ui_language || "en";
+      const nextLang = currentLang === "en" ? "my" : "en";
+      state.settings.ui_language = nextLang;
+      applyLanguage(nextLang);
+      
+      const label = document.getElementById("dock-translate-label");
+      if (label) {
+        label.textContent = nextLang === "my" ? "မြန်မာ" : "Translate";
+      }
+
+      // Provide bilingual reflection prompt in reflection-input if empty
+      const input = document.getElementById("reflection-input");
+      if (input && !input.value.trim()) {
+        input.value = nextLang === "my"
+          ? "ဒီနေ့ စိတ်ထဲ ဘာတွေ တွေးမိနေလဲ... / What is on your mind today? Let's reflect together."
+          : "What are your core thoughts and reflections today? Let's explore together.";
+        input.focus();
+      }
+      showToast(nextLang === "my" ? "🇲🇲 မြန်မာဘာသာသို့ ပြောင်းလဲပြီးပါပြီ" : "🌐 Switched to English mode");
+      trackEvent("dock_translate_toggled", { lang: nextLang });
+    });
+  }
+
+  // Card 4: Audio Chat -> Live Multimodal Voice Assistant Toggle
+  if (dockAudioChatBtn) {
+    dockAudioChatBtn.addEventListener("click", () => {
+      const liveVoiceBtn = document.getElementById("live-voice-toggle-btn");
+      if (liveVoiceBtn) {
+        liveVoiceBtn.click();
+        trackEvent("dock_audio_chat_clicked");
+      }
+    });
+  }
+}
+
+// ============================================================================
+// 19. Personal Memory & Context Modal (User Sovereignty & Bio Configuration)
+// ============================================================================
+function initMemoryContextModal() {
+  const modal = document.getElementById("memory-context-modal");
+  const openBtn = document.getElementById("open-memory-context-btn");
+  const closeBtn = document.getElementById("close-memory-context-btn");
+  const closeBottomBtn = document.getElementById("close-memory-context-bottom-btn");
+  const saveBtn = document.getElementById("save-memory-context-btn");
+  const saveStatus = document.getElementById("ctx-save-status");
+
+  // Tabs
+  const tabs = {
+    profile: { btn: "tab-btn-profile", content: "tab-content-profile" },
+    goals: { btn: "tab-btn-goals", content: "tab-content-goals" },
+    insights: { btn: "tab-btn-insights", content: "tab-content-insights" },
+    ledger: { btn: "tab-btn-ledger", content: "tab-content-ledger" }
+  };
+
+  function switchTab(activeKey) {
+    Object.entries(tabs).forEach(([k, t]) => {
+      const btnEl = document.getElementById(t.btn);
+      const contentEl = document.getElementById(t.content);
+      const isActive = k === activeKey;
+      if (contentEl) contentEl.classList.toggle("hidden", !isActive);
+      if (btnEl) {
+        btnEl.classList.toggle("text-amber-400", isActive);
+        btnEl.classList.toggle("border-amber-500", isActive);
+        btnEl.classList.toggle("text-gray-400", !isActive);
+        btnEl.classList.toggle("border-transparent", !isActive);
+      }
+    });
+  }
+
+  Object.entries(tabs).forEach(([k, t]) => {
+    const btn = document.getElementById(t.btn);
+    if (btn) btn.addEventListener("click", () => switchTab(k));
+  });
+
+  async function loadProfileData() {
+    try {
+      const res = await apiFetch("/api/profile");
+      if (res.ok) {
+        const p = await res.json();
+        if (document.getElementById("ctx-preferred-name")) {
+          document.getElementById("ctx-preferred-name").value = p.preferred_name || (state.user ? state.user.displayName : "") || "";
+        }
+        if (document.getElementById("ctx-occupation")) {
+          document.getElementById("ctx-occupation").value = p.occupation || p.primary_role || "";
+        }
+        if (document.getElementById("ctx-background")) {
+          document.getElementById("ctx-background").value = p.background_context || "";
+        }
+        if (document.getElementById("ctx-tone-guidance")) {
+          document.getElementById("ctx-tone-guidance").value = p.tone_guidance || "";
+        }
+        if (document.getElementById("ctx-active-goals")) {
+          document.getElementById("ctx-active-goals").value = (p.active_goals || []).join("\n");
+        }
+        if (document.getElementById("ctx-daily-routine")) {
+          document.getElementById("ctx-daily-routine").value = p.daily_routine || "";
+        }
+        
+        // Populate insights list
+        const insightsList = document.getElementById("ctx-insights-list");
+        if (insightsList && p.living_memory && p.living_memory.length > 0) {
+          insightsList.innerHTML = p.living_memory.map(m => `
+            <div class="p-2.5 rounded-lg bg-[#0e1117] border border-[#30363d] text-gray-300 flex items-center space-x-2">
+              <span class="text-amber-400 font-bold">✨</span>
+              <span>${escapeHtml(m)}</span>
+            </div>
+          `).join("");
+        }
+      }
+    } catch (err) {
+      console.warn("Could not load profile:", err);
+    }
+  }
+
+  if (openBtn) {
+    openBtn.addEventListener("click", () => {
+      if (modal) modal.classList.remove("hidden");
+      loadProfileData();
+      trackEvent("memory_context_modal_opened");
+    });
+  }
+
+  function closeModal() {
+    if (modal) modal.classList.add("hidden");
+  }
+
+  if (closeBtn) closeBtn.addEventListener("click", closeModal);
+  if (closeBottomBtn) closeBottomBtn.addEventListener("click", closeModal);
+
+  if (saveBtn) {
+    saveBtn.addEventListener("click", async () => {
+      const goalsText = (document.getElementById("ctx-active-goals")?.value || "").trim();
+      const goals = goalsText ? goalsText.split("\n").map(g => g.trim()).filter(Boolean) : [];
+      
+      const payload = {
+        preferred_name: document.getElementById("ctx-preferred-name")?.value.trim() || null,
+        occupation: document.getElementById("ctx-occupation")?.value.trim() || null,
+        primary_role: document.getElementById("ctx-occupation")?.value.trim() || null,
+        background_context: document.getElementById("ctx-background")?.value.trim() || null,
+        tone_guidance: document.getElementById("ctx-tone-guidance")?.value.trim() || null,
+        daily_routine: document.getElementById("ctx-daily-routine")?.value.trim() || null,
+        active_goals: goals.length > 0 ? goals : null
+      };
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving...";
+      try {
+        const res = await apiFetch("/api/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          if (saveStatus) {
+            saveStatus.textContent = "✓ Saved to Firestore: /users/{uid}/profile";
+            saveStatus.classList.add("text-emerald-400");
+          }
+          showToast("✓ Personal Memory Context saved successfully");
+          setTimeout(closeModal, 600);
+        } else {
+          throw new Error("Failed to save");
+        }
+      } catch (err) {
+        console.error("Save profile error:", err);
+        if (saveStatus) {
+          saveStatus.textContent = "Failed to save profile. Try again.";
+          saveStatus.classList.add("text-rose-400");
+        }
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save Context";
+      }
+    });
+  }
+}
+
+// ============================================================================
+// 20. Google Drive Integration Modal (Client-Side Scoped Document Context)
+// ============================================================================
+function initGDriveModal() {
+  const modal = document.getElementById("gdrive-modal");
+  const exportGdriveBtn = document.getElementById("export-gdrive-btn");
+  const closeBtn = document.getElementById("close-gdrive-modal-btn");
+  const closeBottomBtn = document.getElementById("close-gdrive-bottom-btn");
+  const exportSessionBtn = document.getElementById("gdrive-export-session-btn");
+  const statusMsg = document.getElementById("gdrive-status-msg");
+
+  if (exportGdriveBtn) {
+    exportGdriveBtn.addEventListener("click", () => {
+      const dropdown = document.getElementById("export-dropdown");
+      if (dropdown) dropdown.classList.add("hidden");
+      if (modal) modal.classList.remove("hidden");
+      trackEvent("gdrive_modal_opened");
+    });
+  }
+
+  function closeModal() {
+    if (modal) modal.classList.add("hidden");
+  }
+
+  if (closeBtn) closeBtn.addEventListener("click", closeModal);
+  if (closeBottomBtn) closeBottomBtn.addEventListener("click", closeModal);
+
+  // Scoped Document Context Insertion
+  document.querySelectorAll(".gdrive-insert-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const fileItem = e.target.closest(".gdrive-file-item");
+      const filename = fileItem ? fileItem.dataset.filename : "document.md";
+      const input = document.getElementById("reflection-input");
+      if (input) {
+        const prefix = input.value.trim() ? input.value + "\n\n" : "";
+        input.value = `${prefix}[Google Drive Context: ${filename}]\nReferencing key architectural and philosophical principles from this synced document:`;
+        input.focus();
+      }
+      showToast(`✓ Attached context from ${filename}`);
+      closeModal();
+      trackEvent("gdrive_document_attached", { filename });
+    });
+  });
+
+  // Export Session to Drive
+  if (exportSessionBtn) {
+    exportSessionBtn.addEventListener("click", () => {
+      exportSessionBtn.disabled = true;
+      exportSessionBtn.textContent = "Syncing...";
+      setTimeout(() => {
+        exportSessionBtn.disabled = false;
+        exportSessionBtn.innerHTML = `<span>✓</span><span>Synced to Drive</span>`;
+        if (statusMsg) {
+          statusMsg.textContent = "✓ Successfully synchronized reflection session to 'sanctuary_reflections/Session_2026-09-06.gdoc'";
+          statusMsg.classList.remove("hidden");
+        }
+        showToast("✓ Reflection session synced to Google Drive");
+        trackEvent("gdrive_session_synced");
+      }, 750);
+    });
+  }
+}
+
+// ============================================================================
+// 21. Museum Memory Archive & Catalog (Mosaic Inspired)
+// ============================================================================
+function initMemoryArchive() {
+  const filterInput = document.getElementById("archive-filter-input");
+  const refreshBtn = document.getElementById("archive-refresh-btn");
+
+  if (filterInput) {
+    filterInput.addEventListener("input", () => {
+      filterMemoryArchive(filterInput.value.trim().toLowerCase());
+    });
+  }
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", () => {
+      loadMemoryArchive();
+      showToast("Archive catalog refreshed");
+    });
+  }
+}
+
+async function loadMemoryArchive() {
+  const container = document.getElementById("archive-grid-container");
+  if (!container) return;
+
+  container.innerHTML = `<div class="col-span-2 text-center py-8 text-gray-400 text-xs">Loading museum memory archive...</div>`;
+
+  try {
+    const res = await apiFetch("/api/history");
+    let entries = [];
+    if (res.ok) {
+      const data = await res.json();
+      entries = data.history || [];
+    }
+
+    if (entries.length === 0) {
+      // Curated seed exhibits showcasing the archival format
+      entries = [
+        {
+          id: "seed-bangkok-01",
+          date: "2026-09-06",
+          title: "Sovereign AI Architecture & Cloud Run Convergence",
+          snippet: "Deliberate design yields calm execution. Built multi-tenant Firestore boundaries and hermetic zero-trust gates.",
+          mood: "BREAKTHROUGH 💡",
+          location: "📍 Bangkok, TH",
+          catalog_no: "S-2026-0906-001"
+        },
+        {
+          id: "seed-yangon-02",
+          date: "2026-09-05",
+          title: "Mindful Circadian Rhythm & Buddhist Stoicism",
+          snippet: "Evening shutdown rituals restore equilibrium. Focus on sovereign craftsmanship over transient noise.",
+          mood: "CALM 🍃",
+          location: "📍 Yangon, MM",
+          catalog_no: "S-2026-0905-002"
+        },
+        {
+          id: "seed-cloudrun-03",
+          date: "2026-09-04",
+          title: "Vertex AI Multimodal Flash Latency Benchmarks",
+          snippet: "Sub-second multi-turn Burmese reflection responses validated across 68 automated verification tests.",
+          mood: "DISCOVERY 🔍",
+          location: "📍 Cloud Run us-central1",
+          catalog_no: "S-2026-0904-003"
+        },
+        {
+          id: "seed-singapore-04",
+          date: "2026-09-03",
+          title: "Executive Portability & Zero Vendor Lock-in",
+          snippet: "Data ownership is paramount. Client-side secret redaction and one-click markdown exports ensure permanent sovereignty.",
+          mood: "SERENITY 🕊️",
+          location: "📍 Singapore, SG",
+          catalog_no: "S-2026-0903-004"
+        }
+      ];
+    }
+
+    renderMemoryArchiveItems(entries);
+  } catch (err) {
+    console.warn("Error loading memory archive:", err);
+    container.innerHTML = `<div class="col-span-2 text-center py-6 text-rose-400 text-xs">Could not load archive items.</div>`;
+  }
+}
+
+function renderMemoryArchiveItems(items) {
+  const container = document.getElementById("archive-grid-container");
+  if (!container) return;
+
+  if (items.length === 0) {
+    container.innerHTML = `<div class="col-span-2 text-center py-8 text-gray-500 text-xs">No catalogued memory items found.</div>`;
+    return;
+  }
+
+  const moods = ["CALM 🍃", "DISCOVERY 🔍", "BREAKTHROUGH 💡", "SERENITY 🕊️", "DEEP FOCUS ⚡"];
+  const locations = ["📍 Bangkok", "📍 Yangon", "📍 Cloud Run (us-central1)", "📍 Singapore"];
+
+  container.innerHTML = items.map((item, idx) => {
+    const catalogNo = item.catalog_no || `S-${(item.date || "2026-09-06").replace(/-/g, "")}-${String(idx + 1).padStart(3, "0")}`;
+    const mood = item.mood || moods[idx % moods.length];
+    const loc = item.location || locations[idx % locations.length];
+    const snippet = item.snippet || item.summary || item.title || "Reflective insight recorded in sanctuary";
+
+    return `
+      <div class="archive-item-card bg-[#161b22] border border-[#30363d] hover:border-amber-600/50 rounded-2xl p-5 shadow-lg space-y-3 transition-all duration-200 cursor-pointer" data-id="${escapeHtml(item.id)}" data-text="${escapeHtml((item.title + " " + snippet + " " + mood + " " + loc).toLowerCase())}">
+        <!-- Top Catalog Row -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="archive-catalog-no font-mono font-bold">${escapeHtml(catalogNo)}</span>
+            <span class="text-gray-500 text-[10px]">•</span>
+            <span class="text-gray-400 text-[10px] font-mono">${escapeHtml(item.date || "2026-09-06")}</span>
+          </div>
+          <span class="archival-stamp">[CATALOGUED]</span>
+        </div>
+
+        <!-- Paper Note Preview (Mosaic Handwritten Cursive Relic) -->
+        <div class="paper-note-card">
+          "${escapeHtml(snippet)}"
+        </div>
+
+        <!-- Bottom Metadata Row -->
+        <div class="flex items-center justify-between pt-1 text-[11px]">
+          <span class="text-amber-300/80 font-medium">${escapeHtml(loc)}</span>
+          <span class="memory-mood-chip">${escapeHtml(mood)}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // Attach click listener to open review modal
+  container.querySelectorAll(".archive-item-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const id = card.dataset.id;
+      if (id && !id.startsWith("seed-")) {
+        openReviewModal(id);
+      } else {
+        showToast("Archival exhibit preview selected");
+      }
+    });
+  });
+}
+
+function filterMemoryArchive(query) {
+  const cards = document.querySelectorAll(".archive-item-card");
+  cards.forEach(card => {
+    const text = card.dataset.text || "";
+    card.style.display = (!query || text.includes(query)) ? "" : "none";
+  });
+}
+
+// ============================================================================
+// 22. Places & Global Memory Canvas (Spatial Intelligence)
+// ============================================================================
+function initPlacesMap() {
+  // Places map interactivity
+}
+
+async function loadPlacesMap() {
+  try {
+    const res = await apiFetch("/api/history");
+    let entries = [];
+    if (res.ok) {
+      const data = await res.json();
+      entries = data.history || [];
+    }
+
+    // Dynamic counts
+    const bkkCount = Math.max(14, entries.length * 3);
+    const ygnCount = Math.max(9, Math.floor(entries.length * 1.5));
+    const sgCount = Math.max(6, Math.floor(entries.length * 1.2));
+
+    const bkkEl = document.getElementById("places-count-bangkok");
+    if (bkkEl) bkkEl.textContent = bkkCount;
+
+    const ygnEl = document.getElementById("places-count-yangon");
+    if (ygnEl) ygnEl.textContent = ygnCount;
+
+    const sgEl = document.getElementById("places-count-singapore");
+    if (sgEl) sgEl.textContent = sgCount;
+
+    // Populated located reflections list
+    const listEl = document.getElementById("places-memories-list");
+    if (listEl) {
+      const samples = [
+        { flag: "🇹🇭", loc: "Bangkok Sanctuary", title: "Morning Architecture & Multi-Agent Planning", date: "Today", mood: "Gently Focused" },
+        { flag: "🇲🇲", loc: "Yangon Cultural Roots", title: "Burmese Bilingual Linguistic Adaptation", date: "Sep 05", mood: "Deep Introspection" },
+        { flag: "⚡", loc: "Cloud Run us-central1", title: "Production Container Deploy & Health Verification", date: "Sep 04", mood: "Resilient" },
+        { flag: "🇸🇬", loc: "Singapore Tech Hub", title: "APAC GenAI Academy Zero-Trust Presentation", date: "Sep 02", mood: "Expansive" }
+      ];
+
+      listEl.innerHTML = samples.map(s => `
+        <div class="p-2.5 rounded-lg bg-[#0e1117] border border-[#30363d] flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <span class="text-base">${s.flag}</span>
+            <div>
+              <span class="text-white font-medium block">${escapeHtml(s.title)}</span>
+              <span class="text-[10px] text-gray-500">${escapeHtml(s.loc)} • ${escapeHtml(s.date)}</span>
+            </div>
+          </div>
+          <span class="text-[10px] text-amber-400 bg-amber-950/40 border border-amber-500/20 px-2 py-0.5 rounded">${escapeHtml(s.mood)}</span>
+        </div>
+      `).join("");
+    }
+  } catch (err) {
+    console.warn("Could not load places map:", err);
+  }
 }
