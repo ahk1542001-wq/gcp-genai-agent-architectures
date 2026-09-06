@@ -16,7 +16,7 @@ Records a continuous high-definition video exercising 100% of Sanctuary OS featu
 9. Executive Kanban Board (Ticket creation & move to Done)
 10. Mindful Calendar & Time-Blocking (Afternoon Sprint event creation)
 11. Museum Memory Archive (Mosaic inspired: [CATALOGUED] stamps, Caveat paper notes, catalog IDs)
-12. Places & Global Spatial Memory Canvas (Southeast Asia ↔ Cloud Run us-central1 anchors)
+12. Places & Global Spatial Memory Canvas (Southeast Asia & Asia Mindful Sanctuaries)
 13. Life Rewind Genuine Cognitive & Productivity Metrics
 14. Dynamic Retrospective History, Search & Filter Chips with Wisdom Drawer
 15. Personal Memory & Context Engine (Profile & Bio, Goals, Session Insights, Ledger)

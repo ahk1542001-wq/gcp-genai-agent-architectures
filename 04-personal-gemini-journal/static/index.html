@@ -14,28 +14,29 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
 </head>
-<body class="bg-[#0e1117] text-[#e6edf3] font-sans antialiased h-screen overflow-hidden flex flex-col">
+<body class="bg-[#FBF6EF] text-[#3A2618] font-sans antialiased h-screen overflow-hidden flex flex-col">
 
   <!-- ===================================================================== -->
-  <!-- 0. Unauthenticated Landing Screen (Warm Editorial Zero-Trust Gate) -->
+  <!-- ===================================================================== -->
+  <!-- 0. Unauthenticated Landing Screen (Boutique Wellness Sanctuary OS Gate) -->
   <!-- ===================================================================== -->
   <div id="auth-landing" class="fixed inset-0 h-screen w-screen flex flex-col items-center justify-center bg-[#FBF6EF] text-[#3A2618] p-6 relative z-40 overflow-y-auto">
     <div class="max-w-4xl w-full text-center py-10 px-4 sm:px-6 my-auto">
       
       <!-- Top Pill Badge -->
-      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-semibold tracking-wider uppercase bg-[#F5EDE1] border border-[#A9744F]/30 text-[#A9744F] shadow-sm mb-6">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-semibold tracking-wider uppercase bg-[#F5ECE1] border border-[#A9744F]/30 text-[#A9744F] shadow-sm mb-6">
         <span>🌿</span>
-        <span>PRIVATE AI REFLECTIONS WITH GEMINI & FIRESTORE</span>
+        <span>SANCTUARY OS · SOVEREIGN COGNITIVE LIFE GUARDIAN</span>
       </div>
 
-      <!-- Editorial Headline -->
+      <!-- Original Bespoke Headline -->
       <h1 class="text-4xl sm:text-5xl md:text-6xl font-normal tracking-tight text-[#3A2618] leading-[1.15] mb-5" style="font-family: 'Newsreader', Georgia, serif;">
-        A private sanctuary for your<br class="hidden sm:inline"> daily thoughts and reflections.
+        Where deep reflection meets<br class="hidden sm:inline"> sovereign human agency.
       </h1>
 
-      <!-- Grounded Sub-headline -->
+      <!-- Original Grounded Sub-headline -->
       <p class="text-[#635345] text-base sm:text-lg font-normal max-w-2xl mx-auto leading-relaxed mb-8">
-        Write uninhibited reflections, explore creative brainstorms, and receive grounded summaries. Every entry is strictly isolated to your authenticated account in Cloud Firestore.
+        An enterprise personal sanctuary designed for founders, architects, and builders. Reflect freely across languages, transform wandering thoughts into structured action, and preserve your personal growth in a tenant-isolated private vault.
       </p>
 
       <!-- Action Buttons Row -->
@@ -69,38 +70,38 @@
       <!-- Auth Error Container -->
       <div id="auth-error-msg" class="hidden text-xs text-rose-700 bg-rose-50 p-3 rounded-xl border border-rose-200 text-center max-w-md mx-auto mt-4"></div>
 
-      <!-- 3 Editorial Feature Cards -->
+      <!-- 3 Bespoke Sanctuary OS Capability Highlights -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto mt-12 text-left">
-        <!-- Card 1 -->
+        <!-- Card 1: Museum Memory Archive & Places Map -->
         <div class="bg-[#F5EDE1] border border-[#A9744F]/25 rounded-2xl p-6 shadow-sm hover:border-[#A9744F]/50 transition-colors">
           <div class="w-8 h-8 rounded-lg bg-[#EBDDCB] text-[#3A2618] flex items-center justify-center font-serif text-sm font-semibold mb-4 shadow-xs">
-            ✨
+            🏛️
           </div>
-          <h3 class="text-base font-semibold text-[#3A2618] mb-1.5" style="font-family: 'Newsreader', Georgia, serif;">Gemini 2.5 Flash Engine</h3>
+          <h3 class="text-base font-semibold text-[#3A2618] mb-1.5" style="font-family: 'Newsreader', Georgia, serif;">Museum Memory Archive</h3>
           <p class="text-xs text-[#635345] leading-relaxed">
-            Multi-turn introspective dialogue, intelligent brainstorming, and executive summaries with resilient model failover.
+            Transmute reflections into catalogued relics with vintage stamps, handwritten paper notes, and spatial anchors across Southeast Asia & global personal sanctuaries.
           </p>
         </div>
 
-        <!-- Card 2 -->
+        <!-- Card 2: Human-in-the-Loop Sovereign Gate -->
         <div class="bg-[#F5EDE1] border border-[#A9744F]/25 rounded-2xl p-6 shadow-sm hover:border-[#A9744F]/50 transition-colors">
           <div class="w-8 h-8 rounded-lg bg-[#EBDDCB] text-[#3A2618] flex items-center justify-center font-serif text-sm font-semibold mb-4 shadow-xs">
             🛡️
           </div>
-          <h3 class="text-base font-semibold text-[#3A2618] mb-1.5" style="font-family: 'Newsreader', Georgia, serif;">Firestore User Isolation</h3>
+          <h3 class="text-base font-semibold text-[#3A2618] mb-1.5" style="font-family: 'Newsreader', Georgia, serif;">Sovereign Gate & Governance</h3>
           <p class="text-xs text-[#635345] leading-relaxed">
-            Strict path-level security rules ensure entries in <code class="bg-[#EBDDCB] px-1 py-0.5 rounded text-[11px] font-mono text-[#3A2618]">/users/{uid}/*</code> cannot be read or written by any other user.
+            Gemini proposes structured Kanban tickets and calendar focus blocks, but never mutates persistent state without your explicit human approval.
           </p>
         </div>
 
-        <!-- Card 3 -->
+        <!-- Card 3: Multimodal Voice & Genie Action Dock -->
         <div class="bg-[#F5EDE1] border border-[#A9744F]/25 rounded-2xl p-6 shadow-sm hover:border-[#A9744F]/50 transition-colors">
           <div class="w-8 h-8 rounded-lg bg-[#EBDDCB] text-[#3A2618] flex items-center justify-center font-serif text-sm font-semibold mb-4 shadow-xs">
-            📖
+            🎙️
           </div>
-          <h3 class="text-base font-semibold text-[#3A2618] mb-1.5" style="font-family: 'Newsreader', Georgia, serif;">Continuous History</h3>
+          <h3 class="text-base font-semibold text-[#3A2618] mb-1.5" style="font-family: 'Newsreader', Georgia, serif;">Multimodal Voice & Genie Dock</h3>
           <p class="text-xs text-[#635345] leading-relaxed">
-            Revisit past reflections anytime. Search, review multi-turn conversational threads, and track your personal growth over time.
+            Bilingual Burmese 🇲🇲 & English reflection, live audio chat with breathing orb, Google Drive context injection, and authentic Tibetan singing bowl rituals.
           </p>
         </div>
       </div>
@@ -759,99 +760,212 @@
       <!-- VIEW 6: PLACES & MEMORY MAP CANVAS -->
       <!-- ================================================================= -->
       <section id="view-places-content" class="hidden max-w-4xl mx-auto space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#30363d] pb-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5DBD0] pb-4">
           <div>
             <div class="flex items-center space-x-2">
               <span class="text-2xl">📍</span>
-              <h3 class="text-xl font-bold text-[#f0f6fc]">Places & Global Memory Canvas</h3>
+              <h3 class="text-xl font-bold text-[#3A2618]">Places & Global Memory Canvas</h3>
             </div>
-            <p class="text-xs text-[#8b949e] mt-1">Spatial distribution of mindful reflections across Southeast Asia & Cloud Run infrastructure</p>
+            <p class="text-xs text-[#7A6858] mt-1">Spatial distribution of mindful reflections across Southeast Asia & personal travel sanctuaries</p>
           </div>
-          <div class="flex items-center space-x-2 text-xs text-amber-300/90 bg-amber-950/20 border border-amber-500/30 px-3 py-1.5 rounded-lg">
+          <div class="flex items-center space-x-2 text-xs text-[#3A2618] bg-[#F5ECE1] border border-[#A9744F]/30 px-3 py-1.5 rounded-lg">
             <span>🌐 Overall Spatial Tone:</span>
-            <span class="font-semibold text-emerald-400">Gently Positive</span>
+            <span class="font-semibold text-emerald-700">Gently Positive</span>
           </div>
         </div>
 
         <!-- Map Canvas Visualizer -->
-        <div class="places-map-container places-map-grid p-6 min-h-[320px] flex flex-col justify-between relative shadow-xl">
-          <div class="flex items-center justify-between text-xs text-gray-400 z-10">
-            <span class="font-mono text-[11px] text-amber-500/80">LAT 13.7563° N · LON 100.5018° E (APAC Cluster)</span>
-            <span class="bg-[#161b22]/80 border border-[#30363d] px-2.5 py-1 rounded text-[10px] text-gray-300">4 Active Anchor Points</span>
+        <div class="places-map-container places-map-grid p-6 min-h-[460px] flex flex-col justify-between relative shadow-sm border border-[#E5DBD0] rounded-2xl bg-[#FAF6F0]">
+          <div class="flex items-center justify-between text-xs text-[#7A6858] z-10 mb-2">
+            <span class="font-mono text-[11px] text-[#A9744F] font-semibold">LAT 13.7563° N · LON 100.5018° E (Personal Sanctuary Journey)</span>
+            <span class="bg-white/90 border border-[#D8CBBF] px-3 py-1 rounded-full text-[11px] text-[#3A2618] font-medium shadow-xs">5 Active Memory Locations</span>
           </div>
 
-          <!-- Radar / Pin Points Grid -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 my-6 z-10">
-            <!-- Pin 1: Bangkok -->
-            <div class="bg-[#161b22]/90 border border-amber-600/30 rounded-xl p-3.5 relative overflow-hidden backdrop-blur-md">
+          <!-- Interactive Graphic Map Area with Direct Location Name Badges on Point -->
+          <div id="interactive-places-map" class="relative w-full h-[280px] my-4 rounded-xl overflow-hidden bg-[#FAF6F0] border border-[#E5DBD0] shadow-inner flex items-center justify-center select-none">
+            <!-- Stylized Continental Matrix Dots (Southeast Asia & Asia Pacific Arc) -->
+            <svg class="absolute inset-0 w-full h-full opacity-35 pointer-events-none" viewBox="0 0 800 350" fill="none">
+              <!-- Asia continent outline sketch in soft terracotta dots -->
+              <circle cx="280" cy="90" r="3" fill="#A9744F" opacity="0.3"/>
+              <circle cx="310" cy="80" r="3.5" fill="#A9744F" opacity="0.3"/>
+              <circle cx="340" cy="75" r="3" fill="#A9744F" opacity="0.3"/>
+              <circle cx="380" cy="70" r="4" fill="#A9744F" opacity="0.35"/>
+              <circle cx="420" cy="80" r="4.5" fill="#A9744F" opacity="0.35"/>
+              <circle cx="460" cy="95" r="3.5" fill="#A9744F" opacity="0.3"/>
+              <circle cx="500" cy="110" r="4" fill="#A9744F" opacity="0.35"/>
+              <circle cx="540" cy="120" r="3" fill="#A9744F" opacity="0.3"/>
+              <!-- Southeast Asia Archipelago dots -->
+              <circle cx="360" cy="140" r="3.5" fill="#A9744F" opacity="0.4"/>
+              <circle cx="380" cy="160" r="4" fill="#A9744F" opacity="0.45"/>
+              <circle cx="395" cy="190" r="4.5" fill="#A9744F" opacity="0.5"/>
+              <circle cx="410" cy="220" r="4" fill="#A9744F" opacity="0.45"/>
+              <circle cx="430" cy="250" r="3.5" fill="#A9744F" opacity="0.4"/>
+              <!-- Japan Archipelago dots -->
+              <circle cx="620" cy="100" r="3" fill="#A9744F" opacity="0.35"/>
+              <circle cx="640" cy="115" r="3.5" fill="#A9744F" opacity="0.4"/>
+              <circle cx="660" cy="130" r="3" fill="#A9744F" opacity="0.35"/>
+              <!-- Connection Arc lines -->
+              <path d="M 320 160 Q 380 180 430 250" stroke="#A9744F" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.35" />
+              <path d="M 380 180 Q 500 130 640 115" stroke="#A9744F" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.35" />
+            </svg>
+
+            <!-- Point 1: Bangkok (Center Anchor) -->
+            <div class="absolute cursor-pointer group" style="left: 48%; top: 52%;" data-loc="bangkok">
+              <div class="relative flex items-center justify-center">
+                <span class="absolute w-8 h-8 rounded-full bg-[#A9744F]/25 map-radar-pin"></span>
+                <span class="w-3.5 h-3.5 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
+                <!-- Location Name Label directly ON the Point -->
+                <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20">
+                  <span>🇹🇭</span>
+                  <span>Bangkok</span>
+                  <span class="text-[#DE9E74] font-mono">(<span id="places-count-bangkok">42</span>)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Point 2: Yangon -->
+            <div class="absolute cursor-pointer group" style="left: 35%; top: 44%;" data-loc="yangon">
+              <div class="relative flex items-center justify-center">
+                <span class="absolute w-7 h-7 rounded-full bg-[#A9744F]/25 map-radar-pin"></span>
+                <span class="w-3 h-3 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
+                <!-- Location Name Label directly ON the Point -->
+                <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20">
+                  <span>🇲🇲</span>
+                  <span>Yangon</span>
+                  <span class="text-[#DE9E74] font-mono">(<span id="places-count-yangon">28</span>)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Point 3: Chiang Mai -->
+            <div class="absolute cursor-pointer group" style="left: 45%; top: 28%;" data-loc="chiangmai">
+              <div class="relative flex items-center justify-center">
+                <span class="absolute w-7 h-7 rounded-full bg-[#A9744F]/25 map-radar-pin"></span>
+                <span class="w-3 h-3 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
+                <!-- Location Name Label directly ON the Point -->
+                <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20">
+                  <span>🇹🇭</span>
+                  <span>Chiang Mai</span>
+                  <span class="text-[#DE9E74] font-mono">(<span id="places-count-chiangmai">14</span>)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Point 4: Singapore -->
+            <div class="absolute cursor-pointer group" style="left: 54%; top: 76%;" data-loc="singapore">
+              <div class="relative flex items-center justify-center">
+                <span class="absolute w-7 h-7 rounded-full bg-[#A9744F]/25 map-radar-pin"></span>
+                <span class="w-3 h-3 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
+                <!-- Location Name Label directly ON the Point -->
+                <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20">
+                  <span>🇸🇬</span>
+                  <span>Singapore</span>
+                  <span class="text-[#DE9E74] font-mono">(<span id="places-count-singapore">19</span>)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Point 5: Tokyo -->
+            <div class="absolute cursor-pointer group" style="left: 80%; top: 32%;" data-loc="tokyo">
+              <div class="relative flex items-center justify-center">
+                <span class="absolute w-7 h-7 rounded-full bg-[#A9744F]/25 map-radar-pin"></span>
+                <span class="w-3 h-3 rounded-full bg-[#A9744F] border-2 border-white shadow-md z-10"></span>
+                <!-- Location Name Label directly ON the Point -->
+                <div class="map-point-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20">
+                  <span>🇯🇵</span>
+                  <span>Tokyo</span>
+                  <span class="text-[#DE9E74] font-mono">(<span id="places-count-tokyo">8</span>)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Location Breakdown Cards (Authentic Human Memories) -->
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 my-2 z-10">
+            <!-- Bangkok Card -->
+            <div class="location-summary-card bg-white border border-[#E5DBD0] hover:border-[#A9744F] rounded-xl p-3 relative shadow-xs transition-all cursor-pointer" data-loc="bangkok">
               <div class="flex items-center justify-between">
                 <span class="text-base">🇹🇭</span>
-                <span class="text-[10px] font-mono text-amber-400 font-bold">13.75° N</span>
+                <span class="text-[10px] font-mono text-[#A9744F] font-bold">13.75° N</span>
               </div>
-              <h4 class="text-xs font-bold text-white mt-1">Bangkok</h4>
-              <p class="text-[10px] text-gray-400">Primary Creative Sanctuary</p>
-              <div class="mt-2.5 flex items-center justify-between pt-2 border-t border-[#30363d]">
-                <span class="text-[10px] text-gray-400">Memories</span>
-                <span id="places-count-bangkok" class="text-xs font-bold text-amber-400">14</span>
+              <h4 class="text-xs font-bold text-[#3A2618] mt-1">Bangkok</h4>
+              <p class="text-[10px] text-[#7A6858]">Creative Sanctuary</p>
+              <div class="mt-2 flex items-center justify-between pt-1.5 border-t border-[#E5DBD0]">
+                <span class="text-[10px] text-[#7A6858]">Memories</span>
+                <span class="text-xs font-bold text-[#A9744F]">42</span>
               </div>
             </div>
 
-            <!-- Pin 2: Yangon -->
-            <div class="bg-[#161b22]/90 border border-amber-600/30 rounded-xl p-3.5 relative overflow-hidden backdrop-blur-md">
+            <!-- Yangon Card -->
+            <div class="location-summary-card bg-white border border-[#E5DBD0] hover:border-[#A9744F] rounded-xl p-3 relative shadow-xs transition-all cursor-pointer" data-loc="yangon">
               <div class="flex items-center justify-between">
                 <span class="text-base">🇲🇲</span>
-                <span class="text-[10px] font-mono text-amber-400 font-bold">16.86° N</span>
+                <span class="text-[10px] font-mono text-[#A9744F] font-bold">16.86° N</span>
               </div>
-              <h4 class="text-xs font-bold text-white mt-1">Yangon</h4>
-              <p class="text-[10px] text-gray-400">Roots & Cultural Anchor</p>
-              <div class="mt-2.5 flex items-center justify-between pt-2 border-t border-[#30363d]">
-                <span class="text-[10px] text-gray-400">Memories</span>
-                <span id="places-count-yangon" class="text-xs font-bold text-emerald-400">9</span>
+              <h4 class="text-xs font-bold text-[#3A2618] mt-1">Yangon</h4>
+              <p class="text-[10px] text-[#7A6858]">Cultural Roots</p>
+              <div class="mt-2 flex items-center justify-between pt-1.5 border-t border-[#E5DBD0]">
+                <span class="text-[10px] text-[#7A6858]">Memories</span>
+                <span class="text-xs font-bold text-[#A9744F]">28</span>
               </div>
             </div>
 
-            <!-- Pin 3: Cloud Run us-central1 -->
-            <div class="bg-[#161b22]/90 border border-indigo-500/40 rounded-xl p-3.5 relative overflow-hidden backdrop-blur-md">
+            <!-- Chiang Mai Card -->
+            <div class="location-summary-card bg-white border border-[#E5DBD0] hover:border-[#A9744F] rounded-xl p-3 relative shadow-xs transition-all cursor-pointer" data-loc="chiangmai">
               <div class="flex items-center justify-between">
-                <span class="text-base">⚡</span>
-                <span class="text-[10px] font-mono text-indigo-400 font-bold">GCP RUN</span>
+                <span class="text-base">🇹🇭</span>
+                <span class="text-[10px] font-mono text-[#A9744F] font-bold">18.78° N</span>
               </div>
-              <h4 class="text-xs font-bold text-white mt-1">Cloud Run (us-central1)</h4>
-              <p class="text-[10px] text-gray-400">Production AI Engine</p>
-              <div class="mt-2.5 flex items-center justify-between pt-2 border-t border-[#30363d]">
-                <span class="text-[10px] text-gray-400">Telemetry</span>
-                <span class="text-xs font-bold text-indigo-300">Active</span>
+              <h4 class="text-xs font-bold text-[#3A2618] mt-1">Chiang Mai</h4>
+              <p class="text-[10px] text-[#7A6858]">Mindful Retreat</p>
+              <div class="mt-2 flex items-center justify-between pt-1.5 border-t border-[#E5DBD0]">
+                <span class="text-[10px] text-[#7A6858]">Memories</span>
+                <span class="text-xs font-bold text-[#A9744F]">14</span>
               </div>
             </div>
 
-            <!-- Pin 4: Singapore -->
-            <div class="bg-[#161b22]/90 border border-amber-600/30 rounded-xl p-3.5 relative overflow-hidden backdrop-blur-md">
+            <!-- Singapore Card -->
+            <div class="location-summary-card bg-white border border-[#E5DBD0] hover:border-[#A9744F] rounded-xl p-3 relative shadow-xs transition-all cursor-pointer" data-loc="singapore">
               <div class="flex items-center justify-between">
                 <span class="text-base">🇸🇬</span>
-                <span class="text-[10px] font-mono text-amber-400 font-bold">1.35° N</span>
+                <span class="text-[10px] font-mono text-[#A9744F] font-bold">1.35° N</span>
               </div>
-              <h4 class="text-xs font-bold text-white mt-1">Singapore</h4>
-              <p class="text-[10px] text-gray-400">APAC Tech Corridor</p>
-              <div class="mt-2.5 flex items-center justify-between pt-2 border-t border-[#30363d]">
-                <span class="text-[10px] text-gray-400">Memories</span>
-                <span id="places-count-singapore" class="text-xs font-bold text-purple-400">6</span>
+              <h4 class="text-xs font-bold text-[#3A2618] mt-1">Singapore</h4>
+              <p class="text-[10px] text-[#7A6858]">Tech Corridor</p>
+              <div class="mt-2 flex items-center justify-between pt-1.5 border-t border-[#E5DBD0]">
+                <span class="text-[10px] text-[#7A6858]">Memories</span>
+                <span class="text-xs font-bold text-[#A9744F]">19</span>
+              </div>
+            </div>
+
+            <!-- Tokyo Card -->
+            <div class="location-summary-card bg-white border border-[#E5DBD0] hover:border-[#A9744F] rounded-xl p-3 relative shadow-xs transition-all cursor-pointer" data-loc="tokyo">
+              <div class="flex items-center justify-between">
+                <span class="text-base">🇯🇵</span>
+                <span class="text-[10px] font-mono text-[#A9744F] font-bold">35.67° N</span>
+              </div>
+              <h4 class="text-xs font-bold text-[#3A2618] mt-1">Tokyo</h4>
+              <p class="text-[10px] text-[#7A6858]">Zen Architecture</p>
+              <div class="mt-2 flex items-center justify-between pt-1.5 border-t border-[#E5DBD0]">
+                <span class="text-[10px] text-[#7A6858]">Memories</span>
+                <span class="text-xs font-bold text-[#A9744F]">8</span>
               </div>
             </div>
           </div>
 
-          <div class="flex items-center justify-between text-[11px] text-gray-400 pt-2 border-t border-[#30363d]/60 z-10">
-            <span>Span: Southeast Asia ↔ Google Cloud Vertex AI Tier</span>
-            <span class="text-gray-500">Autonomous Geo-Classification Active</span>
+          <div class="flex items-center justify-between text-[11px] text-[#7A6858] pt-2 border-t border-[#E5DBD0] z-10">
+            <span>Span: Southeast Asia ↔ Global Mindful Sanctuaries</span>
+            <span class="text-[#A9744F]">Autonomous Personal Geo-Classification Active</span>
           </div>
         </div>
 
         <!-- Located Memories List -->
-        <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4 space-y-3">
+        <div class="bg-white border border-[#E5DBD0] rounded-xl p-4 space-y-3 shadow-xs">
           <div class="flex items-center justify-between">
-            <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400">Geographically Anchored Reflections</h4>
-            <span class="text-[11px] text-indigo-400">Auto-Linked via Sanctuary Intelligence</span>
+            <h4 class="text-xs font-semibold uppercase tracking-wider text-[#3A2618]">Geographically Anchored Reflections</h4>
+            <span class="text-[11px] text-[#A9744F]">Auto-Linked via Sanctuary Intelligence</span>
           </div>
-          <div id="places-memories-list" class="space-y-2 text-xs text-gray-300">
+          <div id="places-memories-list" class="space-y-2 text-xs text-[#3A2618]">
             <!-- Dynamically populated -->
           </div>
         </div>

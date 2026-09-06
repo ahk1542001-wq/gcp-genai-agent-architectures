@@ -1,31 +1,75 @@
 /* ==========================================================================
-   Personal Gemini Life Guardian - Notion Serene Dark Design System
+   Sanctuary OS: Deep Wine & Soft Blush Boutique Design System
+   Inspired by Luxury Beauty, Wellness, and Boutique Retail Palettes
+   Core 3-Color Swatch:
+     Soft Blush / Warm Paper Alabaster: #FBF6EF (RGB 251, 246, 239)
+     Deep Wine / Espresso Dark Roast:   #3A2618 (RGB 58, 38, 24)
+     Warm Terracotta / Caramel Cognac:  #A9744F (RGB 169, 116, 79)
    ========================================================================== */
 
 :root {
-  --bg-workspace: #0e1117;
-  --bg-sidebar: #161b22;
-  --bg-card: #21262d;
-  --bg-hover: #30363d;
-  --border-subtle: #30363d;
-  --text-primary: #f0f6fc;
-  --text-secondary: #8b949e;
-  --accent-blue: #388bfd;
-  --accent-purple: #a371f7;
-  --accent-emerald: #3fb950;
-  --accent-amber: #d29922;
-  --accent-rose: #f85149;
-
-  /* Sanctuary OS Signature 3-Color Palette */
+  /* Sanctuary OS Core 3-Color Palette */
   --paper: #FBF6EF;   /* Soft Blush / Warm Alabaster (RGB 251, 246, 239) */
   --ink: #3A2618;     /* Deep Wine / Espresso Dark Roast (RGB 58, 38, 24) */
   --accent: #A9744F;  /* Warm Terracotta / Caramel Cognac (RGB 169, 116, 79) */
+
+  /* Boutique Architectural Surfaces */
+  --bg-workspace: #FBF6EF;        /* Soft Blush Warm Canvas */
+  --bg-sidebar: #F4ECE1;          /* Warm Alabaster Linen Sidebar */
+  --bg-header: #FAF5EE;           /* Frosted Soft Blush Header */
+  --bg-card: #FFFFFF;             /* Pure Warm White / Cream Card */
+  --bg-card-subtle: #FFFDFB;      /* Soft Blush Card Surface */
+  --bg-card-tint: #F5EFEB;        /* Subtle Alabaster Tint */
+  --bg-input: #FFFFFF;            /* Clean White Input */
+  --bg-hover: #EFE6DC;            /* Gentle Alabaster Hover */
+
+  /* Borders & Dividers */
+  --border-subtle: #E5DBD0;       /* Delicate Soft Blush Border */
+  --border-medium: #D8CBBF;       /* Warm Terracotta Muted Border */
+  --border-strong: #A9744F;       /* Warm Terracotta Defined */
+  --border-wine: #3A2618;         /* Deep Wine Accent Border */
+
+  /* Typographic Contrast Hierarchy */
+  --text-primary: #3A2618;        /* Deep Wine / Espresso - High Contrast */
+  --text-secondary: #635345;      /* Warm Muted Wine / Cocoa */
+  --text-muted: #7A6858;          /* Gentle Taupe / Subtitle */
+  --text-hint: #9E8C7E;           /* Subtle Hint */
+  --text-on-dark: #FBF6EF;        /* Soft Blush text when on Deep Wine surface */
+
+  /* Boutique Accents & Statuses */
+  --accent-terracotta: #A9744F;
+  --accent-terracotta-light: #C48459;
+  --accent-terracotta-dark: #8C5635;
+  --accent-terracotta-glow: rgba(169, 116, 79, 0.25);
+  --accent-wine-glow: rgba(58, 38, 24, 0.12);
+  --archival-red: #C25E5E;
+  --archival-red-bg: rgba(194, 94, 94, 0.08);
+
+  /* Legacy variable mappings for complete backward compatibility */
+  --wine-workspace: var(--bg-workspace);
+  --wine-sidebar: var(--bg-sidebar);
+  --wine-card: var(--bg-card);
+  --wine-card-elevated: #FFFDFB;
+  --wine-hover: var(--bg-hover);
+  --wine-border: var(--border-subtle);
+  --wine-border-strong: var(--border-medium);
+  --text-blush-primary: var(--text-primary);
+  --text-blush-secondary: var(--text-secondary);
+  --text-blush-muted: var(--text-muted);
+  --terracotta-glow: var(--accent-terracotta-glow);
+  --terracotta-light: var(--accent-terracotta-light);
+  --terracotta-dark: var(--accent-terracotta-dark);
+  --accent-blue: #A9744F;
+  --accent-purple: #C48459;
+  --accent-emerald: #5A8F6C;
+  --accent-amber: #DE9E74;
+  --accent-rose: #C25E5E;
 }
 
 body {
   background-color: var(--bg-workspace);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow: hidden;
 }
 
@@ -38,11 +82,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #30363d;
+  background: #D8CBBF;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #484f58;
+  background: #A9744F;
 }
 
 /* Animations */
@@ -68,8 +112,8 @@ body {
 
 /* Box Breathing Animation */
 @keyframes breatheScale {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(163, 113, 247, 0.2); }
-  50% { transform: scale(1.35); box-shadow: 0 0 60px rgba(163, 113, 247, 0.6); }
+  0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(169, 116, 79, 0.2); }
+  50% { transform: scale(1.35); box-shadow: 0 0 60px rgba(169, 116, 79, 0.5); }
 }
 .breathe-active {
   animation: breatheScale 16s infinite ease-in-out;
@@ -87,14 +131,14 @@ body {
 .kanban-card.dragging {
   opacity: 0.4;
   transform: scale(0.98);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 25px -5px rgba(58, 38, 24, 0.2);
 }
 .drop-target {
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 .drop-target.drop-active {
-  background-color: rgba(56, 139, 253, 0.08);
-  border-color: #388bfd !important;
+  background-color: rgba(169, 116, 79, 0.08);
+  border-color: #A9744F !important;
   border-style: dashed;
 }
 
@@ -103,7 +147,7 @@ body {
   appearance: none;
   width: 36px;
   height: 20px;
-  background-color: #30363d;
+  background-color: #D8CBBF;
   border-radius: 9999px;
   position: relative;
   cursor: pointer;
@@ -119,10 +163,11 @@ body {
   height: 16px;
   background-color: white;
   border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(58, 38, 24, 0.2);
   transition: transform 0.2s ease;
 }
 .toggle-checkbox:checked {
-  background-color: #388bfd;
+  background-color: #A9744F;
 }
 .toggle-checkbox:checked::before {
   transform: translateX(16px);
@@ -139,12 +184,15 @@ body {
   transition: all 0.15s ease;
   cursor: pointer;
   position: relative;
+  background-color: #FFFFFF;
 }
 .calendar-day-cell:hover {
-  background-color: #21262d;
+  background-color: #F5EEE5;
 }
 .calendar-day-cell.current-day {
-  border: 1px solid #388bfd;
+  border: 2px solid #A9744F !important;
+  background-color: rgba(169, 116, 79, 0.1) !important;
+  font-weight: 700;
 }
 
 /* Print Styling for PDF Export */
@@ -184,27 +232,27 @@ html, body {
 }
 
 /* ==========================================================================
-   Ambient Sanctuary Glow & Fluid Voice Orb (Design Spells & Frontend Design)
+   Ambient Sanctuary Glow & Fluid Voice Orb
    ========================================================================== */
 .nav-item.active-glow {
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.16), rgba(168, 85, 247, 0.08)) !important;
-  border-left: 3px solid #818cf8 !important;
-  color: #f0f6fc !important;
-  box-shadow: 0 0 25px -4px rgba(99, 102, 241, 0.3);
+  background: #3A2618 !important;
+  color: #FBF6EF !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(58, 38, 24, 0.18) !important;
 }
 
 @keyframes orbPulse {
   0% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.7);
+    box-shadow: 0 0 0 0 rgba(169, 116, 79, 0.6);
   }
   70% {
     transform: scale(1.15);
-    box-shadow: 0 0 0 8px rgba(129, 140, 248, 0);
+    box-shadow: 0 0 0 10px rgba(169, 116, 79, 0);
   }
   100% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(129, 140, 248, 0);
+    box-shadow: 0 0 0 0 rgba(169, 116, 79, 0);
   }
 }
 
@@ -213,36 +261,49 @@ html, body {
   animation: orbPulse 1.8s infinite cubic-bezier(0.4, 0, 0.6, 1) !important;
 }
 
-/* Export Dropdown Elevation & Notion Aesthetic */
+/* Export Dropdown Elevation & Boutique Aesthetic */
 #export-dropdown {
+  background-color: #FFFFFF !important;
+  border: 1px solid #D8CBBF !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 36px -4px rgba(58, 38, 24, 0.12), 0 0 0 1px rgba(169, 116, 79, 0.1);
+  color: #3A2618 !important;
 }
 
 /* ==========================================================================
    Genie Chatbot Floating Action Dock & Museum Archive Aesthetics
    ========================================================================== */
 .genie-dock-card {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid #E5DBD0 !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgba(58, 38, 24, 0.06);
+  color: #3A2618 !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 .genie-dock-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 14px 28px -4px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.2);
-}
-.floating-pill-dock {
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transform: translateY(-3px) scale(1.02);
+  border-color: #A9744F !important;
+  box-shadow: 0 14px 30px rgba(169, 116, 79, 0.22) !important;
 }
 
-/* Archival Stamp (Mosaic Style with Warm Terracotta #A9744F) */
+.floating-pill-dock {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid #D8CBBF !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 16px 40px rgba(58, 38, 24, 0.08) !important;
+}
+
+/* Archival Stamp (Mosaic Style in Archival Crimson / Terracotta) */
 .archival-stamp {
   display: inline-block;
-  border: 1.5px solid var(--accent, #A9744F);
-  color: var(--accent, #A9744F);
+  border: 1.5px solid #C25E5E !important;
+  color: #C25E5E !important;
+  background: rgba(194, 94, 94, 0.08) !important;
   padding: 0.25rem 0.5rem;
   font-size: 0.62rem;
   letter-spacing: 0.12em;
@@ -251,34 +312,33 @@ html, body {
   font-weight: 700;
   transform: rotate(-1.5deg);
   border-radius: 3px;
-  background: rgba(169, 116, 79, 0.12);
 }
 .archival-stamp.pending {
   border-style: dashed;
-  color: #d29922;
-  border-color: #d29922;
-  background: rgba(210, 153, 34, 0.08);
+  color: #A9744F !important;
+  border-color: #A9744F !important;
+  background: rgba(169, 116, 79, 0.08) !important;
 }
 
 /* Paper Note Handwritten Artifact (Mosaic Style with #FBF6EF & #3A2618) */
 .paper-note-card {
   position: relative;
   padding: 1.1rem 0.9rem 0.9rem 1.1rem;
-  background: var(--paper, #FBF6EF);
-  background-image: repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(169, 116, 79, 0.18) 24px, rgba(169, 116, 79, 0.18) 25px);
-  border: 1px solid rgba(169, 116, 79, 0.3);
-  box-shadow: 2px 3px 12px rgba(58, 38, 24, 0.15);
+  background: #FBF6EF !important;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(169, 116, 79, 0.18) 24px, rgba(169, 116, 79, 0.18) 25px) !important;
+  border: 1px solid #E2DDD3 !important;
+  box-shadow: 2px 3px 12px rgba(58, 38, 24, 0.1);
   transform: rotate(-0.75deg);
   font-family: 'Caveat', cursive, sans-serif;
   font-size: 1.18rem;
   line-height: 25px;
-  color: var(--ink, #3A2618);
+  color: #3A2618 !important;
   border-radius: 6px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .paper-note-card:hover {
   transform: rotate(0deg) scale(1.01);
-  box-shadow: 4px 6px 18px rgba(58, 38, 24, 0.22);
+  box-shadow: 4px 6px 18px rgba(58, 38, 24, 0.16);
 }
 
 /* Museum Archive Cards & Badges */
@@ -286,7 +346,7 @@ html, body {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.7rem;
   letter-spacing: 0.08em;
-  color: var(--accent, #A9744F);
+  color: #A9744F !important;
 }
 
 .memory-mood-chip {
@@ -295,32 +355,506 @@ html, body {
   padding: 0.15rem 0.45rem;
   border-radius: 9999px;
   border: 1px solid rgba(169, 116, 79, 0.35);
-  background: rgba(169, 116, 79, 0.1);
-  color: #f0f6fc;
+  background: rgba(169, 116, 79, 0.12);
+  color: #3A2618;
 }
 
 /* Interactive Places Memory Map Canvas */
 .places-map-container {
-  background: radial-gradient(circle at center, rgba(169, 116, 79, 0.08) 0%, rgba(14, 17, 23, 0.95) 75%), #0e1117;
-  border: 1px solid #30363d;
+  background-color: #FAF6F0 !important;
+  border: 1px solid var(--border-subtle) !important;
   border-radius: 1rem;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 8px 30px rgba(58, 38, 24, 0.06);
 }
 
 .places-map-grid {
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 40px 40px;
+  background-image: radial-gradient(circle, rgba(169, 116, 79, 0.22) 1.2px, transparent 1.2px) !important;
+  background-size: 24px 24px !important;
+}
+
+@keyframes mapRadarPulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  70% { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
 }
 
 .map-radar-pin {
-  animation: radarPulse 2.5s infinite cubic-bezier(0.25, 1, 0.5, 1);
+  animation: mapRadarPulse 2.4s infinite cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-@keyframes radarPulse {
-  0% { transform: scale(1); opacity: 0.9; }
-  70% { transform: scale(2.4); opacity: 0; }
-  100% { transform: scale(2.4); opacity: 0; }
+/* Direct Location Label Pin */
+.map-point-badge {
+  background-color: #3A2618 !important;
+  color: #FBF6EF !important;
+  border: 1px solid rgba(169, 116, 79, 0.5) !important;
+  box-shadow: 0 4px 14px rgba(58, 38, 24, 0.22) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.map-point-badge:hover,
+.map-point-badge.active-loc {
+  background-color: #4D3320 !important;
+  border-color: #A9744F !important;
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(169, 116, 79, 0.35) !important;
+}
+
+/* ==========================================================================
+   Deep Wine & Soft Blush Universal App-Wide Styling Overrides
+   Replaces cold developer slate with luxury wellness boutique warmth
+   ========================================================================== */
+
+#app-shell {
+  background-color: var(--bg-workspace) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Surface Overrides */
+.bg-\[\#0d1117\],
+.bg-\[\#0e1117\] {
+  background-color: var(--bg-workspace) !important;
+  color: var(--text-primary) !important;
+}
+
+.bg-\[\#161b22\] {
+  background-color: #FFFFFF !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+.bg-\[\#161b22\]\/95,
+.bg-\[\#161b22\]\/90,
+.bg-\[\#161b22\]\/80 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: var(--text-primary) !important;
+}
+
+.bg-\[\#21262d\] {
+  background-color: #F4EDE3 !important;
+  color: var(--text-primary) !important;
+}
+
+.hover\:bg-\[\#21262d\]:hover {
+  background-color: #EAE1D5 !important;
+}
+
+.bg-\[\#30363d\] {
+  background-color: #E5DBD0 !important;
+}
+
+.hover\:bg-\[\#30363d\]:hover {
+  background-color: #D8CBBF !important;
+}
+
+.border-\[\#30363d\] {
+  border-color: var(--border-subtle) !important;
+}
+
+.border-\[\#21262d\] {
+  border-color: var(--border-subtle) !important;
+}
+
+/* Typographic Contrast Hierarchy in Deep Wine */
+.text-\[\#f0f6fc\],
+.text-white {
+  color: #3A2618 !important;
+}
+
+.text-\[\#c9d1d9\],
+.text-gray-200,
+.text-gray-300 {
+  color: #564538 !important;
+}
+
+.text-\[\#8b949e\],
+.text-gray-400 {
+  color: #7A6658 !important;
+}
+
+.text-gray-500 {
+  color: #9E8C7E !important;
+}
+
+/* Remap cold indigo & purple buttons to Warm Terracotta & Deep Wine */
+.bg-indigo-600,
+.bg-indigo-500,
+.hover\:bg-indigo-500:hover,
+.hover\:bg-indigo-600:hover {
+  background: linear-gradient(135deg, #A9744F 0%, #8C5635 100%) !important;
+  color: #FBF6EF !important;
+  border-color: #784832 !important;
+  box-shadow: 0 2px 8px rgba(169, 116, 79, 0.25) !important;
+}
+
+.from-purple-600.to-indigo-600,
+.from-indigo-600.to-purple-600,
+.from-purple-600.to-indigo-500 {
+  background-image: linear-gradient(135deg, #C48459 0%, #8C5635 100%) !important;
+  color: #FBF6EF !important;
+}
+
+.hover\:from-indigo-500:hover.hover\:to-purple-500:hover,
+.hover\:from-purple-500:hover.hover\:to-indigo-500:hover {
+  background-image: linear-gradient(135deg, #D49A70 0%, #9C633F 100%) !important;
+  color: #FBF6EF !important;
+}
+
+.text-indigo-400,
+.text-indigo-300,
+.text-purple-400,
+.text-purple-300 {
+  color: #A9744F !important;
+}
+
+.border-indigo-500,
+.border-indigo-500\/40,
+.border-indigo-500\/30,
+.border-indigo-500\/50,
+.border-purple-500\/40,
+.border-purple-500\/50 {
+  border-color: rgba(169, 116, 79, 0.45) !important;
+}
+
+.bg-indigo-950\/40,
+.bg-indigo-950\/60,
+.bg-indigo-950\/20,
+.bg-purple-950\/40 {
+  background-color: rgba(169, 116, 79, 0.12) !important;
+  color: #3A2618 !important;
+}
+
+.focus\:border-indigo-500:focus,
+.focus-within\:border-indigo-500\/80:focus-within {
+  border-color: #A9744F !important;
+  box-shadow: 0 0 16px var(--accent-terracotta-glow) !important;
+}
+
+/* Sidebar Styling in Warm Alabaster with Deep Wine Active State */
+#main-sidebar {
+  background-color: var(--bg-sidebar) !important;
+  border-right: 1px solid var(--border-subtle) !important;
+}
+
+#main-sidebar .border-b,
+#main-sidebar .border-t {
+  border-color: var(--border-subtle) !important;
+}
+
+.nav-item {
+  color: var(--text-secondary) !important;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.nav-item:hover {
+  background-color: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Active Nav Item - Solid Deep Wine with Soft Blush Text (Mosaic Style) */
+#main-sidebar nav button.active-glow,
+#main-sidebar nav button.bg-\[\#21262d\],
+.nav-item.active-glow {
+  background: #3A2618 !important;
+  color: #FBF6EF !important;
+  border-left: none !important;
+  box-shadow: 0 3px 12px rgba(58, 38, 24, 0.18) !important;
+}
+
+#main-sidebar nav button.active-glow span,
+#main-sidebar nav button.bg-\[\#21262d\] span {
+  color: #FBF6EF !important;
+}
+
+#ticket-badge-count {
+  background-color: #FAF6F0 !important;
+  color: #635345 !important;
+  border: 1px solid var(--border-subtle);
+}
+
+#main-sidebar nav button.active-glow #ticket-badge-count {
+  background-color: rgba(251, 246, 239, 0.2) !important;
+  color: #FBF6EF !important;
+  border-color: transparent;
+}
+
+/* Header in Frosted Soft Blush Alabaster */
+header {
+  background-color: var(--bg-header) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-primary) !important;
+}
+
+header #view-title {
+  color: #3A2618 !important;
+}
+
+header #current-date-display {
+  color: #7A6658 !important;
+  border-left-color: var(--border-subtle) !important;
+}
+
+/* Studio Callout & Action Proposals */
+#callout-card {
+  background-color: #FFFDFB !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+#action-proposal-container > div {
+  background: #FFFDFB !important;
+  border: 1.5px solid #A9744F !important;
+  box-shadow: 0 8px 24px rgba(169, 116, 79, 0.12) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Chat Stream Bubbles */
+#chat-stream .bg-\[\#161b22\] {
+  background-color: #FFFFFF !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 4px 16px rgba(58, 38, 24, 0.04) !important;
+}
+
+#chat-stream .bg-indigo-600\/30 {
+  background: #F4ECE2 !important;
+  border: 1px solid #DECEBE !important;
+  color: var(--text-primary) !important;
+}
+
+.model-badge {
+  background-color: rgba(169, 116, 79, 0.12) !important;
+  color: #A9744F !important;
+  border: 1px solid rgba(169, 116, 79, 0.3) !important;
+}
+
+/* Emotional Arc Card */
+#emotional-arc-card {
+  background-color: #FFFFFF !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+#emotional-arc-empty {
+  background-color: #FAF6F0 !important;
+  border: 1px dashed var(--border-medium) !important;
+}
+
+/* RonDesignLab Genie Floating Action Dock */
+.genie-dock-card {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid var(--border-subtle) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgba(58, 38, 24, 0.06);
+  color: var(--text-primary) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.genie-dock-card div {
+  color: var(--text-primary) !important;
+}
+
+.genie-dock-card:hover {
+  transform: translateY(-3px) scale(1.02);
+  border-color: #A9744F !important;
+  box-shadow: 0 14px 30px rgba(169, 116, 79, 0.22) !important;
+}
+
+/* Floating Pill Input Bar */
+.floating-pill-dock {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid #D8CBBF !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 16px 40px rgba(58, 38, 24, 0.08) !important;
+}
+
+.floating-pill-dock:focus-within {
+  border-color: #A9744F !important;
+  box-shadow: 0 16px 40px rgba(58, 38, 24, 0.1), 0 0 16px var(--accent-terracotta-glow) !important;
+}
+
+#reflection-input {
+  color: var(--text-primary) !important;
+}
+
+#reflection-input::placeholder {
+  color: var(--text-hint) !important;
+}
+
+#send-reflection-btn {
+  background: linear-gradient(135deg, #A9744F 0%, #3A2618 100%) !important;
+  color: #FBF6EF !important;
+  box-shadow: 0 4px 16px rgba(169, 116, 79, 0.35) !important;
+}
+
+#send-reflection-btn:hover {
+  transform: scale(1.06);
+  box-shadow: 0 6px 20px rgba(169, 116, 79, 0.5) !important;
+}
+
+#mode-selector-pill {
+  background-color: #FAF6F0 !important;
+  border-color: #D8CBBF !important;
+  color: #A9744F !important;
+}
+
+#mode-selector-pill:hover {
+  background-color: #F4EDE3 !important;
+}
+
+#mode-dropdown-menu,
+#mention-autocomplete-menu {
+  background-color: #FFFFFF !important;
+  border-color: #D8CBBF !important;
+  box-shadow: 0 20px 45px rgba(58, 38, 24, 0.15) !important;
+  color: #3A2618 !important;
+}
+
+.mode-dropdown-item:hover {
+  background-color: #FAF6F0 !important;
+}
+
+/* Kanban Board in Boutique Wellness Style */
+.kanban-column {
+  background-color: #F4EDE3 !important;
+  border-color: var(--border-subtle) !important;
+}
+
+.kanban-card {
+  background-color: #FFFFFF !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 2px 8px rgba(58, 38, 24, 0.05);
+}
+
+.kanban-card:hover {
+  border-color: var(--accent) !important;
+  box-shadow: 0 6px 18px rgba(169, 116, 79, 0.15);
+}
+
+/* Mindful Calendar */
+#calendar-events-section,
+#view-calendar-content .bg-\[\#161b22\] {
+  background-color: #FFFFFF !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+.calendar-day-cell {
+  border-color: var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+.calendar-day-cell:hover {
+  background-color: #F5EEE5 !important;
+}
+
+.calendar-day-cell.current-day {
+  border: 2px solid var(--accent) !important;
+  background-color: rgba(169, 116, 79, 0.12) !important;
+  font-weight: 700;
+}
+
+/* Modals & Dialogs (Clean Soft Blush Cream Cards, Deep Wine Headings & Action Buttons) */
+#settings-modal,
+#gdrive-modal,
+#memory-context-modal,
+#executive-report-modal,
+#journal-review-modal,
+#new-ticket-modal,
+#shutdown-modal {
+  background-color: rgba(58, 38, 24, 0.45) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+#settings-modal > div,
+#gdrive-modal > div,
+#memory-context-modal > div,
+#executive-report-modal > div,
+#journal-review-modal > div,
+#new-ticket-modal > div,
+#shutdown-modal > div {
+  background-color: #FFFDFB !important;
+  border: 1px solid #E2DDD3 !important;
+  box-shadow: 0 25px 60px rgba(58, 38, 24, 0.18), 0 0 0 1px rgba(169, 116, 79, 0.1) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Modal Headers */
+#settings-modal .border-b,
+#gdrive-modal .border-b,
+#memory-context-modal .border-b,
+#executive-report-modal .border-b,
+#journal-review-modal .border-b,
+#new-ticket-modal .border-b {
+  background-color: #FAF6F0 !important;
+  border-color: #E5DBD0 !important;
+}
+
+#settings-modal h3,
+#gdrive-modal h3,
+#memory-context-modal h3,
+#executive-report-modal h3,
+#journal-review-modal h3,
+#new-ticket-modal h3,
+#shutdown-modal h3 {
+  color: #3A2618 !important;
+}
+
+/* Primary Modal Action Buttons (Deep Wine with Soft Blush Text) */
+#save-settings-btn,
+#save-memory-context-btn,
+#confirm-shutdown-btn,
+#download-report-md-btn {
+  background: #3A2618 !important;
+  color: #FBF6EF !important;
+  border: 1px solid #3A2618 !important;
+  box-shadow: 0 2px 10px rgba(58, 38, 24, 0.2) !important;
+  transition: all 0.15s ease;
+}
+
+#save-settings-btn:hover,
+#save-memory-context-btn:hover,
+#confirm-shutdown-btn:hover,
+#download-report-md-btn:hover {
+  background: #28190E !important;
+}
+
+/* Inputs, Textareas, and Selects in Modals & App */
+input[type="text"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+  background-color: #FFFFFF !important;
+  border: 1px solid #D8CBBF !important;
+  color: #3A2618 !important;
+  border-radius: 8px;
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(169, 116, 79, 0.15) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9E8C7E !important;
+}
+
+/* Mobile Bottom Nav */
+#mobile-bottom-nav {
+  background-color: #FAF5EE !important;
+  border-top: 1px solid var(--border-subtle) !important;
 }

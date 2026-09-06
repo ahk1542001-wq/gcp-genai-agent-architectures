@@ -3088,12 +3088,12 @@ async function loadMemoryArchive() {
           catalog_no: "S-2026-0905-002"
         },
         {
-          id: "seed-cloudrun-03",
+          id: "seed-chiangmai-03",
           date: "2026-09-04",
-          title: "Vertex AI Multimodal Flash Latency Benchmarks",
-          snippet: "Sub-second multi-turn Burmese reflection responses validated across 68 automated verification tests.",
+          title: "Mountain Sanctuary & Deep Focus Contemplation",
+          snippet: "Sub-second multi-turn Burmese reflection responses validated in mountain sanctuary stillness.",
           mood: "DISCOVERY 🔍",
-          location: "📍 Cloud Run us-central1",
+          location: "📍 Chiang Mai, TH",
           catalog_no: "S-2026-0904-003"
         },
         {
@@ -3125,7 +3125,7 @@ function renderMemoryArchiveItems(items) {
   }
 
   const moods = ["CALM 🍃", "DISCOVERY 🔍", "BREAKTHROUGH 💡", "SERENITY 🕊️", "DEEP FOCUS ⚡"];
-  const locations = ["📍 Bangkok", "📍 Yangon", "📍 Cloud Run (us-central1)", "📍 Singapore"];
+  const locations = ["📍 Bangkok", "📍 Yangon", "📍 Chiang Mai", "📍 Singapore", "📍 Tokyo"];
 
   container.innerHTML = items.map((item, idx) => {
     const catalogNo = item.catalog_no || `S-${(item.date || "2026-09-06").replace(/-/g, "")}-${String(idx + 1).padStart(3, "0")}`;
@@ -3183,8 +3183,10 @@ function filterMemoryArchive(query) {
 // ============================================================================
 // 22. Places & Global Memory Canvas (Spatial Intelligence)
 // ============================================================================
+let activePlaceFilter = null;
+
 function initPlacesMap() {
-  // Places map interactivity
+  // Places map interactivity initialized
 }
 
 async function loadPlacesMap() {
@@ -3197,9 +3199,11 @@ async function loadPlacesMap() {
     }
 
     // Dynamic counts
-    const bkkCount = Math.max(14, entries.length * 3);
-    const ygnCount = Math.max(9, Math.floor(entries.length * 1.5));
-    const sgCount = Math.max(6, Math.floor(entries.length * 1.2));
+    const bkkCount = Math.max(42, entries.length * 3);
+    const ygnCount = Math.max(28, Math.floor(entries.length * 1.8));
+    const cmCount = Math.max(14, Math.floor(entries.length * 1.1));
+    const sgCount = Math.max(19, Math.floor(entries.length * 1.3));
+    const tyoCount = Math.max(8, Math.floor(entries.length * 0.7));
 
     const bkkEl = document.getElementById("places-count-bangkok");
     if (bkkEl) bkkEl.textContent = bkkCount;
@@ -3207,33 +3211,75 @@ async function loadPlacesMap() {
     const ygnEl = document.getElementById("places-count-yangon");
     if (ygnEl) ygnEl.textContent = ygnCount;
 
+    const cmEl = document.getElementById("places-count-chiangmai");
+    if (cmEl) cmEl.textContent = cmCount;
+
     const sgEl = document.getElementById("places-count-singapore");
     if (sgEl) sgEl.textContent = sgCount;
 
-    // Populated located reflections list
-    const listEl = document.getElementById("places-memories-list");
-    if (listEl) {
-      const samples = [
-        { flag: "🇹🇭", loc: "Bangkok Sanctuary", title: "Morning Architecture & Multi-Agent Planning", date: "Today", mood: "Gently Focused" },
-        { flag: "🇲🇲", loc: "Yangon Cultural Roots", title: "Burmese Bilingual Linguistic Adaptation", date: "Sep 05", mood: "Deep Introspection" },
-        { flag: "⚡", loc: "Cloud Run us-central1", title: "Production Container Deploy & Health Verification", date: "Sep 04", mood: "Resilient" },
-        { flag: "🇸🇬", loc: "Singapore Tech Hub", title: "APAC GenAI Academy Zero-Trust Presentation", date: "Sep 02", mood: "Expansive" }
-      ];
+    const tyoEl = document.getElementById("places-count-tokyo");
+    if (tyoEl) tyoEl.textContent = tyoCount;
 
-      listEl.innerHTML = samples.map(s => `
-        <div class="p-2.5 rounded-lg bg-[#0e1117] border border-[#30363d] flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <span class="text-base">${s.flag}</span>
-            <div>
-              <span class="text-white font-medium block">${escapeHtml(s.title)}</span>
-              <span class="text-[10px] text-gray-500">${escapeHtml(s.loc)} • ${escapeHtml(s.date)}</span>
-            </div>
-          </div>
-          <span class="text-[10px] text-amber-400 bg-amber-950/40 border border-amber-500/20 px-2 py-0.5 rounded">${escapeHtml(s.mood)}</span>
-        </div>
-      `).join("");
-    }
+    // Populated located reflections list (Real human personal sanctuaries)
+    const samples = [
+      { id: "bangkok", flag: "🇹🇭", loc: "Bangkok Creative Sanctuary", title: "Morning Architecture & Multi-Agent Planning", date: "Today", mood: "Gently Focused" },
+      { id: "yangon", flag: "🇲🇲", loc: "Yangon Cultural Roots", title: "Burmese Bilingual Linguistic Adaptation", date: "Sep 05", mood: "Deep Introspection" },
+      { id: "chiangmai", flag: "🇹🇭", loc: "Chiang Mai Mountain Sanctuary", title: "Mountain Reflection & Deep Focus Retreat", date: "Sep 04", mood: "Mindful Serenity" },
+      { id: "singapore", flag: "🇸🇬", loc: "Singapore Tech Hub", title: "APAC GenAI Academy Zero-Trust Presentation", date: "Sep 02", mood: "Expansive" },
+      { id: "tokyo", flag: "🇯🇵", loc: "Tokyo Zen Sanctuary", title: "Minimalist Design & Spatial Stillness", date: "Aug 29", mood: "Quiet Clarity" }
+    ];
+
+    renderPlacesMemoriesList(samples, activePlaceFilter);
+    initPlacesInteractivity(samples);
   } catch (err) {
     console.warn("Could not load places map:", err);
   }
+}
+
+function renderPlacesMemoriesList(samples, filterLoc = null) {
+  const listEl = document.getElementById("places-memories-list");
+  if (!listEl) return;
+
+  const filtered = filterLoc ? samples.filter(s => s.id === filterLoc) : samples;
+
+  listEl.innerHTML = filtered.map(s => `
+    <div class="p-3 rounded-xl bg-[#FAF6F0] border border-[#E5DBD0] hover:border-[#A9744F] flex items-center justify-between transition-colors cursor-pointer location-memory-item" data-loc="${s.id}">
+      <div class="flex items-center space-x-3">
+        <span class="text-lg">${s.flag}</span>
+        <div>
+          <span class="text-[#3A2618] font-medium block">${escapeHtml(s.title)}</span>
+          <span class="text-[10px] text-[#7A6858]">${escapeHtml(s.loc)} • ${escapeHtml(s.date)}</span>
+        </div>
+      </div>
+      <span class="text-[10px] text-[#A9744F] font-semibold bg-[#F5ECE1] border border-[#A9744F]/30 px-2.5 py-1 rounded-full">${escapeHtml(s.mood)}</span>
+    </div>
+  `).join("");
+}
+
+function initPlacesInteractivity(samples) {
+  // Point pins and location cards click handlers
+  const locTriggers = document.querySelectorAll("[data-loc]");
+  locTriggers.forEach(el => {
+    el.addEventListener("click", () => {
+      const locId = el.dataset.loc;
+      if (activePlaceFilter === locId) {
+        activePlaceFilter = null; // Toggle off
+        document.querySelectorAll(".map-point-badge").forEach(b => b.classList.remove("active-loc"));
+        showToast("Showing reflections from all sanctuaries");
+      } else {
+        activePlaceFilter = locId;
+        document.querySelectorAll(".map-point-badge").forEach(b => {
+          const parent = b.closest("[data-loc]");
+          if (parent && parent.dataset.loc === locId) {
+            b.classList.add("active-loc");
+          } else {
+            b.classList.remove("active-loc");
+          }
+        });
+        const locName = locId.charAt(0).toUpperCase() + locId.slice(1);
+        showToast(`Filtered memories for 📍 ${locName}`);
+      }
+      renderPlacesMemoriesList(samples, activePlaceFilter);
+    });
+  });
 }
