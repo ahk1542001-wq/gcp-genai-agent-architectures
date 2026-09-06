@@ -435,12 +435,78 @@ Output STRICT JSON:
         spoken_ack = ""
         detected_mode = self._detect_persona_heuristically(user_msg, mode)
 
+        is_burmese = any('\u1000' <= ch <= '\u109f' for ch in user_msg)
+
         name = ""
         if user_profile and isinstance(user_profile, dict):
             raw_name = (user_profile.get("name") or "").strip()
             if raw_name:
                 name = raw_name.split()[0]
 
+        user_snippet = user_msg.strip()
+        if len(user_snippet) > 50:
+            user_snippet = user_snippet[:47] + "..."
+
+        if not is_burmese:
+            # English Fallback Dialogue
+            display_name = name or "Victor"
+
+            # 1. Task creation intent
+            if any(w in lower_msg for w in ["task", "todo", "ticket", "kanban", "create", "synthesize", "priority", "sprint", "launch"]):
+                clean_title = re.sub(r'(please|create|task|add|to do|todo|for me|synthesize|tickets|ticket)', '', user_msg, flags=re.IGNORECASE).strip()
+                task_title = clean_title or "Verify Vertex AI & Cloud Run IAM Telemetry"
+                if len(task_title) > 60:
+                    task_title = "Launch Sanctuary OS on Cloud Run with Vertex AI"
+                actions.append({
+                    "tool": "create_ticket",
+                    "params": {
+                        "title": task_title,
+                        "priority": "High" if any(w in lower_msg for w in ["high", "urgent", "priority", "critical"]) else "Medium",
+                        "category": "Work" if any(w in lower_msg for w in ["work", "deploy", "code", "cloud", "run", "vertex", "ai", "launch"]) else "Wellness",
+                        "column": "todo"
+                    }
+                })
+                spoken_ack = f"Certainly, {display_name}. Creating high-priority task '{task_title[:35]}' in your To Do board..."
+
+            # 2. Task move to done
+            elif any(w in lower_msg for w in ["done", "finished", "completed", "resolved"]):
+                actions.append({
+                    "tool": "move_ticket",
+                    "params": {
+                        "ticket_title_or_id": user_msg[:40],
+                        "new_column": "done"
+                    }
+                })
+                spoken_ack = f"Understood, {display_name}. Marking task as completed and advancing to Done..."
+
+            # 3. Stress / Breathing
+            elif any(w in lower_msg for w in ["breathe", "stress", "anxious", "overwhelmed", "exhausted"]):
+                actions.append({"tool": "trigger_box_breathing", "params": {"reason": "Stress relief"}})
+                spoken_ack = f"Take a gentle, slow breath, {display_name}. Initiating box breathing exercise now..."
+
+            if actions:
+                action_desc = f"the task '{actions[0]['params']['title']}'"
+                reply = f"Based on your milestone '{user_snippet}', I've structured {action_desc} on your Kanban board. What critical architecture milestone shall we focus on next, {display_name}?"
+            elif any(w in lower_msg for w in ["hello", "hi", "greetings", "hey"]):
+                reply = f"Hello {display_name}! Delighted to connect with you in Sanctuary OS. What core priorities and mindful reflections shall we explore today?"
+            elif detected_mode == "actionable":
+                reply = f"Drawing from '{user_snippet}', we can translate this directly into structured, high-leverage execution milestones. Which priority will give you the greatest momentum today, {display_name}?"
+            elif detected_mode == "philosophy":
+                reply = f"Your reflection '{user_snippet}' touches on profound clarity. When examining this challenge, what aspects remain entirely within your sovereign control?"
+            elif detected_mode == "brainstorm":
+                reply = f"The idea '{user_snippet}' sparks inventive possibilities. Let's explore lateral angles and creative sparks to expand this horizon."
+            else:
+                reply = f"I've registered your reflection: '{user_snippet}'. What additional perspective or action would you like to reflect on, {display_name}?"
+
+            return {
+                "spoken_ack": spoken_ack or f"Certainly, {display_name}... reflecting on '{user_snippet[:30]}' now...",
+                "actions": actions,
+                "final_reply": reply,
+                "sentiment": 0.65,
+                "detected_mode": detected_mode
+            }
+
+        # Burmese Fallback Dialogue
         call_name = f"{name} ရေ" if name else "ခင်ဗျာ"
         user_stated = f"{name} ပြောတဲ့" if name else "ဝေမျှပေးတဲ့"
         user_possessive = f"{name} ရဲ့" if name else "မိတ်ဆွေရဲ့"
@@ -475,10 +541,6 @@ Output STRICT JSON:
         elif any(w in lower_msg for w in ["breathe", "stress", "anxious", "overwhelmed", "စိတ်ဖိစီး", "မော"]):
             actions.append({"tool": "trigger_box_breathing", "params": {"reason": "Stress relief"}})
             spoken_ack = f"စိတ်အေးအေးထားပါ {call_name}... အသက်ရှူစက်ဝိုင်းလေး ဖွင့်ပေးနေပါတယ်..."
-
-        user_snippet = user_msg.strip()
-        if len(user_snippet) > 50:
-            user_snippet = user_snippet[:47] + "..."
 
         if actions:
             action_desc = "လုပ်ဆောင်ချက်"
@@ -761,6 +823,13 @@ system: Personal Gemini Life Guardian
             raw_name = (user_profile.get("name") or "").strip()
             if raw_name:
                 name = raw_name.split()[0]
+
+        is_burmese = any('\u1000' <= ch <= '\u109f' for ch in text)
+        if not is_burmese:
+            return (
+                f"I have noted your reflection: '{user_snippet}'. "
+                f"What aspect is fully within your control, and how would you like to proceed next, {name or 'Victor'}?"
+            )
 
         call_name = f"{name} ရေ" if name else "ခင်ဗျာ"
         user_stated = f"{name} ပြောတဲ့" if name else "ဝေမျှပေးတဲ့"

@@ -1468,7 +1468,7 @@ async function approveActiveProposal() {
 
     const data = await res.json();
     if (feedbackEl) {
-      feedbackEl.className = "mt-2 text-xs font-medium text-center py-1 rounded bg-emerald-950/60 border border-emerald-500/40 text-emerald-300";
+      feedbackEl.className = "mt-2 text-xs font-medium text-center py-1.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 shadow-xs";
       feedbackEl.textContent = "✓ Action approved and persisted.";
       feedbackEl.classList.remove("hidden");
     }
@@ -1494,7 +1494,7 @@ async function approveActiveProposal() {
   } catch (err) {
     console.error("Action confirmation failed:", err);
     if (feedbackEl) {
-      feedbackEl.className = "mt-2 text-xs font-medium text-center py-1 rounded bg-rose-950/60 border border-rose-500/40 text-rose-300";
+      feedbackEl.className = "mt-2 text-xs font-medium text-center py-1.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 shadow-xs";
       feedbackEl.textContent = `Confirmation failed: ${err.message}`;
       feedbackEl.classList.remove("hidden");
     }
@@ -1829,6 +1829,20 @@ function initEmotionalChart() {
   const canvasWrapper = document.getElementById("emotional-arc-canvas-wrapper");
   if (emptyEl) emptyEl.classList.remove("hidden");
   if (canvasWrapper) canvasWrapper.classList.add("hidden");
+
+  // Wire up collapsible toggle
+  const arcToggleBtn = document.getElementById("arc-toggle-collapse-btn");
+  const arcBody = document.getElementById("emotional-arc-body");
+  const arcIcon = document.getElementById("arc-toggle-icon");
+  const arcText = document.getElementById("arc-toggle-text");
+  if (arcToggleBtn && arcBody && !arcToggleBtn.dataset.bound) {
+    arcToggleBtn.dataset.bound = "true";
+    arcToggleBtn.addEventListener("click", () => {
+      const isHidden = arcBody.classList.toggle("hidden");
+      if (arcIcon) arcIcon.textContent = isHidden ? "▸" : "▾";
+      if (arcText) arcText.textContent = isHidden ? "Expand" : "Collapse";
+    });
+  }
 }
 
 function updateEmotionalChart(sentimentScore = 0.5) {
@@ -3231,6 +3245,12 @@ function initPlacesMap() {
       subdomains: "abcd"
     }).addTo(placesLeafletMap);
 
+    // Clear static fallback points so Leaflet interactive markers are the single source of truth and IDs remain unique
+    const staticPoints = document.querySelector(".gps-points-layer");
+    if (staticPoints) {
+      staticPoints.innerHTML = "";
+    }
+
     tiles.on("load", () => {
       const fallback = document.getElementById("places-svg-fallback");
       if (fallback) fallback.classList.add("opacity-10");
@@ -3246,7 +3266,7 @@ function initPlacesMap() {
             <div class="map-point-badge custom-gps-badge absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap z-20 shadow-md">
               <span>${loc.flag}</span>
               <span>${loc.name}</span>
-              <span class="text-[#DE9E74] font-mono">(<span id="leaflet-count-${id}">${loc.defaultCount}</span>)</span>
+              <span class="text-[#DE9E74] font-mono">(<span id="places-count-${id}" class="leaflet-count-val">${loc.defaultCount}</span>)</span>
             </div>
           </div>
         </div>

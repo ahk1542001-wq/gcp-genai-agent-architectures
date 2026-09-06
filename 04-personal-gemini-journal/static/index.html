@@ -442,33 +442,6 @@
           </div>
         </div>
 
-        <!-- Sleek Auxiliary Action Chips (ChatGPT / Claude Style Prompt & Modal Tools) -->
-        <div class="flex items-center justify-center gap-2 sm:gap-2.5 my-3 px-1 flex-wrap">
-          <!-- Card 1: Chat Files (Google Drive & Context Export Modal) -->
-          <button type="button" id="dock-chat-files-btn" class="genie-dock-card group flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 hover:bg-[#FAF6F0] border border-[#E5DBD0] hover:border-[#A9744F] text-[#3A2618] shadow-xs transition-all hover:scale-[1.02] cursor-pointer" title="Attach Files & Google Drive Context">
-            <span class="text-sm">📁</span>
-            <span class="text-xs font-medium">Chat Files</span>
-          </button>
-
-          <!-- Card 2: Images (Visual Reflections & Mood Artifacts) -->
-          <button type="button" id="dock-images-btn" class="genie-dock-card group flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 hover:bg-[#FAF6F0] border border-[#E5DBD0] hover:border-[#A9744F] text-[#3A2618] shadow-xs transition-all hover:scale-[1.02] cursor-pointer" title="Visual Memories & Rewind">
-            <span class="text-sm">🖼️</span>
-            <span class="text-xs font-medium">Images</span>
-          </button>
-
-          <!-- Card 3: Translate (Bilingual Burmese & English Dialogue) -->
-          <button type="button" id="dock-translate-btn" class="genie-dock-card group flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 hover:bg-[#FAF6F0] border border-[#E5DBD0] hover:border-[#A9744F] text-[#3A2618] shadow-xs transition-all hover:scale-[1.02] cursor-pointer" title="Toggle Bilingual Burmese Mode">
-            <span class="text-sm">🌐</span>
-            <span id="dock-translate-label" class="text-xs font-medium">Translate</span>
-          </button>
-
-          <!-- Card 4: Audio Chat (Live Voice Assistant Toggle) -->
-          <button type="button" id="dock-audio-chat-btn" class="genie-dock-card group flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 hover:bg-[#FAF6F0] border border-[#E5DBD0] hover:border-[#A9744F] text-[#3A2618] shadow-xs transition-all hover:scale-[1.02] cursor-pointer" title="Start Live Voice Assistant">
-            <span class="text-sm">🎙️</span>
-            <span class="text-xs font-medium">Audio Chat</span>
-          </button>
-        </div>
-
         <!-- Brain Dump & Reflection Floating Pill Input Box (Sleek Minimal AI Dock) -->
         <div class="floating-pill-dock bg-white/95 border border-[#D8CBBF] rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 shadow-xl focus-within:border-[#A9744F] transition-all relative">
           <!-- Sleek Floating Mention / Slash Autocomplete Popup -->
@@ -479,6 +452,38 @@
             </div>
             <div id="mention-autocomplete-items" class="py-1 max-h-60 overflow-y-auto">
               <!-- Autocomplete items populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Sleek Integrated Tool Strip (ChatGPT / Claude Style Composer Accessories) -->
+          <div class="composer-tools-strip flex items-center justify-between gap-2 pb-2.5 mb-2.5 border-b border-[#E5DBD0]/70 flex-wrap">
+            <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <!-- Card 1: Chat Files (Google Drive & Context Export Modal) -->
+              <button type="button" id="dock-chat-files-btn" class="genie-dock-card group flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF6F0] hover:bg-[#F0E6D8] border border-[#E5DBD0] hover:border-[#A9744F] text-[#3A2618] text-xs font-medium shadow-xs transition-all hover:scale-[1.02] cursor-pointer" title="Attach Files & Google Drive Context">
+                <span class="text-xs">📁</span>
+                <span class="text-[11px]">Chat Files</span>
+              </button>
+
+              <!-- Card 2: Images (Visual Reflections & Mood Artifacts) -->
+              <button type="button" id="dock-images-btn" class="genie-dock-card group flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF6F0] hover:bg-[#F0E6D8] border border-[#E5DBD0] hover:border-[#A9744F] text-[#3A2618] text-xs font-medium shadow-xs transition-all hover:scale-[1.02] cursor-pointer" title="Visual Memories & Rewind">
+                <span class="text-xs">🖼️</span>
+                <span class="text-[11px]">Images</span>
+              </button>
+
+              <!-- Card 3: Translate (Bilingual Burmese & English Dialogue) -->
+              <button type="button" id="dock-translate-btn" class="genie-dock-card group flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF6F0] hover:bg-[#F0E6D8] border border-[#E5DBD0] hover:border-[#A9744F] text-[#3A2618] text-xs font-medium shadow-xs transition-all hover:scale-[1.02] cursor-pointer" title="Toggle Bilingual Burmese Mode">
+                <span class="text-xs">🌐</span>
+                <span id="dock-translate-label" class="text-[11px]">Translate</span>
+              </button>
+
+              <!-- Card 4: Audio Chat (Live Voice Assistant Toggle) -->
+              <button type="button" id="dock-audio-chat-btn" class="genie-dock-card group flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF6F0] hover:bg-[#F0E6D8] border border-[#E5DBD0] hover:border-[#A9744F] text-[#3A2618] text-xs font-medium shadow-xs transition-all hover:scale-[1.02] cursor-pointer" title="Start Live Voice Assistant">
+                <span class="text-xs">🎙️</span>
+                <span class="text-[11px]">Audio Chat</span>
+              </button>
+            </div>
+            <div class="hidden sm:flex items-center text-[10px] text-[#A9744F] font-mono font-medium tracking-wide">
+              <span>GEMINI 2.5 FLASH</span>
             </div>
           </div>
 
@@ -551,13 +556,13 @@
             </div>
             <div class="flex items-center space-x-2 shrink-0">
               <!-- Live Voice Mode Button (ChatGPT / Antigravity Audio Chat Style) -->
-              <button id="live-voice-toggle-btn" type="button" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#FAF6F0] hover:bg-[#F0E6D8] border border-[#D8CBBF] text-[#3A2618] flex items-center justify-center shadow-xs transition-all hover:scale-105 active:scale-95" title="Start Live Voice Mode">
+              <button id="live-voice-toggle-btn" type="button" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#FAF6F0] hover:bg-[#F0E6D8] border border-[#D8CBBF] text-[#3A2618] flex items-center justify-center shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer" title="Start Live Voice Mode">
                 <span id="voice-icon" class="text-sm sm:text-base">🎙️</span>
                 <span id="voice-btn-text" class="hidden">Start Live Voice</span>
               </button>
               <div id="voice-breathing-orb" class="hidden w-2.5 h-2.5 rounded-full bg-[#A9744F] animate-ping" title="Voice Channel Active"></div>
 
-              <button id="send-reflection-btn" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#3A2618] hover:bg-[#28190E] text-[#FBF6EF] font-bold flex items-center justify-center shadow-md transition-transform hover:scale-105 active:scale-95 shrink-0 ring-1 ring-[#A9744F]/40" title="Reflect (Send)">
+              <button id="send-reflection-btn" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#3A2618] hover:bg-[#28190E] text-[#FBF6EF] font-bold flex items-center justify-center shadow-md transition-transform hover:scale-105 active:scale-95 shrink-0 ring-1 ring-[#A9744F]/40 cursor-pointer" title="Reflect (Send)">
                 <span class="text-base sm:text-lg font-bold leading-none">↑</span>
               </button>
             </div>
@@ -565,27 +570,35 @@
         </div>
 
         <!-- Emotional & Cognitive Arc Visualizer (Chart.js - Subtle, Collapsible & Clean) -->
-        <div id="emotional-arc-card" class="bg-white border border-[#E5DBD0] rounded-2xl p-4 shadow-xs transition-all">
-          <div class="flex items-center justify-between mb-3">
+        <div id="emotional-arc-card" class="bg-white/85 border border-[#E5DBD0] rounded-2xl p-3.5 sm:p-4 shadow-xs transition-all">
+          <div class="flex items-center justify-between mb-2">
             <div class="flex items-center space-x-2">
-              <span class="text-base">📈</span>
+              <span class="text-sm sm:text-base">📈</span>
               <h3 class="text-xs font-bold text-[#3A2618] uppercase tracking-wider">Cognitive & Emotional Arc Progression</h3>
             </div>
-            <span id="arc-status-badge" class="text-[11px] text-[#7A6858] font-mono bg-[#FAF6F0] px-2.5 py-0.5 rounded-full border border-[#D8CBBF]">Real-Time Psychological Shift</span>
-          </div>
-
-          <!-- Authentic Empty State (Zero Fake Lines) -->
-          <div id="emotional-arc-empty" class="h-28 flex flex-col items-center justify-center text-center p-4 border border-dashed border-[#D8CBBF] rounded-xl bg-[#FAF6F0]/60">
-            <div class="w-8 h-8 rounded-full bg-[#A9744F]/10 border border-[#A9744F]/20 flex items-center justify-center text-[#A9744F] mb-1.5">
-              📊
+            <div class="flex items-center space-x-2">
+              <span id="arc-status-badge" class="text-[10px] sm:text-[11px] text-[#7A6858] font-mono bg-[#FAF6F0] px-2.5 py-0.5 rounded-full border border-[#D8CBBF]">Real-Time Psychological Shift</span>
+              <button id="arc-toggle-collapse-btn" type="button" class="text-[11px] text-[#A9744F] hover:text-[#3A2618] bg-[#FAF6F0] hover:bg-[#F4EDE3] px-2.5 py-0.5 rounded-lg border border-[#D8CBBF] transition-all flex items-center gap-1 font-medium cursor-pointer" title="Toggle Emotional Arc Visualizer">
+                <span id="arc-toggle-icon">▾</span>
+                <span id="arc-toggle-text">Collapse</span>
+              </button>
             </div>
-            <p class="text-xs text-[#3A2618] font-medium">Awaiting Reflection Dialogue</p>
-            <p class="text-[11px] text-[#7A6858] max-w-sm mt-0.5">Your emotional clarity and grounding trajectory will graph here automatically as you reflect with your Guardian.</p>
           </div>
 
-          <!-- Dynamic Canvas (Revealed only upon genuine reflection) -->
-          <div id="emotional-arc-canvas-wrapper" class="h-44 w-full hidden">
-            <canvas id="emotionalArcChart"></canvas>
+          <div id="emotional-arc-body" class="transition-all duration-200">
+            <!-- Authentic Empty State (Zero Fake Lines) -->
+            <div id="emotional-arc-empty" class="h-20 flex flex-col items-center justify-center text-center p-3 border border-dashed border-[#D8CBBF] rounded-xl bg-[#FAF6F0]/60">
+              <div class="w-6 h-6 rounded-full bg-[#A9744F]/10 border border-[#A9744F]/20 flex items-center justify-center text-[#A9744F] mb-1 text-xs">
+                📊
+              </div>
+              <p class="text-xs text-[#3A2618] font-medium">Awaiting Reflection Dialogue</p>
+              <p class="text-[10px] sm:text-[11px] text-[#7A6858] max-w-sm">Your emotional clarity and grounding trajectory will graph here automatically as you reflect with your Guardian.</p>
+            </div>
+
+            <!-- Dynamic Canvas (Revealed only upon genuine reflection) -->
+            <div id="emotional-arc-canvas-wrapper" class="h-32 sm:h-36 w-full hidden mt-2">
+              <canvas id="emotionalArcChart"></canvas>
+            </div>
           </div>
         </div>
       </section>

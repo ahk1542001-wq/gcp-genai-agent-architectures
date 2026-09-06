@@ -165,13 +165,15 @@ def record_browser_session():
         # Step 2: RonDesignLab Genie Floating Action Dock Interactions (0:07 - 0:22)
         print("  2/16. RonDesignLab Genie Action Dock (Translate, Files, Audio Chat)...")
         
-        # 2a. Dock Translate Toggle -> Switches language to Burmese
+        # 2a. Dock Translate Toggle -> Demonstrates instant bilingual support and returns to English
         dock_translate = page.locator("#dock-translate-btn")
         if dock_translate.is_visible():
             smooth_move(page, dock_translate)
             page.wait_for_timeout(300)
             dock_translate.click()
-            page.wait_for_timeout(1000) # Show toast and translated pill
+            page.wait_for_timeout(800) # Show Burmese toast
+            dock_translate.click()
+            page.wait_for_timeout(800) # Switch back to English for international hackathon evaluation
 
         # 2b. Dock Chat Files -> Scoped Google Drive Context Modal
         dock_files = page.locator("#dock-chat-files-btn")
@@ -195,7 +197,7 @@ def record_browser_session():
                 close_gdrive.click()
                 page.wait_for_timeout(400)
 
-        # Clear input box for clean persona and Burmese thought typing
+        # Clear input box for clean persona and English thought typing
         clear_input_btn = page.locator("#clear-input-btn")
         if clear_input_btn.is_visible():
             clear_input_btn.click()
@@ -357,7 +359,7 @@ def record_browser_session():
             page.wait_for_selector("#view-places-content:not(.hidden)", timeout=3000)
             page.wait_for_timeout(1200)
 
-            pin_bangkok = page.locator("#places-count-bangkok")
+            pin_bangkok = page.locator("#places-count-bangkok").first
             if pin_bangkok.is_visible():
                 smooth_move(page, pin_bangkok)
                 page.wait_for_timeout(800)
@@ -514,7 +516,7 @@ def build_audio_track(total_duration):
         (7.0, "audio_02.aiff", "The RonDesignLab Genie Action Dock enables instant bilingual switching and Google Drive context injection."),
         (14.5, "audio_03.aiff", "Activate the multimodal voice assistant with dynamic breathing orb and live audio waveform."),
         (21.0, "audio_04.aiff", "Select from four reflection personas, with quick mention autocomplete for sovereign focus."),
-        (27.5, "audio_05.aiff", "Reflect freely in your native language. Gemini 2.5 Flash responds with deep empathetic clarity and dynamic emotional trajectory."),
+        (27.5, "audio_05.aiff", "Reflect freely with English or bilingual dialogue. Gemini 2.5 Flash responds with deep empathetic clarity and dynamic emotional trajectory."),
         (38.0, "audio_06.aiff", "With human-in-the-loop sovereignty, Gemini proposes actions requiring explicit approval."),
         (45.0, "audio_07.aiff", "Seamlessly manage priorities with the executive Kanban board and mindful calendar."),
         (52.0, "audio_08.aiff", "Explore the Museum Memory Archive with cataloged relics, and the Places Spatial Canvas tracking memories across Southeast Asia."),

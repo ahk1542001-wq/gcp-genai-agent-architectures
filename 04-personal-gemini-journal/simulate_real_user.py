@@ -23,15 +23,21 @@ import time
 import socket
 import threading
 import requests
+import shutil
 from playwright.sync_api import sync_playwright
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(line_buffering=True)
+
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 DEFAULT_BASE_URL = "http://localhost:8080"
-SCREENSHOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "screenshots", "real_user_verification"))
+SCREENSHOT_DIR = os.path.abspath(os.path.join(PROJECT_ROOT, "tests", "screenshots", "real_user_verification"))
+ROOT_SCREENSHOT_DIR = os.path.abspath(os.path.join(PROJECT_ROOT, "screenshots", "real_user_verification"))
 os.makedirs(SCREENSHOT_DIR, exist_ok=True)
+os.makedirs(ROOT_SCREENSHOT_DIR, exist_ok=True)
 TEST_AUTH_HEADER = "test-token:victor_kyaw:victor@sanctuary.test:Victor Kyaw"
 
 
@@ -487,6 +493,11 @@ def run_real_user_simulation():
             clean_screenshot = os.path.join(SCREENSHOT_DIR, "18_clean_state_verified.png")
             page.screenshot(path=clean_screenshot)
             print(f"[Step 19] Saved clean state screenshot: {clean_screenshot}")
+
+            # Mirror all screenshots to ROOT_SCREENSHOT_DIR as well
+            for f in os.listdir(SCREENSHOT_DIR):
+                if f.endswith(".png"):
+                    shutil.copy2(os.path.join(SCREENSHOT_DIR, f), os.path.join(ROOT_SCREENSHOT_DIR, f))
 
             browser.close()
             print("[Simulation] Real human user simulation completed with 100% SUCCESS and full cleanup!")

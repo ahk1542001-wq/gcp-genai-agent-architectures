@@ -288,15 +288,16 @@ html, body {
   transform: translateY(-1.5px) scale(1.02);
   border-color: #A9744F !important;
   background-color: #FAF6F0 !important;
-  box-shadow: 0 6px 18px rgba(169, 116, 79, 0.16) !important;
+  box-shadow: 0 4px 12px rgba(169, 116, 79, 0.15) !important;
 }
 
-.floating-pill-dock {
-  background: rgba(255, 255, 255, 0.96) !important;
-  border: 1px solid #D8CBBF !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 16px 40px rgba(58, 38, 24, 0.08) !important;
+.composer-tools-strip {
+  background: transparent;
+}
+
+.composer-tools-strip .genie-dock-card {
+  font-size: 0.72rem;
+  letter-spacing: -0.01em;
 }
 
 /* Archival Stamp (Mosaic Style in Archival Crimson / Terracotta) */
