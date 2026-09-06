@@ -2,7 +2,7 @@
 
 [![Google Cloud Run](https://img.shields.io/badge/Google_Cloud-Cloud_Run-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
 [![Hackathon Evaluation Label](https://img.shields.io/badge/Hackathon_Label-dev--tutorial%3Dcloud--run--ai--challenge-34A853?logo=googlecloud&logoColor=white)](./04-personal-gemini-journal/deploy.sh)
-[![Pattern 4 Tests](https://img.shields.io/badge/Pattern_4_Tests-66%2F66_Passing_(100%25)-34A853?logo=pytest&logoColor=white)](./04-personal-gemini-journal/tests)
+[![Pattern 4 Tests](https://img.shields.io/badge/Pattern_4_Tests-68%2F68_Passing_(100%25)-34A853?logo=pytest&logoColor=white)](./04-personal-gemini-journal/tests)
 [![Vertex AI](https://img.shields.io/badge/Google_Cloud-Vertex_AI-EA4335?logo=googlecloud&logoColor=white)](https://cloud.google.com/vertex-ai)
 [![Google ADK](https://img.shields.io/badge/Google_ADK-v1.27%2B-34A853?logo=google&logoColor=white)](https://github.com/google/adk)
 [![Model Context Protocol](https://img.shields.io/badge/Protocol-MCP-8A2BE2)](https://modelcontextprotocol.io)
@@ -10,7 +10,17 @@
 
 > A production-grade collection of enterprise AI Agent architectures built on **Google Cloud**, demonstrating the core pillars of modern agentic systems: **Unstructured Document Intelligence (RAG)**, **Structured Big Data Analytics (Model Context Protocol)**, **Autonomous Operational Workflows (Cloud Run Sandboxes & Human-in-the-Loop)**, and **Privacy-First Executive Journaling (Sanctuary OS on Cloud Run)**.
 >
-> **🏆 Featured Ideathon Submission:** [Pattern 4 — Secure Personal Gemini Journal & Executive Sanctuary](./04-personal-gemini-journal/) for the **Hack2Skill APAC GenAI Academy (Accelerate AI with Cloud Run)**. Deployed with mandatory evaluation label `--labels="dev-tutorial=cloud-run-ai-challenge"` and 100% verified with 66/66 automated tests.
+> **🏆 Featured Ideathon Submission:** [Pattern 4 — Secure Personal Gemini Journal & Executive Sanctuary](./04-personal-gemini-journal/) for the **Hack2Skill APAC GenAI Academy (Accelerate AI with Cloud Run)**. Deployed with mandatory evaluation label `--labels="dev-tutorial=cloud-run-ai-challenge"` and 100% verified with 68/68 automated tests.
+
+---
+
+### 🎬 Featured Project Demo: Sanctuary OS (1-Minute Walkthrough)
+
+[![Sanctuary OS Walkthrough](./04-personal-gemini-journal/sanctuary_os_demo_walkthrough.gif)](./04-personal-gemini-journal/sanctuary_os_demo_walkthrough.mp4)
+
+- 🌐 **Live Cloud Run Deployment:** [https://personal-gemini-journal-ypp4pspywq-uc.a.run.app](https://personal-gemini-journal-ypp4pspywq-uc.a.run.app)
+- 👤 **Instant Evaluator Access:** Click **"Continue as Guest Evaluator"** for instant sandbox testing with zero login required.
+- 📹 **Walkthrough Video:** [`sanctuary_os_demo_walkthrough.mp4`](./04-personal-gemini-journal/sanctuary_os_demo_walkthrough.mp4)
 
 ---
 

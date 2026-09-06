@@ -48,6 +48,28 @@ gcloud services enable \
 ENV_VARS="GCP_PROJECT_ID=${PROJECT_ID},ENVIRONMENT=production,GEMINI_MODEL=gemini-2.5-flash,GOOGLE_CLOUD_LOCATION=${REGION}"
 SECRET_ARGS=()
 
+# Dynamic propagation of public Firebase Web settings
+if [ -z "${FIREBASE_API_KEY}" ]; then
+    FIREBASE_API_KEY=$(gcloud run services describe "${SERVICE_NAME}" --platform managed --region "${REGION}" --project "${PROJECT_ID}" --format='value(spec.template.spec.containers[0].env.filter(name=FIREBASE_API_KEY).value)' 2>/dev/null || echo "")
+fi
+if [ -n "${FIREBASE_API_KEY}" ]; then
+    ENV_VARS="${ENV_VARS},FIREBASE_API_KEY=${FIREBASE_API_KEY}"
+fi
+
+if [ -z "${FIREBASE_APP_ID}" ]; then
+    FIREBASE_APP_ID=$(gcloud run services describe "${SERVICE_NAME}" --platform managed --region "${REGION}" --project "${PROJECT_ID}" --format='value(spec.template.spec.containers[0].env.filter(name=FIREBASE_APP_ID).value)' 2>/dev/null || echo "")
+fi
+if [ -n "${FIREBASE_APP_ID}" ]; then
+    ENV_VARS="${ENV_VARS},FIREBASE_APP_ID=${FIREBASE_APP_ID}"
+fi
+
+if [ -z "${FIREBASE_MESSAGING_SENDER_ID}" ]; then
+    FIREBASE_MESSAGING_SENDER_ID=$(gcloud run services describe "${SERVICE_NAME}" --platform managed --region "${REGION}" --project "${PROJECT_ID}" --format='value(spec.template.spec.containers[0].env.filter(name=FIREBASE_MESSAGING_SENDER_ID).value)' 2>/dev/null || echo "")
+fi
+if [ -n "${FIREBASE_MESSAGING_SENDER_ID}" ]; then
+    ENV_VARS="${ENV_VARS},FIREBASE_MESSAGING_SENDER_ID=${FIREBASE_MESSAGING_SENDER_ID}"
+fi
+
 if [ "${USE_VERTEX_AI}" = "true" ] || [ "${USE_VERTEX_AI}" = "1" ]; then
     echo "  ℹ️ AI Engine: Vertex AI Enterprise IAM (roles/aiplatform.user) explicitly selected."
     ENV_VARS="${ENV_VARS},USE_VERTEX_AI=true"
