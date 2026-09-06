@@ -70,6 +70,17 @@ def _clean_and_parse_json(raw_text: str) -> Any:
     return json.loads(text)
 
 
+def sanitize_delimiter_tags(text: str) -> str:
+    """Neutralize XML/tag delimiters to prevent prompt injection breakouts."""
+    if not text:
+        return ""
+    return (
+        str(text)
+        .replace("</user_journal_reflection>", "[ESCAPED_CLOSING_TAG]")
+        .replace("<user_journal_reflection>", "[ESCAPED_OPENING_TAG]")
+    )
+
+
 def resolve_gemini_api_key(project_id: Optional[str] = None, use_vertex: Optional[bool] = None) -> Optional[str]:
     """
     Resolves Gemini API key from environment variable or Secret Manager.
@@ -302,7 +313,7 @@ class GeminiJournalService:
         - final_voice_reply: Calming, empathetic, or coaching vocal response
         - detected_mode: Auto-detected or specified persona mode ("actionable", "philosophy", "brainstorm", "balanced")
         """
-        sanitized = user_message.strip()
+        sanitized = sanitize_delimiter_tags(user_message.strip())
         effective_mode = persona_mode if persona_mode in ("balanced", "actionable", "philosophy", "brainstorm", "coach", "guardian", "auto") else "auto"
 
         if effective_mode in ("actionable", "coach"):
@@ -501,7 +512,7 @@ Output STRICT JSON:
     # Multi-turn Chat & Summary
     # --------------------------------------------------------------------------
     def chat_turn(self, conversation_history: List[Dict[str, str]], user_message: str, past_wisdom: Optional[str] = None, user_profile: Optional[Dict[str, Any]] = None) -> str:
-        sanitized_message = user_message.strip()
+        sanitized_message = sanitize_delimiter_tags(user_message.strip())
         context_block = ""
         if past_wisdom:
             context_block = f"\n[Context from past journal wisdom]: {past_wisdom}\n"
@@ -544,7 +555,7 @@ Provide a warm, empathetic, and reflective response that encourages deeper self-
             return self._fallback_chat_response(sanitized_message, user_profile=user_profile)
 
     def summarize_session(self, conversation_history: List[Dict[str, str]]) -> Dict[str, Any]:
-        text_transcript = "\n".join([f"{msg.get('role', 'user').title()}: {msg.get('text', '')}" for msg in conversation_history])
+        text_transcript = sanitize_delimiter_tags("\n".join([f"{msg.get('role', 'user').title()}: {msg.get('text', '')}" for msg in conversation_history]))
         prompt = f"""Analyze this personal journaling session and output structured takeaways in JSON.
 Journal Transcript:
 <user_journal_reflection>
@@ -591,7 +602,7 @@ Output strict JSON:
 
 Current User Theme:
 <user_journal_reflection>
-{current_topic}
+{sanitize_delimiter_tags(current_topic)}
 </user_journal_reflection>
 
 Past Journal Archives:
@@ -625,7 +636,7 @@ If no connection is relevant, output {{"matched_entry_id": null}}
     # Emotional & Cognitive Arc Visualizer
     # --------------------------------------------------------------------------
     def analyze_emotional_arc(self, conversation_history: List[Dict[str, str]]) -> Dict[str, Any]:
-        text_transcript = "\n".join([f"Turn {i+1} ({msg.get('role', 'user')}): {msg.get('text', '')}" for i, msg in enumerate(conversation_history)])
+        text_transcript = sanitize_delimiter_tags("\n".join([f"Turn {i+1} ({msg.get('role', 'user')}): {msg.get('text', '')}" for i, msg in enumerate(conversation_history)]))
         prompt = f"""Perform granular emotional arc analysis on this journaling session.
 Transcript:
 <user_journal_reflection>
@@ -666,7 +677,7 @@ Output strict JSON:
         prompt = f"""Distill 3 to 5 clear, empowering, pragmatic action items from this journal entry.
 Journal Content:
 <user_journal_reflection>
-{journal_content}
+{sanitize_delimiter_tags(journal_content)}
 </user_journal_reflection>
 
 Output strict JSON list:
