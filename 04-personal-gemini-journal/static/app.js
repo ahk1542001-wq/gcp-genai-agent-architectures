@@ -2735,6 +2735,27 @@ function escapeHtml(text) {
     .replace(/'/g, "&#039;");
 }
 
+function showToast(message, duration = 2800) {
+  let toastContainer = document.getElementById("sanctuary-toast-container");
+  if (!toastContainer) {
+    toastContainer = document.createElement("div");
+    toastContainer.id = "sanctuary-toast-container";
+    toastContainer.className = "fixed bottom-6 right-6 z-[9999] flex flex-col space-y-2 pointer-events-none";
+    document.body.appendChild(toastContainer);
+  }
+
+  const toast = document.createElement("div");
+  toast.className = "bg-[#161b22]/95 border border-amber-600/40 text-[#f0f6fc] text-xs px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-2 animate-fadeIn pointer-events-auto transition-all duration-300";
+  toast.innerHTML = `<span class="text-amber-400">🌿</span><span>${escapeHtml(message)}</span>`;
+  toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(8px)";
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
 // ============================================================================
 // 18. Genie Chatbot Floating Action Dock (RonDesignLab Inspired)
 // ============================================================================

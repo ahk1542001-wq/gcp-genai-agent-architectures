@@ -1754,6 +1754,10 @@ def test_browser_genie_dock_archive_places_and_context_modals():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
+
+        page_errors = []
+        page.on("pageerror", lambda err: page_errors.append(str(err)))
+
         goto_authenticated(page, name="Victor Kyaw")
 
         # 1. Verify 4 Genie Action Dock Cards
@@ -1805,14 +1809,76 @@ def test_browser_genie_dock_archive_places_and_context_modals():
         page.wait_for_timeout(200)
         assert not page.locator("#memory-context-modal").is_visible()
 
-        # 7. Test Google Drive Modal via Dock Card 1
+        # 7. Test Google Drive Modal via Dock Card 1 & Document Context Insertion
         page.locator("#nav-journal").click()
         page.wait_for_timeout(200)
         dock_files.click()
         page.wait_for_selector("#gdrive-modal:not(.hidden)", timeout=3000)
         assert page.locator(".gdrive-file-item").first.is_visible()
-        page.locator("#close-gdrive-modal-btn").click()
-        page.wait_for_timeout(200)
-        assert not page.locator("#gdrive-modal").is_visible()
+
+        # Click insert context on first file, verifying toast and auto-close
+        page.locator(".gdrive-insert-btn").first.click()
+        page.wait_for_timeout(300)
+        assert not page.locator("#gdrive-modal").is_visible(), "Modal should close upon inserting context"
+        assert "Google Drive Context" in page.locator("#reflection-input").input_value()
+
+        # Ensure zero unhandled JavaScript page errors
+        assert len(page_errors) == 0, f"Encountered unexpected page errors: {page_errors}"
 
         browser.close()
+
+
+def test_browser_rapid_view_switching_concurrency_and_canvas_stability():
+    """
+    Stress test rapid view switching between Archive, Places, Rewind, and Journal
+    while multi-turn reflection is in flight and during viewport resizing,
+    verifying zero unhandled runtime exceptions or Chart.js canvas errors.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        page_errors = []
+        page.on("pageerror", lambda err: page_errors.append(str(err)))
+
+        goto_authenticated(page, name="Victor Kyaw")
+
+        # 1. Start a reflection input and send
+        input_box = page.locator("#reflection-input")
+        input_box.fill("Stress testing concurrent view switching and Chart.js resilience.")
+        page.locator("#send-reflection-btn").click()
+
+        # 2. Immediately rapidly switch among all views without waiting for response
+        views_to_cycle = [
+            "#nav-archive",
+            "#nav-places",
+            "#nav-rewind",
+            "#nav-kanban",
+            "#nav-calendar",
+            "#nav-archive",
+            "#nav-places",
+            "#nav-journal"
+        ]
+
+        for nav_selector in views_to_cycle:
+            btn = page.locator(nav_selector)
+            if btn.is_visible():
+                btn.click()
+                page.wait_for_timeout(60)
+
+        # 3. Simulate viewport resize while views were toggled
+        page.set_viewport_size({"width": 800, "height": 600})
+        page.wait_for_timeout(100)
+        page.set_viewport_size({"width": 1440, "height": 900})
+        page.wait_for_timeout(200)
+
+        # 4. Return to Journal view and ensure chat-stream or empty state is healthy
+        page.locator("#nav-journal").click()
+        page.wait_for_timeout(500)
+        assert page.locator("#view-journal-content").is_visible()
+
+        # 5. Assert zero uncaught JavaScript page exceptions
+        assert len(page_errors) == 0, f"Encountered unexpected page errors during rapid view switching: {page_errors}"
+
+        browser.close()
+

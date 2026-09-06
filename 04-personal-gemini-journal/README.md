@@ -7,7 +7,7 @@
 [![Cloud Firestore](https://img.shields.io/badge/Google_Cloud-Firestore-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/docs/firestore)
 [![Secret Manager](https://img.shields.io/badge/Google_Cloud-Secret_Manager-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/secret-manager)
 [![Gemini 2.5 & 3.7 Flash](https://img.shields.io/badge/Gemini-2.5_%26_3.7_Flash-8A2BE2?logo=google&logoColor=white)](https://ai.google.dev)
-[![Test Suite](https://img.shields.io/badge/Tests-76%2F76_Passing_(100%25)-34A853?logo=pytest&logoColor=white)](./tests)
+[![Test Suite](https://img.shields.io/badge/Tests-77%2F77_Passing_(100%25)-34A853?logo=pytest&logoColor=white)](./tests)
 [![Design](https://img.shields.io/badge/UI_Craft-Zero_AI_Slop-indigo)](./static)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
