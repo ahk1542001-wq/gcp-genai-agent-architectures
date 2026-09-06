@@ -1748,3 +1748,71 @@ def test_browser_auto_summarize_persists_breakthrough_and_summary_to_firestore()
         assert "breakthrough" in payload
         assert "MultiTurn" in payload.get("tags", [])
         browser.close()
+
+def test_browser_genie_dock_archive_places_and_context_modals():
+    """Verify Genie Floating Action Dock, Museum Archive, Places Map, and Context/GDrive Modals."""
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        goto_authenticated(page, name="Victor Kyaw")
+
+        # 1. Verify 4 Genie Action Dock Cards
+        dock_files = page.locator("#dock-chat-files-btn")
+        dock_images = page.locator("#dock-images-btn")
+        dock_translate = page.locator("#dock-translate-btn")
+        dock_audio = page.locator("#dock-audio-chat-btn")
+        assert dock_files.is_visible()
+        assert dock_images.is_visible()
+        assert dock_translate.is_visible()
+        assert dock_audio.is_visible()
+
+        # 2. Test Dock Translate toggle
+        dock_translate.click()
+        page.wait_for_timeout(300)
+        refl_input = page.locator("#reflection-input")
+        assert len(refl_input.input_value()) > 0 or "မြန်မာ" in page.locator("#dock-translate-label").inner_text()
+
+        # 3. Test Dock Images switches to Rewind
+        dock_images.click()
+        page.wait_for_timeout(300)
+        assert page.locator("#view-rewind-content").is_visible()
+
+        # 4. Test Museum Archive View
+        page.locator("#nav-archive").click()
+        page.wait_for_timeout(300)
+        assert page.locator("#view-archive-content").is_visible()
+        assert page.locator(".archival-stamp").first.is_visible()
+        assert page.locator(".paper-note-card").first.is_visible()
+
+        # 5. Test Places & Map View
+        page.locator("#nav-places").click()
+        page.wait_for_timeout(300)
+        assert page.locator("#view-places-content").is_visible()
+        assert page.locator("#places-count-bangkok").is_visible()
+
+        # 6. Test Personal Memory Context Modal
+        page.locator("#open-memory-context-btn").click()
+        page.wait_for_selector("#memory-context-modal:not(.hidden)", timeout=3000)
+        assert page.locator("#tab-content-profile").is_visible()
+        
+        # Test tab switching
+        page.locator("#tab-btn-goals").click()
+        page.wait_for_timeout(200)
+        assert page.locator("#tab-content-goals").is_visible()
+        
+        # Close modal with button
+        page.locator("#close-memory-context-btn").click()
+        page.wait_for_timeout(200)
+        assert not page.locator("#memory-context-modal").is_visible()
+
+        # 7. Test Google Drive Modal via Dock Card 1
+        page.locator("#nav-journal").click()
+        page.wait_for_timeout(200)
+        dock_files.click()
+        page.wait_for_selector("#gdrive-modal:not(.hidden)", timeout=3000)
+        assert page.locator(".gdrive-file-item").first.is_visible()
+        page.locator("#close-gdrive-modal-btn").click()
+        page.wait_for_timeout(200)
+        assert not page.locator("#gdrive-modal").is_visible()
+
+        browser.close()

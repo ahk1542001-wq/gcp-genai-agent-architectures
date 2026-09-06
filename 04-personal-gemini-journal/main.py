@@ -102,6 +102,10 @@ class ProfileRequest(BaseModel):
     active_goals: Optional[List[str]] = None
     daily_routine: Optional[str] = None
     living_memory: Optional[List[str]] = None
+    preferred_name: Optional[str] = None
+    occupation: Optional[str] = None
+    background_context: Optional[str] = None
+    tone_guidance: Optional[str] = None
 
 class DistillActionRequest(BaseModel):
     content: str = Field(..., min_length=5)

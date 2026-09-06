@@ -15,6 +15,11 @@
   --accent-emerald: #3fb950;
   --accent-amber: #d29922;
   --accent-rose: #f85149;
+
+  /* Sanctuary OS Signature 3-Color Palette */
+  --paper: #FBF6EF;   /* Soft Blush / Warm Alabaster (RGB 251, 246, 239) */
+  --ink: #3A2618;     /* Deep Wine / Espresso Dark Roast (RGB 58, 38, 24) */
+  --accent: #A9744F;  /* Warm Terracotta / Caramel Cognac (RGB 169, 116, 79) */
 }
 
 body {
@@ -213,4 +218,109 @@ html, body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* ==========================================================================
+   Genie Chatbot Floating Action Dock & Museum Archive Aesthetics
+   ========================================================================== */
+.genie-dock-card {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.genie-dock-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px -4px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+.floating-pill-dock {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Archival Stamp (Mosaic Style with Warm Terracotta #A9744F) */
+.archival-stamp {
+  display: inline-block;
+  border: 1.5px solid var(--accent, #A9744F);
+  color: var(--accent, #A9744F);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  transform: rotate(-1.5deg);
+  border-radius: 3px;
+  background: rgba(169, 116, 79, 0.12);
+}
+.archival-stamp.pending {
+  border-style: dashed;
+  color: #d29922;
+  border-color: #d29922;
+  background: rgba(210, 153, 34, 0.08);
+}
+
+/* Paper Note Handwritten Artifact (Mosaic Style with #FBF6EF & #3A2618) */
+.paper-note-card {
+  position: relative;
+  padding: 1.1rem 0.9rem 0.9rem 1.1rem;
+  background: var(--paper, #FBF6EF);
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(169, 116, 79, 0.18) 24px, rgba(169, 116, 79, 0.18) 25px);
+  border: 1px solid rgba(169, 116, 79, 0.3);
+  box-shadow: 2px 3px 12px rgba(58, 38, 24, 0.15);
+  transform: rotate(-0.75deg);
+  font-family: 'Caveat', cursive, sans-serif;
+  font-size: 1.18rem;
+  line-height: 25px;
+  color: var(--ink, #3A2618);
+  border-radius: 6px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.paper-note-card:hover {
+  transform: rotate(0deg) scale(1.01);
+  box-shadow: 4px 6px 18px rgba(58, 38, 24, 0.22);
+}
+
+/* Museum Archive Cards & Badges */
+.archive-catalog-no {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--accent, #A9744F);
+}
+
+.memory-mood-chip {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(169, 116, 79, 0.35);
+  background: rgba(169, 116, 79, 0.1);
+  color: #f0f6fc;
+}
+
+/* Interactive Places Memory Map Canvas */
+.places-map-container {
+  background: radial-gradient(circle at center, rgba(169, 116, 79, 0.08) 0%, rgba(14, 17, 23, 0.95) 75%), #0e1117;
+  border: 1px solid #30363d;
+  border-radius: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.places-map-grid {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.map-radar-pin {
+  animation: radarPulse 2.5s infinite cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes radarPulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  70% { transform: scale(2.4); opacity: 0; }
+  100% { transform: scale(2.4); opacity: 0; }
 }
