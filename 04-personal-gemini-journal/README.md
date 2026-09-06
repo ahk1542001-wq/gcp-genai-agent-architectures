@@ -67,8 +67,8 @@ labels:
 ### 1. Cloud Run & Google Cloud Platform Infrastructure
 ```mermaid
 flowchart TD
-    subgraph ClientLayer["💻 Web Client (Vanilla SPA + Tailwind + Chart.js + Inter Typography)"]
-        UI["Reflective Journaling Studio\n(Notion Serene Dark Aesthetic)"]
+    subgraph ClientLayer["💻 Web Client (Vanilla SPA + Tailwind + Leaflet + Chart.js + Newsreader & Inter Typography)"]
+        UI["Reflective Journaling Studio\n(Boutique Wellness Soft Blush & Deep Wine)"]
         StyleSelector["Reflection Style Engine\n(Balanced | Actionable | Philosophy | Brainstorm)"]
         MultiTurn["Multi-Turn Dialogue Stream\n(Gemini 2.5 / 3.7 Flash Badges + Timestamps)"]
         HistoryDrawer["History Search & Filter\n([All] [Reflective] [Actionable] [Breakthrough])"]
@@ -286,13 +286,14 @@ Curated archival exhibit designed around physical museum cataloguing standards:
 - **Monospace Catalog Numbering:** Unique archival identifier for every session (e.g. `S-2026-0906-001`).
 - **Archival Stamp:** Official `[CATALOGUED]` visual badge certifying permanent cloud preservation.
 - **Lined Paper Note Preview:** Real paper note preview rendered in authentic `Caveat` cursive handwriting font with warm terracotta lined styling.
-- **Location & Mood Badges:** Location stamps (`📍 Bangkok`, `📍 Cloud Run`) and mood indicators (`CALM 🍃`, `DISCOVERY 🔍`, `BREAKTHROUGH 💡`).
+- **Location & Mood Badges:** Authentic mindful sanctuary stamps (`📍 Bangkok`, `📍 Yangon`, `📍 Chiang Mai`, `📍 Singapore`) and mood indicators (`CALM 🍃`, `DISCOVERY 🔍`, `BREAKTHROUGH 💡`).
 
-### 11. 🗺️ Places & Memory Geography Map View (`#nav-places`)
-Spatial memory mapping connecting executive reflections to physical coordinates:
-- **Interactive Radar Map Canvas:** Dynamic grid displaying memory coordinates with animated pulsing radar pin.
-- **Spatial Tone Analysis:** Automatically aggregates emotional tone (e.g. `gently positive`) and count of memories anchored to specific coordinates.
-- **Located Reflections Ledger:** Chronological list of geotagged entries with quick navigation back to full transcripts.
+### 11. 🗺️ Places & Spatial Memory Map View (`#nav-places`)
+Cartographic spatial memory mapping connecting personal reflections to physical geography:
+- **Leaflet Cartographic Engine:** Embedded Leaflet 1.9.4 map with CartoDB Voyager tiles depicting true coastlines, oceans, and city geography on warm alabaster.
+- **On-Pin Radar Pulse Badges:** Animated radar pins with location names and memory counts directly on the point markers (`📍 Bangkok (42)`, `📍 Yangon (28)`, `📍 Chiang Mai (14)`, `📍 Singapore (19)`, `📍 Tokyo (8)`).
+- **Connecting Polyline Journey Routes:** Visual journey lines linking reflective life milestones across Asia.
+- **HUD Telemetry Bar & Controls:** Top telemetry bar (`🛰️ GPS FIX 3D · 9 SATS | ACCURACY ±2.4m`) with integrated zoom/recenter controls (`#gps-btn-zoom-in`, `#gps-btn-zoom-out`, `#gps-btn-recenter`). Zero mentions of backend cloud infrastructure as personal memory places.
 
 ### 12. 🧠 Personal Memory & Context Modal (`#memory-context-modal`)
 Sovereign user profile and long-term agent memory management accessible from header (`🧠 Bio`):
@@ -323,9 +324,9 @@ As required by Phase 1 of the Hack2Skill Ideathon Challenge, Google AI Studio wa
 
 ## 🧪 Complete Test Suite & Verification Guide
 
-Sanctuary OS enforces a two-tier verification methodology: a 76-test automated pytest suite for continuous integration and an automated, human-fidelity browser simulation via Playwright.
+Sanctuary OS enforces a two-tier verification methodology: a 77-test automated pytest suite for continuous integration and an automated, human-fidelity browser simulation via Playwright.
 
-### 1. Automated Hermetic Test Suite (76/76 Tests Passing • 100% Green)
+### 1. Automated Hermetic Test Suite (77/77 Tests Passing • 100% Green)
 
 Run the full hermetic test suite across agent evaluation, security isolation, Playwright browser UI automation, and full E2E user lifecycles:
 
