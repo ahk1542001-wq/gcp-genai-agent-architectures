@@ -20,7 +20,7 @@
 
 ![Sanctuary OS Walkthrough](./sanctuary_os_demo_walkthrough.gif)
 
-- 📹 **Full Demo Video File:** [`sanctuary_os_demo_walkthrough.mp4`](./sanctuary_os_demo_walkthrough.mp4) (55s, 1080p, human-in-the-loop lifecycle)
+- 📹 **Full Demo Video File:** [`sanctuary_os_demo_walkthrough.mp4`](./sanctuary_os_demo_walkthrough.mp4) (77s, 1080p, full 16-feature live audio walkthrough with professional narration & Tibetan singing bowl harmonics)
 - 🌐 **Live Cloud Run Deployment:** [https://personal-gemini-journal-ypp4pspywq-uc.a.run.app](https://personal-gemini-journal-ypp4pspywq-uc.a.run.app)
 - 👤 **Instant Evaluator Access:** Click **"Continue as Guest Evaluator"** on the landing page for immediate instant-access testing with zero login credentials required.
 

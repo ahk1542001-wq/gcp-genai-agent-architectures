@@ -3,24 +3,31 @@
 Comprehensive Live Feature Walkthrough with Real Audio & Narration for Sanctuary OS
 Records a continuous high-definition video exercising 100% of Sanctuary OS features:
 1. Zero-friction Guest Evaluator access
-2. Live Multimodal Voice Assistant toggle (with animated soundwave & breathing orb)
-3. 4-Style Reflection Persona Selector & Quick Mention Autocomplete (@tags)
-4. Empathetic Multi-Turn Burmese Reflection with Gemini 2.5 Flash
-5. Real-Time Dynamic Emotional Trajectory Arc (Chart.js)
-6. Human-in-the-Loop Sovereign Gate (Action Proposal & Approval)
-7. Session Distillation & 1-Click Firestore Sync
-8. Executive Kanban Board with drag/drop prioritization
-9. Mindful Calendar & Time-Blocking
-10. Life Rewind Genuine Cognitive & Productivity Metrics
-11. Dynamic Retrospective History, Search & Filter Chips
-12. Executive Data Report Modal with Markdown Portability Export
-13. Bilingual Settings Panel with sound & voice toggles
-14. Mindful Evening Shutdown Ritual with Burmese Gratitude & Zen Confirmation
+2. RonDesignLab Genie Floating Action Dock:
+   - Bilingual Burmese 🇲🇲 / English toggle with live toast
+   - Scoped Google Drive Cloud Context modal & document insertion
+   - Live Multimodal Voice Assistant toggle with breathing orb & real-time audio waveform
+3. 4-Style Reflection Persona Selector (Mindful, Actionable, Philosophical, Stoic)
+4. Quick Mention Autocomplete (@tags: @architecture, @hackathon, @wellbeing)
+5. Empathetic Multi-Turn Burmese Reflection with Gemini 2.5 Flash
+6. Real-Time Dynamic Emotional Trajectory Arc (Chart.js)
+7. Human-in-the-Loop Sovereign Gate (Autonomous Action Proposal & Approval)
+8. Session Distillation & 1-Click Firestore Sync
+9. Executive Kanban Board (Ticket creation & move to Done)
+10. Mindful Calendar & Time-Blocking (Afternoon Sprint event creation)
+11. Museum Memory Archive (Mosaic inspired: [CATALOGUED] stamps, Caveat paper notes, catalog IDs)
+12. Places & Global Spatial Memory Canvas (Southeast Asia ↔ Cloud Run us-central1 anchors)
+13. Life Rewind Genuine Cognitive & Productivity Metrics
+14. Dynamic Retrospective History, Search & Filter Chips with Wisdom Drawer
+15. Personal Memory & Context Engine (Profile & Bio, Goals, Session Insights, Ledger)
+16. Executive Data Report Modal with Markdown Portability Export
+17. Bilingual Settings Panel with sound & voice toggles
+18. Mindful Evening Shutdown Ritual with Burmese Gratitude & Zen Confirmation
 
 Audio Track:
 - Crystal-clear professional narration (Samantha / Daniel)
-- Authentic Tibetan Singing Bowl chime (216Hz/432Hz/648Hz harmonics)
-- Synchronized sound effects for approvals and zen confirmation
+- Authentic Tibetan Singing Bowl harmonics (216Hz fundamental, 432Hz octave, 648Hz harmonic third)
+- Synchronized chime for approvals and zen confirmation
 """
 
 import os
@@ -82,9 +89,9 @@ def inject_cursor_overlay(page):
         cursor.style.width = '24px';
         cursor.style.height = '24px';
         cursor.style.borderRadius = '50%';
-        cursor.style.backgroundColor = 'rgba(99, 102, 241, 0.45)';
-        cursor.style.border = '2px solid #818cf8';
-        cursor.style.boxShadow = '0 0 14px rgba(129, 140, 248, 0.7)';
+        cursor.style.backgroundColor = 'rgba(169, 116, 79, 0.55)';
+        cursor.style.border = '2px solid #A9744F';
+        cursor.style.boxShadow = '0 0 16px rgba(169, 116, 79, 0.8)';
         cursor.style.pointerEvents = 'none';
         cursor.style.zIndex = '999999';
         cursor.style.transition = 'transform 0.1s ease, width 0.15s ease, height 0.15s ease, background-color 0.15s ease';
@@ -100,21 +107,24 @@ def inject_cursor_overlay(page):
         });
         window.addEventListener('mousedown', () => {
             cursor.style.transform = 'translate(-50%, -50%) scale(0.65)';
-            cursor.style.backgroundColor = 'rgba(239, 68, 68, 0.75)';
+            cursor.style.backgroundColor = 'rgba(239, 68, 68, 0.85)';
             cursor.style.borderColor = '#f87171';
         });
         window.addEventListener('mouseup', () => {
             cursor.style.transform = 'translate(-50%, -50%) scale(1)';
-            cursor.style.backgroundColor = 'rgba(99, 102, 241, 0.45)';
-            cursor.style.borderColor = '#818cf8';
+            cursor.style.backgroundColor = 'rgba(169, 116, 79, 0.55)';
+            cursor.style.borderColor = '#A9744F';
         });
     }""")
 
-def smooth_move(page, locator, steps=12):
-    box = locator.bounding_box()
-    if box:
-        page.mouse.move(box["x"] + box["width"]/2, box["y"] + box["height"]/2, steps=steps)
-        page.wait_for_timeout(100)
+def smooth_move(page, locator, steps=14):
+    try:
+        box = locator.bounding_box()
+        if box:
+            page.mouse.move(box["x"] + box["width"]/2, box["y"] + box["height"]/2, steps=steps)
+            page.wait_for_timeout(80)
+    except Exception:
+        pass
 
 def record_browser_session():
     from playwright.sync_api import sync_playwright
@@ -134,8 +144,8 @@ def record_browser_session():
         )
         page = context.new_page()
 
-        # Step 1: Landing Page & Instant Guest Evaluator Access (0:00 - 0:05)
-        print("  1/14. Landing Screen & 1-Click Guest Evaluator Access...")
+        # Step 1: Landing Page & Instant Guest Evaluator Access (0:00 - 0:07)
+        print("  1/16. Landing Screen & 1-Click Guest Evaluator Access...")
         page.goto(BASE_URL, wait_until="networkidle")
         inject_cursor_overlay(page)
         page.wait_for_timeout(1000)
@@ -148,29 +158,69 @@ def record_browser_session():
         else:
             page.evaluate("() => { if (window.__SANCTUARY_TEST_AUTH__) { window.__SANCTUARY_TEST_AUTH__.signIn('victor_kyaw', 'victor@sanctuary.test', 'Victor Kyaw'); } }")
         
-        page.wait_for_selector("#app-shell:not(.hidden)", timeout=6000)
+        page.wait_for_selector("#app-shell:not(.hidden)", timeout=8000)
         inject_cursor_overlay(page)
         page.wait_for_timeout(1200)
 
-        # Step 2: Live Voice Assistant & Animated Soundwave (0:05 - 0:11)
-        print("  2/14. Live Multimodal Voice Assistant Toggle...")
-        voice_toggle = page.locator("#live-voice-toggle-btn")
-        if voice_toggle.is_visible():
-            smooth_move(page, voice_toggle)
+        # Step 2: RonDesignLab Genie Floating Action Dock Interactions (0:07 - 0:22)
+        print("  2/16. RonDesignLab Genie Action Dock (Translate, Files, Audio Chat)...")
+        
+        # 2a. Dock Translate Toggle -> Switches language to Burmese
+        dock_translate = page.locator("#dock-translate-btn")
+        if dock_translate.is_visible():
+            smooth_move(page, dock_translate)
             page.wait_for_timeout(300)
-            voice_toggle.click()
-            page.wait_for_timeout(1600)  # Show pulsing orb and active soundwave
-            smooth_move(page, voice_toggle)
-            voice_toggle.click()
+            dock_translate.click()
+            page.wait_for_timeout(1000) # Show toast and translated pill
+
+        # 2b. Dock Chat Files -> Scoped Google Drive Context Modal
+        dock_files = page.locator("#dock-chat-files-btn")
+        if dock_files.is_visible():
+            smooth_move(page, dock_files)
+            page.wait_for_timeout(300)
+            dock_files.click()
+            page.wait_for_selector("#gdrive-modal:not(.hidden)", timeout=3000)
+            page.wait_for_timeout(1200)
+
+            # Insert context from first document
+            insert_btn = page.locator(".gdrive-insert-btn").first
+            if insert_btn.is_visible():
+                smooth_move(page, insert_btn)
+                page.wait_for_timeout(300)
+                insert_btn.click()
+                page.wait_for_timeout(800)
+            else:
+                close_gdrive = page.locator("#close-gdrive-modal-btn")
+                smooth_move(page, close_gdrive)
+                close_gdrive.click()
+                page.wait_for_timeout(400)
+
+        # Clear input box for clean persona and Burmese thought typing
+        clear_input_btn = page.locator("#clear-input-btn")
+        if clear_input_btn.is_visible():
+            clear_input_btn.click()
+            page.wait_for_timeout(300)
+
+        # 2c. Dock Audio Chat -> Live Multimodal Voice Assistant
+        dock_audio = page.locator("#dock-audio-chat-btn")
+        if dock_audio.is_visible():
+            smooth_move(page, dock_audio)
+            page.wait_for_timeout(300)
+            dock_audio.click()
+            page.wait_for_timeout(2600)  # Show pulsing breathing orb & dynamic audio waveform
+
+            # Toggle off voice assistant
+            smooth_move(page, dock_audio)
+            dock_audio.click()
             page.wait_for_timeout(800)
 
-        # Step 3: 4-Style Reflection Persona Selector (0:11 - 0:17)
-        print("  3/14. 4-Style Reflection Persona Selector...")
+        # Step 3: 4-Style Reflection Persona Selector (0:22 - 0:30)
+        print("  3/16. 4-Style Reflection Persona Selector...")
         pill = page.locator("#mode-selector-pill")
         smooth_move(page, pill)
         pill.click()
         page.wait_for_selector("#mode-dropdown-menu:not(.hidden)", timeout=3000)
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(600)
 
         card_actionable = page.locator('.reflection-style-card[data-style="actionable"]')
         smooth_move(page, card_actionable)
@@ -178,46 +228,46 @@ def record_browser_session():
         card_actionable.click()
         page.wait_for_timeout(800)
 
-        # Step 4: Quick Mention Autocomplete (@tags) (0:17 - 0:22)
-        print("  4/14. Quick Mention Autocomplete (@tags)...")
+        # Step 4: Quick Mention Autocomplete (@tags) (0:30 - 0:36)
+        print("  4/16. Quick Mention Autocomplete (@tags)...")
         input_box = page.locator("#reflection-input")
         smooth_move(page, input_box)
         input_box.click()
-        input_box.type("@", delay=40)
+        input_box.type("@", delay=45)
         page.wait_for_timeout(1000)  # Show tag popup
         page.locator("#clear-input-btn").click()
-        page.wait_for_timeout(300)
+        page.wait_for_timeout(400)
 
-        # Step 5: Realistic Burmese Reflection Typing (0:22 - 0:31)
-        print("  5/14. Realistic Burmese Reflection Typing...")
+        # Step 5: Realistic Burmese Reflection Typing & Gemini 2.5 Flash Response (0:36 - 0:52)
+        print("  5/16. Realistic Burmese Reflection & Empathetic Gemini 2.5 Flash Response...")
         journal_thought = "ဒီနေ့ Cloud Run ပေါ်မှာ Sanctuary OS ကို အောင်မြင်စွာ Deploy လုပ်ပြီးပြီ။ Security Constitution နဲ့ Firestore Multi-Tenancy ကို စစ်ဆေးပြီးပြီ။ Executive tasks တွေ စီစဉ်ချင်တယ်။"
         input_box.type(journal_thought, delay=35)
         page.wait_for_timeout(800)
 
-        # Submit to Gemini
+        # Submit to Gemini via circular send button
         send_btn = page.locator("#send-reflection-btn")
         smooth_move(page, send_btn)
         send_btn.click()
 
-        # Step 6: Gemini 2.5 Flash Empathetic Reflection & Emotional Arc (0:31 - 0:38)
-        print("  6/14. Multi-Turn Reflection & Emotional Trajectory Arc...")
-        page.wait_for_selector("#chat-stream .model-badge", timeout=8000)
+        # Step 6: Multi-Turn Reflection & Emotional Arc Chart (0:52 - 0:59)
+        print("  6/16. Multi-Turn Reflection & Emotional Trajectory Arc...")
+        page.wait_for_selector("#chat-stream .model-badge", timeout=25000)
         page.wait_for_timeout(1000)
-        page.mouse.wheel(0, 250)
-        page.wait_for_timeout(1200)
+        page.mouse.wheel(0, 300)
+        page.wait_for_timeout(1400)
 
-        # Step 7: Human-in-the-Loop Sovereign Gate Approval (0:38 - 0:44)
-        print("  7/14. Human-in-the-Loop Sovereign Action Approval...")
+        # Step 7: Human-in-the-Loop Sovereign Gate Approval (0:59 - 1:06)
+        print("  7/16. Human-in-the-Loop Sovereign Action Approval...")
         proposal_container = page.locator("#action-proposal-container")
         if proposal_container.is_visible():
             approve_btn = page.locator("#proposal-approve-btn")
             smooth_move(page, approve_btn)
-            page.wait_for_timeout(600)
+            page.wait_for_timeout(500)
             approve_btn.click()
             page.wait_for_timeout(1200)
 
-        # Step 8: Auto-Summarize & 1-Click Firestore Sync (0:44 - 0:50)
-        print("  8/14. Session Distillation & Cloud Firestore Sync...")
+        # Step 8: Auto-Summarize & 1-Click Firestore Sync (1:06 - 1:14)
+        print("  8/16. Session Distillation & Cloud Firestore Sync...")
         summarize_btn = page.locator("#auto-summarize-btn")
         if summarize_btn.is_visible():
             smooth_move(page, summarize_btn)
@@ -228,53 +278,101 @@ def record_browser_session():
         if save_btn.is_visible():
             smooth_move(page, save_btn)
             save_btn.click()
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(1200)
 
-        # Step 9: Executive Kanban Board (0:50 - 0:57)
-        print("  9/14. Executive Kanban Board Navigation & Management...")
+        # Step 9: Executive Kanban Board (1:14 - 1:26)
+        print("  9/16. Executive Kanban Board Management...")
         nav_kanban = page.locator("#nav-kanban")
         smooth_move(page, nav_kanban)
         nav_kanban.click()
         page.wait_for_selector("#view-kanban-content:not(.hidden)", timeout=3000)
-        page.wait_for_timeout(1200)
+        page.wait_for_timeout(1000)
 
         add_tkt = page.locator("#add-ticket-btn")
         if add_tkt.is_visible():
             smooth_move(page, add_tkt)
-            page.wait_for_timeout(500)
+            add_tkt.click()
+            page.wait_for_selector("#new-ticket-modal:not(.hidden)", timeout=3000)
+            page.wait_for_timeout(400)
+            test_ticket_name = "Test: Verify Vertex AI & Cloud Run IAM Telemetry"
+            page.locator("#ticket-title-input").fill(test_ticket_name)
+            page.locator("#ticket-priority-select").select_option("High")
+            page.locator("#submit-ticket-btn").click()
+            page.wait_for_selector("#new-ticket-modal", state="hidden", timeout=3000)
+            page.wait_for_timeout(800)
 
-        # Step 10: Mindful Calendar & Life Rewind (0:57 - 1:06)
-        print("  10/14. Mindful Calendar & Genuine Life Rewind Metrics...")
+            # Advance ticket to Done
+            page.evaluate(f"""
+                async () => {{
+                    const tickets = state.tickets || [];
+                    const t = tickets.find(x => x.title === '{test_ticket_name}');
+                    if (t) await moveTicketColumn(t.id, 'done');
+                }}
+            """)
+            page.wait_for_timeout(1000)
+
+        # Step 10: Mindful Calendar & Time-Blocking (1:26 - 1:36)
+        print("  10/16. Mindful Calendar & Time-Blocking...")
         nav_cal = page.locator("#nav-calendar")
         smooth_move(page, nav_cal)
         nav_cal.click()
         page.wait_for_selector("#view-calendar-content:not(.hidden)", timeout=3000)
-        page.wait_for_timeout(1500)
+        page.wait_for_timeout(1000)
 
-        nav_rewind = page.locator("#nav-rewind")
-        smooth_move(page, nav_rewind)
-        nav_rewind.click()
-        page.wait_for_selector("#view-rewind-content:not(.hidden)", timeout=3000)
-        page.wait_for_timeout(1800)
+        test_cal_event = "APAC Hackathon Final Architecture Polish"
+        today_iso = page.evaluate("() => new Date().toISOString().slice(0, 10)")
+        page.locator("#new-event-title").fill(test_cal_event)
+        page.locator("#new-event-date").fill(today_iso)
+        page.locator("#new-event-timeblock").select_option("Afternoon Sprint")
+        add_evt = page.locator("#add-event-btn")
+        smooth_move(page, add_evt)
+        add_evt.click()
+        page.wait_for_timeout(1200)
 
-        # Step 10b: Museum Memory Archive & Places Map Geography
-        print("  10b/14. Museum Memory Archive & Places Map Geography...")
+        # Step 11: Museum Memory Archive (Mosaic Inspired) (1:36 - 1:49)
+        print("  11/16. Museum Memory Archive (Cataloged Relics & Stamps)...")
         nav_archive = page.locator("#nav-archive")
         if nav_archive.is_visible():
             smooth_move(page, nav_archive)
             nav_archive.click()
             page.wait_for_selector("#view-archive-content:not(.hidden)", timeout=3000)
-            page.wait_for_timeout(1500)
+            page.wait_for_timeout(1200)
 
+            # Test search / filter input
+            archive_filter = page.locator("#archive-filter-input")
+            if archive_filter.is_visible():
+                smooth_move(page, archive_filter)
+                archive_filter.click()
+                archive_filter.type("Breakthrough", delay=45)
+                page.wait_for_timeout(1000)
+                archive_filter.fill("")
+                page.wait_for_timeout(600)
+
+        # Step 12: Places & Spatial Memory Map Canvas (1:49 - 2:01)
+        print("  12/16. Places & Global Memory Map Canvas...")
         nav_places = page.locator("#nav-places")
         if nav_places.is_visible():
             smooth_move(page, nav_places)
             nav_places.click()
             page.wait_for_selector("#view-places-content:not(.hidden)", timeout=3000)
-            page.wait_for_timeout(1500)
+            page.wait_for_timeout(1200)
 
-        # Step 11: Dynamic History Search & Review Drawer (1:06 - 1:13)
-        print("  11/14. Dynamic Retrospective History & Tag Filtering...")
+            pin_bangkok = page.locator("#places-count-bangkok")
+            if pin_bangkok.is_visible():
+                smooth_move(page, pin_bangkok)
+                page.wait_for_timeout(800)
+
+            page.mouse.wheel(0, 180)
+            page.wait_for_timeout(1200)
+
+        # Step 13: Life Rewind View & Retrospective History (2:01 - 2:13)
+        print("  13/16. Life Rewind & Retrospective Wisdom Drawer...")
+        nav_rewind = page.locator("#nav-rewind")
+        smooth_move(page, nav_rewind)
+        nav_rewind.click()
+        page.wait_for_selector("#view-rewind-content:not(.hidden)", timeout=3000)
+        page.wait_for_timeout(1500)
+
         nav_journal = page.locator("#nav-journal")
         smooth_move(page, nav_journal)
         nav_journal.click()
@@ -285,7 +383,7 @@ def record_browser_session():
         if chip_actionable.is_visible():
             smooth_move(page, chip_actionable)
             chip_actionable.click()
-            page.wait_for_timeout(800)
+            page.wait_for_timeout(700)
 
         chip_all = page.locator('#history-filter-chips .history-chip[data-filter="all"]')
         if chip_all.is_visible():
@@ -293,66 +391,93 @@ def record_browser_session():
             chip_all.click()
             page.wait_for_timeout(600)
 
-        # Step 12: Executive Report Modal & Data Portability (1:13 - 1:20)
-        print("  12/14. Executive Data Report Modal & Export Portability...")
+        # Review Drawer Modal
+        history_items = page.locator("#journal-history-list .history-item")
+        if history_items.count() > 0:
+            smooth_move(page, history_items.first)
+            history_items.first.click()
+            page.wait_for_selector("#journal-review-modal:not(.hidden)", timeout=3000)
+            page.wait_for_timeout(1000)
+            close_rev = page.locator("#close-review-modal-btn")
+            smooth_move(page, close_rev)
+            close_rev.click()
+            page.wait_for_selector("#journal-review-modal", state="hidden", timeout=3000)
+            page.wait_for_timeout(600)
+
+        # Step 14: Personal Memory Context Engine Modal (2:13 - 2:25)
+        print("  14/16. Personal Memory Context Engine Modal...")
+        bio_btn = page.locator("#open-memory-context-btn")
+        if bio_btn.is_visible():
+            smooth_move(page, bio_btn)
+            bio_btn.click()
+            page.wait_for_selector("#memory-context-modal:not(.hidden)", timeout=3000)
+            page.wait_for_timeout(800)
+
+            # Tab switches
+            page.locator("#tab-btn-goals").click()
+            page.wait_for_timeout(600)
+            page.locator("#tab-btn-insights").click()
+            page.wait_for_timeout(600)
+            page.locator("#tab-btn-profile").click()
+            page.wait_for_timeout(500)
+
+            name_input = page.locator("#ctx-preferred-name")
+            if name_input.is_visible():
+                name_input.fill("Victor Kyaw")
+            occ_input = page.locator("#ctx-occupation")
+            if occ_input.is_visible():
+                occ_input.fill("AI Systems Architect & Founder")
+
+            save_mem = page.locator("#save-memory-context-btn")
+            if save_mem.is_visible():
+                smooth_move(page, save_mem)
+                save_mem.click()
+                page.wait_for_timeout(800)
+
+            close_mem = page.locator("#close-memory-context-btn")
+            if close_mem.is_visible():
+                smooth_move(page, close_mem)
+                close_mem.click()
+                page.wait_for_timeout(600)
+
+        # Step 15: Executive Report Modal & Bilingual Settings (2:25 - 2:37)
+        print("  15/16. Executive Report Modal & Bilingual Settings Panel...")
         report_btn = page.locator("#executive-report-btn")
         if report_btn.is_visible():
             smooth_move(page, report_btn)
             report_btn.click()
-            page.wait_for_selector("#executive-report-modal", state="visible", timeout=3000)
-            page.wait_for_timeout(1200)
+            page.wait_for_selector("#executive-report-modal:not(.hidden)", timeout=3000)
+            page.wait_for_timeout(1000)
+
+            copy_rep = page.locator("#copy-markdown-report-btn")
+            if copy_rep.is_visible():
+                smooth_move(page, copy_rep)
+                copy_rep.click()
+                page.wait_for_timeout(500)
 
             close_rep = page.locator("#close-executive-report-btn")
             smooth_move(page, close_rep)
             close_rep.click()
             page.wait_for_timeout(600)
 
-        # Step 12b: Personal Memory Context & Google Drive Modals
-        print("  12b/14. Personal Bio & Google Drive Context Modals...")
-        bio_btn = page.locator("#open-memory-context-btn")
-        if bio_btn.is_visible():
-            smooth_move(page, bio_btn)
-            bio_btn.click()
-            page.wait_for_selector("#memory-context-modal", state="visible", timeout=3000)
-            page.wait_for_timeout(1000)
-            close_bio = page.locator("#close-memory-context-btn")
-            if close_bio.is_visible():
-                smooth_move(page, close_bio)
-                close_bio.click()
-                page.wait_for_timeout(600)
-
-        gdrive_btn = page.locator("#open-gdrive-btn")
-        if gdrive_btn.is_visible():
-            smooth_move(page, gdrive_btn)
-            gdrive_btn.click()
-            page.wait_for_selector("#gdrive-modal", state="visible", timeout=3000)
-            page.wait_for_timeout(1000)
-            close_gdrive = page.locator("#close-gdrive-modal-btn")
-            if close_gdrive.is_visible():
-                smooth_move(page, close_gdrive)
-                close_gdrive.click()
-                page.wait_for_timeout(500)
-
-        # Step 13: Bilingual Settings Panel (1:20 - 1:27)
-        print("  13/14. Executive Settings Panel & Sound Controls...")
         settings_btn = page.locator("#open-settings-sidebar-btn")
         if settings_btn.is_visible():
             smooth_move(page, settings_btn)
             settings_btn.click()
-            page.wait_for_selector("#settings-modal", state="visible", timeout=3000)
-            page.wait_for_timeout(1200)
+            page.wait_for_selector("#settings-modal:not(.hidden)", timeout=3000)
+            page.wait_for_timeout(1000)
 
             close_set = page.locator("#close-settings-btn")
             smooth_move(page, close_set)
             close_set.click()
             page.wait_for_timeout(600)
 
-        # Step 14: Evening Shutdown Ritual & Zen Confirmation (1:27 - 1:35)
-        print("  14/14. Mindful Evening Shutdown Ritual & Zen State...")
+        # Step 16: Mindful Evening Shutdown Ritual & Zen Confirmation (2:37 - 2:50)
+        print("  16/16. Mindful Evening Shutdown Ritual & Zen State...")
         nav_shutdown = page.locator("#nav-shutdown")
         smooth_move(page, nav_shutdown)
         nav_shutdown.click()
-        page.wait_for_selector("#shutdown-modal", state="visible", timeout=3000)
+        page.wait_for_selector("#shutdown-modal:not(.hidden)", timeout=3000)
         page.wait_for_timeout(800)
 
         gratitude_box = page.locator("#shutdown-gratitude-input")
@@ -366,7 +491,8 @@ def record_browser_session():
         if zen_btn.is_visible():
             smooth_move(page, zen_btn)
             zen_btn.click()
-            page.wait_for_timeout(2500)
+            page.wait_for_selector("#shutdown-zen-confirmed:not(.hidden)", timeout=4000)
+            page.wait_for_timeout(2800)
 
         video_path = page.video.path()
         print(f"  ✓ Raw video captured: {video_path}")
@@ -385,15 +511,15 @@ def build_audio_track(total_duration):
 
     narration_segments = [
         (0.0, "audio_01.aiff", "Welcome to Sanctuary OS, an enterprise cognitive sanctuary deployed on Google Cloud Run."),
-        (6.0, "audio_02.aiff", "Featuring live multimodal voice assistance with real-time audio interaction."),
-        (13.0, "audio_03.aiff", "Select from four distinct reflection personas, with quick tag autocomplete."),
-        (22.0, "audio_04.aiff", "Reflect freely in your native language. Gemini 2.5 Flash responds with deep empathetic clarity."),
-        (38.0, "audio_05.aiff", "With human-in-the-loop sovereignty, Gemini proposes actions requiring explicit human approval."),
-        (45.0, "audio_06.aiff", "Distill breakthrough insights and synchronize securely to tenant-isolated Cloud Firestore."),
-        (52.0, "audio_07.aiff", "Seamlessly organize sprint priorities with the executive Kanban board and mindful calendar."),
-        (65.0, "audio_08.aiff", "Review genuine cognitive metrics in Life Rewind, and explore retrospective wisdom in the history drawer."),
-        (76.0, "audio_09.aiff", "Export executive reports with full data portability, and customize bilingual settings."),
-        (88.0, "audio_10.aiff", "Complete your day with the evening shutdown ritual and confirm your zen state.")
+        (7.0, "audio_02.aiff", "The RonDesignLab Genie Action Dock enables instant bilingual switching and Google Drive context injection."),
+        (14.5, "audio_03.aiff", "Activate the multimodal voice assistant with dynamic breathing orb and live audio waveform."),
+        (21.0, "audio_04.aiff", "Select from four reflection personas, with quick mention autocomplete for sovereign focus."),
+        (27.5, "audio_05.aiff", "Reflect freely in your native language. Gemini 2.5 Flash responds with deep empathetic clarity and dynamic emotional trajectory."),
+        (38.0, "audio_06.aiff", "With human-in-the-loop sovereignty, Gemini proposes actions requiring explicit approval."),
+        (45.0, "audio_07.aiff", "Seamlessly manage priorities with the executive Kanban board and mindful calendar."),
+        (52.0, "audio_08.aiff", "Explore the Museum Memory Archive with cataloged relics, and the Places Spatial Canvas tracking memories across Southeast Asia."),
+        (61.0, "audio_09.aiff", "Review Life Rewind cognitive metrics, retrospective wisdom, and your personal memory context."),
+        (68.5, "audio_10.aiff", "Export executive reports, and conclude your day with the evening shutdown ritual into zen state.")
     ]
 
     # 1. Generate individual narration AIFF clips
@@ -403,7 +529,7 @@ def build_audio_track(total_duration):
         cmd = ["say", "-v", voice, "-r", "165", text, "-o", str(clip_path)]
         subprocess.run(cmd, check=True)
 
-    # 2. Generate Tibetan Singing Bowl chime (opening and closing)
+    # 2. Generate Tibetan Singing Bowl chime (opening, midpoint, and closing)
     chime_open = AUDIO_DIR / "chime_open.wav"
     subprocess.run([
         "ffmpeg", "-y", "-f", "lavfi",
@@ -411,17 +537,23 @@ def build_audio_track(total_duration):
         str(chime_open)
     ], check=True, stderr=subprocess.DEVNULL)
 
+    chime_mid = AUDIO_DIR / "chime_mid.wav"
+    subprocess.run([
+        "ffmpeg", "-y", "-f", "lavfi",
+        "-i", "sine=frequency=216:duration=3.5[s1];sine=frequency=432:duration=3.5[s2];sine=frequency=648:duration=3.5[s3];[s1][s2][s3]amix=inputs=3,afade=t=in:st=0:d=0.05,afade=t=out:st=0.6:d=2.9,volume=0.20",
+        str(chime_mid)
+    ], check=True, stderr=subprocess.DEVNULL)
+
     chime_close = AUDIO_DIR / "chime_close.wav"
     subprocess.run([
         "ffmpeg", "-y", "-f", "lavfi",
-        "-i", "sine=frequency=216:duration=5[s1];sine=frequency=432:duration=5[s2];sine=frequency=648:duration=5[s3];[s1][s2][s3]amix=inputs=3,afade=t=in:st=0:d=0.05,afade=t=out:st=1.2:d=3.8,volume=0.35",
+        "-i", "sine=frequency=216:duration=5.5[s1];sine=frequency=432:duration=5.5[s2];sine=frequency=648:duration=5.5[s3];[s1][s2][s3]amix=inputs=3,afade=t=in:st=0:d=0.05,afade=t=out:st=1.2:d=4.3,volume=0.35",
         str(chime_close)
     ], check=True, stderr=subprocess.DEVNULL)
 
     # 3. Mix everything with precise timing using ffmpeg complex filter
     master_audio = AUDIO_DIR / "master_soundtrack.m4a"
     
-    # Construct ffmpeg amix graph
     inputs = []
     filter_complex = []
     
@@ -438,10 +570,15 @@ def build_audio_track(total_duration):
         filter_complex.append(f"[{stream_idx}:a]adelay={delay_ms}|{delay_ms},volume=1.0[a{stream_idx}];")
         stream_idx += 1
 
+    # Add midpoint chime at 87s (archive transition)
+    inputs.extend(["-i", str(chime_mid)])
+    filter_complex.append(f"[{stream_idx}:a]adelay=51500|51500,volume=0.35[a{stream_idx}];")
+    stream_idx += 1
+
     # Add closing chime near end
     inputs.extend(["-i", str(chime_close)])
-    close_delay_ms = max(0, int((total_duration - 4.5) * 1000))
-    filter_complex.append(f"[{stream_idx}:a]adelay={close_delay_ms}|{close_delay_ms},volume=0.7[a{stream_idx}];")
+    close_delay_ms = max(0, int((total_duration - 5.0) * 1000))
+    filter_complex.append(f"[{stream_idx}:a]adelay={close_delay_ms}|{close_delay_ms},volume=0.75[a{stream_idx}];")
     
     total_streams = stream_idx + 1
     mix_sources = "".join(f"[a{i}]" for i in range(total_streams))
@@ -463,7 +600,6 @@ def build_audio_track(total_duration):
 def compile_master_video(webm_path, audio_path):
     print("🎬 [Render] Merging HD Video with Master Audio into 1080p MP4 & GIF...")
 
-    # Probe duration of webm
     probe = subprocess.run([
         "ffprobe", "-v", "error", "-show_entries", "format=duration",
         "-of", "default=noprint_wrappers=1:nokey=1", str(webm_path)
@@ -490,6 +626,11 @@ def compile_master_video(webm_path, audio_path):
     subprocess.run(cmd_mp4, check=True, stderr=subprocess.DEVNULL)
     size_mb = OUTPUT_MP4.stat().st_size / (1024 * 1024)
     print(f"  ✅ Complete HD Video with Audio: {OUTPUT_MP4} ({size_mb:.2f} MB, {video_duration:.1f}s)")
+
+    # Also save to tests/walkthrough_recordings/
+    archival_mp4 = RECORDINGS_DIR / "sanctuary_os_demo_walkthrough.mp4"
+    RECORDINGS_DIR.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["cp", str(OUTPUT_MP4), str(archival_mp4)], check=True)
 
     # Generate Walkthrough GIF for README
     cmd_gif = [
@@ -520,8 +661,8 @@ def main():
     # 3. Merge video & audio into final deliverables
     compile_master_video(webm_path, audio_path)
 
-    # Cleanup temporary directories
-    subprocess.run(["rm", "-rf", str(RECORDINGS_DIR), str(AUDIO_DIR)])
+    # Clean temporary audio files but preserve archival video
+    subprocess.run(["rm", "-rf", str(AUDIO_DIR)])
     print("🎉 All features & live audio walkthrough generated successfully!")
 
 if __name__ == "__main__":
