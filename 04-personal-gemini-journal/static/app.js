@@ -243,6 +243,37 @@ async function signInWithGoogle() {
   }
 }
 
+async function signInAsGuest() {
+  if (state.authConfig && state.authConfig.auth_mode === "test") {
+    if (window.__SANCTUARY_TEST_AUTH__) {
+      window.__SANCTUARY_TEST_AUTH__.signIn("evaluator_guest", "guest@hackathon.eval", "Guest Evaluator");
+      return;
+    }
+  }
+
+  if (typeof firebase === "undefined" || !firebase.auth) {
+    showAuthLanding("Authentication library could not be loaded.");
+    return;
+  }
+
+  try {
+    const btn = document.getElementById("guest-signin-btn");
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `<span>⏳</span><span>Connecting Sandbox...</span>`;
+    }
+    await firebase.auth().signInAnonymously();
+  } catch (err) {
+    console.error("Guest sign in error:", err);
+    showAuthLanding(err.message || "Guest sign in failed. Please try again.");
+    const btn = document.getElementById("guest-signin-btn");
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<span>⚡</span><span>Continue as Guest Evaluator</span>`;
+    }
+  }
+}
+
 async function signOutUser() {
   try {
     if (typeof firebase !== "undefined" && firebase.auth && firebase.auth().currentUser) {
@@ -329,11 +360,12 @@ async function initializeAuthentication() {
           try {
             const token = await fbUser.getIdToken();
             state.token = token;
+            const isAnon = Boolean(fbUser.isAnonymous);
             state.user = {
               uid: fbUser.uid,
-              email: fbUser.email,
-              name: fbUser.displayName || (fbUser.email ? fbUser.email.split("@")[0] : "Journaler"),
-              auth_provider: "firebase"
+              email: fbUser.email || (isAnon ? "guest@evaluator.local" : null),
+              name: fbUser.displayName || (isAnon ? "Guest Evaluator" : (fbUser.email ? fbUser.email.split("@")[0] : "Journaler")),
+              auth_provider: isAnon ? "firebase_anonymous" : "firebase"
             };
             localStorage.setItem("journal_token", token);
             showAppShell();
@@ -380,6 +412,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Auth buttons
   const googleBtn = document.getElementById("google-signin-btn");
   if (googleBtn) googleBtn.onclick = signInWithGoogle;
+
+  const guestBtn = document.getElementById("guest-signin-btn");
+  if (guestBtn) guestBtn.onclick = signInAsGuest;
 
   const signoutBtn = document.getElementById("signout-btn");
   if (signoutBtn) signoutBtn.onclick = signOutUser;

@@ -100,11 +100,15 @@ def verify_firebase_id_token(token: str) -> AuthenticatedUser:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+        provider = decoded.get("firebase", {}).get("sign_in_provider", "google.com")
+        display_name = decoded.get("name") or ("Guest Evaluator" if provider == "anonymous" else "Journaler")
+        email = decoded.get("email") or (f"{uid[:12]}@anonymous.guest" if provider == "anonymous" else None)
+
         return AuthenticatedUser(
             uid=uid,
-            email=decoded.get("email"),
-            name=decoded.get("name", "Journaler"),
-            auth_provider=decoded.get("firebase", {}).get("sign_in_provider", "google.com"),
+            email=email,
+            name=display_name,
+            auth_provider=provider,
         )
     except HTTPException:
         raise
